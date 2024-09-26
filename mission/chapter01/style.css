@@ -1,0 +1,49 @@
+
+body {
+    background-color: #ccdfff;
+}
+
+h1, h5 {
+    text-align: center;
+}
+
+hr {
+    margin: 50px 0;
+}
+
+input {
+    width: 100%;
+    padding: 8px;
+    margin-bottom: 10px;
+}
+
+.todo-container {
+    display: flex;
+    justify-content: space-between;
+}
+
+.todo-list, .completed-list {
+    width: 48%;
+}
+
+ul {
+    list-style-type: none;
+}
+
+li {
+    padding: 10px;
+    margin-bottom: 5px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+button {
+    background-color: #8eb7ff;
+    color: black;
+    border: none;
+    padding: 5px 10px;
+    cursor: pointer;
+    border-radius: 3px;
+}
+
