@@ -34,6 +34,7 @@ export default [
         { allowConstantExport: true },
       ],
       "react/prop-types": "off", // card.jsx에서 movie 오류 뜨는 거 없애줌
+      "no-unused-vars": ["warn", { "varsIgnorePattern": "^_" }] // 안 쓰면 오류 나는 거 없애줌
     },
   },
 ]

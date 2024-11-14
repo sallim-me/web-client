@@ -1,12 +1,12 @@
 import { createBrowserRouter, RouterProvider } from 'react-router-dom';
 
 import SearchPage from './pages/Search/search';
-import MoviesPage from './pages/Movie/movie';
 import CategoryPage from './pages/Category/category';
 import LoginPage from './pages/Login/login';
 import SignupPage from './pages/Signup/signup';
 
 import RootLayout from './layout/root-layout';
+import MovieRouter from './pages/router/movierouter'
 
 const router = createBrowserRouter([
   {
@@ -22,8 +22,8 @@ const router = createBrowserRouter([
         element: <CategoryPage />
       },
       {
-        path: 'movie/:category', // 특정 카테고리의 영화 데이터를 보여주는 페이지 경로
-        element: <MoviesPage />
+        path: 'movie/:CategoryOrMovieId', 
+        element: <MovieRouter/> // 카테고리에 해당하는 영화 리스트 or 상세 페이지
       },
       {
         path: 'login', 

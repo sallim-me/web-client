@@ -12,7 +12,8 @@ const CategoryPage = () => {
     return (
         <S.CategoryContainer>
             {categories.map((category) => (
-                <Link key={category.path} to={`movie/${category.path}`}>
+                <Link key={category.path} to={`/movie/${category.path}`}> 
+                {/*movie 앞에 /가 있어야 상대경로로 취급된다. / 없으면 movie가 두 번 주소에 들어감*/}
                     <S.CategoryBox>
                         <p>{category.name}</p>
                     </S.CategoryBox>
