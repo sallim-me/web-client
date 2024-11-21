@@ -12,7 +12,7 @@ const router = createBrowserRouter([
   {
     path: '/',
     element: <RootLayout/>, // RootLayout에서 Sidebar와 Outlet을 관리
-    children: [ // children에 있는 게 Outlet인가?%%%
+    children: [ // children에 정의된 라우트는 Outlet을 통해 렌더링된다
       {
         path: 'search', // 페이지 경로
         element: <SearchPage />
@@ -23,7 +23,8 @@ const router = createBrowserRouter([
       },
       {
         path: 'movie/:category_or_movieid', 
-        element: <MovieRouter/> // 카테고리에 해당하는 영화 리스트 or 상세 페이지
+        element: <MovieRouter/> 
+        // 카테고리에 해당하는 영화 리스트 or 클릭한 영화의 상세 페이지
       },
       {
         path: 'login', 

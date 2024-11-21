@@ -4,8 +4,8 @@ import { useCustomFetch } from '../../hooks/useCustomFetch.js';
 import * as S from './detail.style.js';
 
 const DetailPage = ({ movieId }) => {
-    const { data: movie, error, loading } = useCustomFetch(`https://api.themoviedb.org/3/movie/${movieId}?language=ko-KR&append_to_response=credits`);
-
+    console.log("detail page에 들어옴")
+    const { data : movie, error, loading } = useCustomFetch(`/movie/${movieId}?language=ko-KR&append_to_response=credits`);
     if (loading) {
         return <p>로딩 중...</p>;
     }
@@ -14,10 +14,11 @@ const DetailPage = ({ movieId }) => {
     }
     if (!movie) {
         return <p>영화 데이터를 불러올 수 없습니다.</p>; 
-    }
+    } //%%% 상세페이지 안나오는디... 왜냐
+
 
     return (
-        <S.Container>
+        <S.DetailContainer>
             <MovieInfo
                 backdropPath={`https://image.tmdb.org/t/p/w500${movie.backdrop_path}`}
                 title={movie.title}
@@ -27,7 +28,7 @@ const DetailPage = ({ movieId }) => {
                 overview={movie.overview}
             />
             <Casting cast={movie.credits?.cast || []} />
-        </S.Container>
+        </S.DetailContainer>
     );
 };
 
