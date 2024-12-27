@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Navigation Bar</title>
+    <style>
+       #logo-img{
+            width: 25px;
+            height: 20px;
+            margin-right: 5px;
+       }
+
+       #mode-img{
+            width: 30px;
+            height: 30px;
+       }
+
+        .nav {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            color: black;
+            padding: 10px 20px;
+        }
+
+        .logo {
+            display: flex; 
+            font-weight: bold;
+        }
+
+        .menu {
+            display: flex;
+            gap: 20px;
+        }
+
+        a {
+            text-decoration: none;
+            color: black;
+        }
+    </style>
+</head>
+<body>
+    <div class="nav">
+        <div class="logo">
+            <img id="logo-img" src="logo.png">
+            <a href="#">SMUMC</a>
+        </div>
+        <div class="menu">
+            <a href="#">Projects</a>
+            <a href="#">Members</a>
+            <a href="#">Notice</a>
+            <img id="mode-img" src="mode.png">
+        </div>
+    </div>
+</body>
+</html>

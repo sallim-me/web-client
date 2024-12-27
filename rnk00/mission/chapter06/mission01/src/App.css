@@ -1,0 +1,37 @@
+body {
+  background-color: #c7f8d0c1;
+  padding: 20px;
+}
+
+form {
+  margin-bottom: 20px;
+}
+
+input[type='text'] {
+  padding: 10px;
+  border: 2px solid #a5c544;
+  width: 200px;
+  margin-right: 10px; 
+  font-size: 16px; 
+}
+
+button {
+  padding: 10px 15px;
+  background-color: #a5c544; 
+  color: white; 
+  border: none;
+  font-size: 16px;
+  height: 45px;
+}
+
+#delete{
+  background-color: rgb(247, 150, 150);
+}
+
+#update{
+  background-color: rgb(140, 161, 247);
+}
+
+#update2{
+  background-color: rgb(107, 135, 249);
+}
