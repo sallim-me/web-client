@@ -1,8 +1,8 @@
 import * as S from './card.style';
 
-const Card = ({movie}) => { 
+const Card = ({movie, onClick}) => { 
     return (
-        <S.CardContainer>
+        <S.CardContainer onClick={onClick}> {/*onClick 설정해야함 */}
             <S.CardImage
                 src={`https://image.tmdb.org/t/p/w500${movie.poster_path}`}
                 // movie.poster_path 받아와야 해서 백틱 써야 함
