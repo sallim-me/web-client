@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="300" height="200" viewBox="0 0 300 200" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- 에어컨 본체 -->
+  <rect x="80" y="40" width="140" height="40" rx="4" fill="#F5F5F5" stroke="#E0E0E0" stroke-width="2"/>
+  
+  <!-- 통풍구 -->
+  <rect x="90" y="65" width="120" height="8" rx="4" fill="#E0E0E0"/>
+  
+  <!-- 디스플레이 패널 -->
+  <rect x="90" y="50" width="20" height="8" rx="2" fill="#D0D0D0"/>
+  
+  <!-- 바람 표시 -->
+  <path d="M110 100C120 95 130 98 140 95M110 110C120 105 130 108 140 105" stroke="#E0E0E0" stroke-width="2"/>
+</svg> 
