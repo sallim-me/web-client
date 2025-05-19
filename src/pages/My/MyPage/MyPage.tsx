@@ -11,6 +11,7 @@ import {
   IconButton,
 } from '@mui/material';
 import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
+import { useAuthStore } from '@/store/useAuthStore';
 
 // 타입 정의
 interface Post {
@@ -23,6 +24,7 @@ interface Post {
 
 const MyPage = () => {
   const navigate = useNavigate();
+  const logout = useAuthStore((state) => state.logout);
 
   // 예시 유저 정보
   const nickname = 'HGD';
@@ -87,15 +89,26 @@ const MyPage = () => {
             </Typography>
           </Stack>
         </Stack>
-        <Box sx={{ display: 'flex', justifyContent: 'center', mt: 2 }}>
+        <Stack spacing={1} sx={{ mt: 2 }}>
           <Button
             variant="outlined"
-            sx={{ width: '60%' }}
+            sx={{ width: '60%', mx: 'auto' }}
             onClick={() => navigate('/my-page/edit-profile')}
           >
             회원 정보 수정
           </Button>
-        </Box>
+          <Button
+            variant="outlined"
+            color="error"
+            sx={{ width: '60%', mx: 'auto' }}
+            onClick={() => {
+              logout();
+              navigate('/login');
+            }}
+          >
+            로그아웃
+          </Button>
+        </Stack>
       </Paper>
 
       {/* 내가 쓴 글 */}

@@ -8,7 +8,10 @@ import {
   Button,
   Stack,
   Paper,
+  Alert,
+  Link,
 } from '@mui/material';
+import { useAuthStore } from '@/store/useAuthStore';
 
 interface LoginForm {
   username: string;
@@ -17,6 +20,9 @@ interface LoginForm {
 
 const Login = () => {
   const navigate = useNavigate();
+  const login = useAuthStore((state) => state.login);
+  const [error, setError] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
   const [formData, setFormData] = useState<LoginForm>({
     username: '',
     password: '',
@@ -28,15 +34,24 @@ const Login = () => {
       ...prev,
       [name]: value,
     }));
+    // 에러 메시지 초기화
+    setError(null);
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // TODO: 로그인 로직 구현
-    console.log('Login form submitted:', formData);
-    // 임시로 로그인 성공 처리
-    localStorage.setItem('token', 'dummy-token');
-    navigate('/post/list');
+    setIsLoading(true);
+    setError(null);
+
+    try {
+      await login(formData);
+      navigate('/post/list');
+    } catch (error) {
+      setError('로그인에 실패했습니다. 아이디와 비밀번호를 확인해주세요.');
+      console.error('Login error:', error);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -56,6 +71,12 @@ const Login = () => {
               로그인
             </Typography>
 
+            {error && (
+              <Alert severity="error" onClose={() => setError(null)}>
+                {error}
+              </Alert>
+            )}
+
             <form onSubmit={handleSubmit}>
               <Stack spacing={3}>
                 <TextField
@@ -66,6 +87,7 @@ const Login = () => {
                   onChange={handleChange}
                   fullWidth
                   required
+                  disabled={isLoading}
                 />
 
                 <TextField
@@ -76,6 +98,7 @@ const Login = () => {
                   onChange={handleChange}
                   fullWidth
                   required
+                  disabled={isLoading}
                 />
 
                 <Button
@@ -83,8 +106,9 @@ const Login = () => {
                   variant="contained"
                   size="large"
                   fullWidth
+                  disabled={isLoading}
                 >
-                  로그인
+                  {isLoading ? '로그인 중...' : '로그인'}
                 </Button>
 
                 <Button
@@ -92,10 +116,21 @@ const Login = () => {
                   variant="outlined"
                   size="large"
                   fullWidth
-                  onClick={() => navigate('/signup')}
+                  onClick={() => navigate('/post/list')}
+                  disabled={isLoading}
                 >
-                  회원가입
+                  둘러보기
                 </Button>
+
+                <Box sx={{ textAlign: 'center' }}>
+                  <Link
+                    component="button"
+                    variant="body2"
+                    onClick={() => navigate('/signup')}
+                  >
+                    계정이 없으신가요? 회원가입
+                  </Link>
+                </Box>
               </Stack>
             </form>
           </Stack>

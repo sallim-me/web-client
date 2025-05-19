@@ -1,11 +1,13 @@
 import { PropsWithChildren } from 'react';
-
-import { Mui } from "./mui";
+import { ReactQuery } from './react-query';
+import { Mui } from './mui';
 
 export default function Provider({ children }: PropsWithChildren) {
   return(
-    <Mui>
-      {children}
-    </Mui>
+    <ReactQuery>
+      <Mui>
+        {children}
+      </Mui>
+    </ReactQuery>
   );
 }

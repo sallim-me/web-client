@@ -1,7 +1,7 @@
 import { Box } from "@mui/material";
 import { PropsWithChildren } from "react";
 
-export function CustomLayout({ children }: PropsWithChildren) {
+export function MobileLayout({ children }: PropsWithChildren) {
   return (
     <Box
       sx={{
@@ -27,3 +27,5 @@ export function CustomLayout({ children }: PropsWithChildren) {
     </Box>
   );
 }
+
+export default MobileLayout; 

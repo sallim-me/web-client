@@ -1,0 +1,57 @@
+sequenceDiagram
+    actor User
+    participant Login as Login Component
+    participant AuthStore as Auth Store (Zustand)
+    participant Axios as Axios Instance
+    participant API as Backend API
+    participant Router as React Router
+
+    Note over User,Router: Login Flow
+    User->>Login: Enter credentials
+    User->>Login: Click login button
+    Login->>AuthStore: Call login(data)
+    AuthStore->>Axios: POST /auth/login
+    Note over Axios: Add CORS headers
+    Axios->>API: Send login request
+    Note over API: Validate CORS
+    API-->>Axios: Return tokens
+    Axios-->>AuthStore: Return response
+    AuthStore->>AuthStore: Update state with tokens
+    AuthStore-->>Login: Return success
+    Login->>Router: Navigate to /post/list
+
+    Note over Axios,API: Token Management
+    Axios->>Axios: Add token to request header
+    Axios->>API: Make authenticated request
+    API-->>Axios: Return 401 if token expired
+    Axios->>AuthStore: Call reissueToken()
+    AuthStore->>Axios: POST /auth/reissue
+    Axios->>API: Request new tokens
+    API-->>Axios: Return new tokens
+    Axios->>AuthStore: Update tokens
+    AuthStore-->>Axios: Return new token
+    Axios->>API: Retry original request
+
+    Note over User,Router: Logout Flow
+    User->>Login: Click logout
+    Login->>AuthStore: Call logout()
+    AuthStore->>Axios: POST /auth/logout
+    Axios->>API: Send logout request
+    API-->>Axios: Return success
+    Axios-->>AuthStore: Return response
+    AuthStore->>AuthStore: Clear tokens
+    AuthStore-->>Login: Return success
+    Login->>Router: Navigate to /login
+
+    Note over AuthStore,API: Error Handling
+    API-->>Axios: Return error
+    Axios-->>AuthStore: Handle error
+    AuthStore->>AuthStore: Clear tokens on auth error
+    AuthStore-->>Login: Return error
+    Login->>User: Show error message
+
+    Note over Axios,API: CORS Handling
+    Axios->>API: Preflight request (OPTIONS)
+    API-->>Axios: CORS headers
+    Axios->>API: Actual request
+    API-->>Axios: Response with CORS headers 
