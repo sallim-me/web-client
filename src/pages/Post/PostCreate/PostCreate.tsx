@@ -1,38 +1,36 @@
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import {
   Box,
   Container,
-  TextField,
-  Select,
-  MenuItem,
-  FormControl,
-  InputLabel,
   Typography,
+  IconButton,
+  Paper,
+  TextField,
   Button,
   Stack,
-  Radio,
-  RadioGroup,
-  FormControlLabel,
-  FormLabel,
-  Paper,
-  IconButton,
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem,
   SelectChangeEvent,
-} from '@mui/material';
-import DeleteIcon from '@mui/icons-material/Delete';
-import AddPhotoAlternateIcon from '@mui/icons-material/AddPhotoAlternate';
+} from "@mui/material";
+import ArrowBackIcon from "@mui/icons-material/ArrowBack";
+import DeleteIcon from "@mui/icons-material/Delete";
+import AddPhotoAlternateIcon from "@mui/icons-material/AddPhotoAlternate";
 
-// 타입 정의
-interface FormData {
+interface PostForm {
   title: string;
   tradeType: string;
   category: string;
-  images: string[];
+  modelNumber: string;
   modelName: string;
-  specifications: string;
-  defectAnswers: Record<string, string>;
+  brand: string;
+  minPrice: string;
   description: string;
-  price: string;
+  quantity: string;
+  images: string[];
+  defectAnswers: Record<string, string>;
 }
 
 interface DefectQuestions {
@@ -41,57 +39,113 @@ interface DefectQuestions {
 
 const PostCreate = () => {
   const navigate = useNavigate();
-  const [formData, setFormData] = useState<FormData>({
-    title: '',
-    tradeType: '',
-    category: '',
+  const [form, setForm] = useState<PostForm>({
+    title: "",
+    tradeType: "",
+    category: "",
+    modelNumber: "",
+    modelName: "",
+    brand: "",
+    minPrice: "",
+    description: "",
+    quantity: "",
     images: [],
-    modelName: '',
-    specifications: '',
     defectAnswers: {},
-    description: '',
-    price: '',
   });
 
-  const categories = ['냉장고', '세탁기', '에어컨'];
-  const tradeTypes = ['판매', '구매'];
-
   const defectQuestions: DefectQuestions = {
-    냉장고: [
-      '냉각 기능에 문제가 있나요?',
-      '문이 제대로 닫히나요?',
-      '내부 부품이 모두 있나요?',
+    refrigerator: [
+      "냉각 기능에 문제가 있나요?",
+      "문이 제대로 닫히나요?",
+      "내부 부품이 모두 있나요?",
     ],
-    세탁기: [
-      '세탁 기능에 문제가 있나요?',
-      '배수가 잘 되나요?',
-      '소음이 심한가요?',
+    washer: [
+      "세탁 기능에 문제가 있나요?",
+      "배수가 잘 되나요?",
+      "소음이 심한가요?",
     ],
-    에어컨: [
-      '냉방 기능에 문제가 있나요?',
-      '실외기 상태는 어떤가요?',
-      '필터 상태는 어떤가요?',
+    aircon: [
+      "냉방 기능에 문제가 있나요?",
+      "실외기 상태는 어떤가요?",
+      "필터 상태는 어떤가요?",
     ],
   };
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+  const handleBack = () => {
+    navigate(-1);
+  };
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+
+    // 기존 게시물 목록 가져오기
+    const savedPosts = localStorage.getItem("posts");
+    const posts = savedPosts ? JSON.parse(savedPosts) : [];
+
+    // 새 게시물 생성
+    const newPost = {
+      id: Date.now(),
+      ...form,
+      minPrice: Number(form.minPrice),
+      quantity: Number(form.quantity),
+      isScraped: false,
+      author: {
+        id: 1, // 임시 사용자 ID
+        nickname: "홍길동", // 임시 닉네임
+        profileImage: "/images/refrigerator.svg",
+      },
+      isAuthor: true,
+      createdAt: new Date().toISOString(),
+    };
+
+    // 게시물 목록에 추가
+    const updatedPosts = [...posts, newPost];
+    localStorage.setItem("posts", JSON.stringify(updatedPosts));
+
+    navigate("/post/list");
+  };
+
+  const handleChange = (
+    e: React.ChangeEvent<HTMLInputElement | { name?: string; value: unknown }>
+  ) => {
     const { name, value } = e.target;
-    setFormData((prev) => ({
+    setForm((prev) => ({
+      ...prev,
+      [name as string]: value,
+    }));
+  };
+
+  const handleSelectChange = (e: SelectChangeEvent<string>) => {
+    const { name, value } = e.target;
+    setForm((prev) => ({
       ...prev,
       [name]: value,
     }));
   };
 
-  const handleSelectChange = (e: SelectChangeEvent) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files || []);
+    if (files.length + form.images.length > 5) {
+      alert("최대 5장까지 업로드할 수 있습니다.");
+      return;
+    }
+
+    const newImages = files.map((file) => URL.createObjectURL(file));
+    setForm((prev) => ({
       ...prev,
-      [name]: value,
+      images: [...prev.images, ...newImages],
+    }));
+  };
+
+  const handleImageDelete = (index: number) => {
+    setForm((prev) => ({
+      ...prev,
+      images: prev.images.filter((_, i) => i !== index),
     }));
   };
 
   const handleDefectQuestionChange = (question: string, answer: string) => {
-    setFormData((prev) => ({
+    setForm((prev) => ({
       ...prev,
       defectAnswers: {
         ...prev.defectAnswers,
@@ -100,290 +154,296 @@ const PostCreate = () => {
     }));
   };
 
-  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = Array.from(e.target.files || []);
-    if (files.length + formData.images.length > 5) {
-      alert('최대 5장까지 업로드할 수 있습니다.');
-      return;
-    }
-
-    const newImages = files.map((file) => URL.createObjectURL(file));
-    setFormData((prev) => ({
-      ...prev,
-      images: [...prev.images, ...newImages],
-    }));
-  };
-
-  const handleImageDelete = (index: number) => {
-    setFormData((prev) => ({
-      ...prev,
-      images: prev.images.filter((_, i) => i !== index),
-    }));
-  };
-
-  const getImageForCategory = (category: string) => {
-    switch (category) {
-      case '냉장고':
-        return '/images/refrigerator.svg';
-      case '세탁기':
-        return '/images/washer.svg';
-      case '에어컨':
-        return '/images/airconditioner.svg';
-      default:
-        return '/images/refrigerator.svg';
-    }
-  };
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-
-    // 기존 게시물 가져오기
-    const savedPosts = localStorage.getItem('posts');
-    const posts = savedPosts ? JSON.parse(savedPosts) : [];
-
-    // 새 게시물 데이터 생성
-    const newPost = {
-      id: Date.now(),
-      title: `[${formData.tradeType}] ${formData.title}`,
-      modelName: formData.modelName,
-      price: Number(formData.price),
-      imageUrl: getImageForCategory(formData.category),
-      isScraped: false,
-      category: formData.category,
-      status: 'available',
-      author: '현재 사용자',
-      authorId: 'current-user',
-      isAuthor: true,
-      type: formData.tradeType === '판매' ? 'sell' : 'buy',
-      specifications: formData.specifications,
-      defectAnswers: formData.defectAnswers,
-      description: formData.description,
-      createdAt: new Date().toISOString(),
-    };
-
-    // 새 게시물을 기존 게시물 배열에 추가
-    const updatedPosts = [newPost, ...posts];
-    localStorage.setItem('posts', JSON.stringify(updatedPosts));
-
-    // 게시물 목록 페이지로 이동
-    navigate('/post/list');
-  };
-
   return (
-    <Container maxWidth="sm" sx={{ py: 3 }}>
+    <Container maxWidth="sm" sx={{ pb: "76px" }}>
+      {/* 헤더 */}
       <Paper
-        component="form"
-        onSubmit={handleSubmit}
         sx={{
-          p: 3,
-          display: 'flex',
-          flexDirection: 'column',
-          gap: 3,
+          position: "sticky",
+          top: 0,
+          zIndex: 100,
+          p: 2,
+          mb: 2,
+          borderRadius: 0,
+          borderBottom: "1px solid",
+          borderColor: "grey.200",
         }}
+        elevation={0}
       >
-        <TextField
-          label="제목"
-          name="title"
-          value={formData.title}
-          onChange={handleChange}
-          placeholder="브랜드명, 제품명, 모델명을 포함해주세요"
-          required
-          fullWidth
-        />
+        <Stack direction="row" alignItems="center" spacing={1}>
+          <IconButton onClick={handleBack} size="small">
+            <ArrowBackIcon />
+          </IconButton>
+          <Typography variant="h6" sx={{ flex: 1, textAlign: "center" }}>
+            글 작성
+          </Typography>
+        </Stack>
+      </Paper>
 
-        <FormControl fullWidth required>
-          <InputLabel>거래 유형</InputLabel>
-          <Select
-            name="tradeType"
-            value={formData.tradeType}
-            onChange={handleSelectChange}
-            label="거래 유형"
-          >
-            {tradeTypes.map((type) => (
-              <MenuItem key={type} value={type}>
-                {type}
-              </MenuItem>
-            ))}
-          </Select>
-        </FormControl>
+      {/* 글 작성 폼 */}
+      <Paper sx={{ p: 3 }}>
+        <form onSubmit={handleSubmit}>
+          <Stack spacing={3}>
+            {/* 제목 */}
+            <TextField
+              label="제목"
+              name="title"
+              value={form.title}
+              onChange={handleChange}
+              fullWidth
+              required
+            />
 
-        {formData.tradeType && (
-          <>
+            {/* 거래 유형 */}
             <FormControl fullWidth required>
-              <InputLabel>카테고리</InputLabel>
+              <InputLabel>거래 유형</InputLabel>
               <Select
-                name="category"
-                value={formData.category}
+                name="tradeType"
+                value={form.tradeType}
+                label="거래 유형"
                 onChange={handleSelectChange}
-                label="카테고리"
               >
-                {categories.map((category) => (
-                  <MenuItem key={category} value={category}>
-                    {category}
-                  </MenuItem>
-                ))}
+                <MenuItem value="sell">판매</MenuItem>
+                <MenuItem value="buy">구매</MenuItem>
               </Select>
             </FormControl>
 
-            {formData.tradeType === '판매' && (
-              <>
-                <Box>
-                  <Typography variant="subtitle1" gutterBottom>
-                    제품 사진 (최대 5장)
-                  </Typography>
-                  <Button
-                    component="label"
-                    variant="outlined"
-                    startIcon={<AddPhotoAlternateIcon />}
-                    sx={{ width: '100%', height: 120 }}
-                  >
-                    클릭하여 사진 업로드
-                    <input
-                      type="file"
-                      accept="image/*"
-                      multiple
-                      onChange={handleImageUpload}
-                      style={{ display: 'none' }}
-                    />
-                  </Button>
-                  {formData.images.length > 0 && (
-                    <Stack
-                      direction="row"
-                      spacing={1}
+            {/* 판매일 때만 이미지 업로드 표시 */}
+            {form.tradeType === "sell" && (
+              <Box>
+                <Typography variant="subtitle1" sx={{ mb: 1 }}>
+                  제품 사진
+                </Typography>
+                <Box
+                  sx={{
+                    display: "flex",
+                    gap: 1,
+                    flexWrap: "wrap",
+                  }}
+                >
+                  {form.images.map((image, index) => (
+                    <Box
+                      key={index}
                       sx={{
-                        mt: 2,
-                        overflowX: 'auto',
-                        pb: 1,
-                        '&::-webkit-scrollbar': {
-                          height: 6,
-                        },
-                        '&::-webkit-scrollbar-track': {
-                          background: '#f5f5f5',
-                          borderRadius: 3,
-                        },
-                        '&::-webkit-scrollbar-thumb': {
-                          background: '#bddde4',
-                          borderRadius: 3,
-                        },
+                        position: "relative",
+                        width: 100,
+                        height: 100,
                       }}
                     >
-                      {formData.images.map((image, index) => (
-                        <Box
-                          key={index}
-                          sx={{
-                            position: 'relative',
-                            flexShrink: 0,
-                          }}
-                        >
-                          <img
-                            src={image}
-                            alt={`Preview ${index + 1}`}
-                            style={{
-                              width: 80,
-                              height: 80,
-                              objectFit: 'cover',
-                              borderRadius: 8,
-                            }}
-                          />
-                          <IconButton
-                            size="small"
-                            onClick={() => handleImageDelete(index)}
-                            sx={{
-                              position: 'absolute',
-                              top: -8,
-                              right: -8,
-                              bgcolor: 'background.paper',
-                              '&:hover': {
-                                bgcolor: 'background.paper',
-                              },
-                            }}
-                          >
-                            <DeleteIcon fontSize="small" />
-                          </IconButton>
-                        </Box>
-                      ))}
-                    </Stack>
+                      <img
+                        src={image}
+                        alt={`Uploaded ${index + 1}`}
+                        style={{
+                          width: "100%",
+                          height: "100%",
+                          objectFit: "cover",
+                          borderRadius: 4,
+                        }}
+                      />
+                      <IconButton
+                        size="small"
+                        onClick={() => handleImageDelete(index)}
+                        sx={{
+                          position: "absolute",
+                          top: -8,
+                          right: -8,
+                          bgcolor: "background.paper",
+                          "&:hover": {
+                            bgcolor: "background.paper",
+                          },
+                        }}
+                      >
+                        <DeleteIcon fontSize="small" />
+                      </IconButton>
+                    </Box>
+                  ))}
+                  {form.images.length < 5 && (
+                    <Button
+                      component="label"
+                      variant="outlined"
+                      sx={{
+                        width: 100,
+                        height: 100,
+                        borderStyle: "dashed",
+                      }}
+                    >
+                      <input
+                        type="file"
+                        accept="image/*"
+                        hidden
+                        onChange={handleImageUpload}
+                        multiple
+                      />
+                      <AddPhotoAlternateIcon />
+                    </Button>
                   )}
                 </Box>
+              </Box>
+            )}
 
+            {/* 판매일 때만 추가 정보 표시 */}
+            {form.tradeType === "sell" && form.images.length > 0 && (
+              <>
+                {/* 카테고리 */}
+                <FormControl fullWidth required>
+                  <InputLabel>카테고리</InputLabel>
+                  <Select
+                    name="category"
+                    value={form.category}
+                    label="카테고리"
+                    onChange={handleSelectChange}
+                  >
+                    <MenuItem value="refrigerator">냉장고</MenuItem>
+                    <MenuItem value="washer">세탁기</MenuItem>
+                    <MenuItem value="aircon">에어컨</MenuItem>
+                  </Select>
+                </FormControl>
+
+                {/* 모델 번호 */}
+                <TextField
+                  label="모델 번호"
+                  name="modelNumber"
+                  value={form.modelNumber}
+                  onChange={handleChange}
+                  fullWidth
+                  required
+                />
+
+                {/* 모델명 */}
                 <TextField
                   label="모델명"
                   name="modelName"
-                  value={formData.modelName}
+                  value={form.modelName}
                   onChange={handleChange}
+                  fullWidth
                   required
-                  fullWidth
                 />
 
+                {/* 브랜드 */}
                 <TextField
-                  label="제품 사양"
-                  name="specifications"
-                  value={formData.specifications}
+                  label="브랜드"
+                  name="brand"
+                  value={form.brand}
                   onChange={handleChange}
-                  multiline
-                  rows={4}
                   fullWidth
+                  required
                 />
 
+                {/* 최저가 */}
                 <TextField
-                  label="가격"
-                  name="price"
+                  label="최저가"
+                  name="minPrice"
+                  value={form.minPrice}
+                  onChange={handleChange}
+                  fullWidth
+                  required
                   type="number"
-                  value={formData.price}
-                  onChange={handleChange}
-                  required
-                  fullWidth
                   InputProps={{
-                    endAdornment: <Typography>원</Typography>,
+                    inputProps: { min: 0 },
                   }}
                 />
 
-                {formData.category && defectQuestions[formData.category] && (
+                {/* 카테고리가 선택되었을 때만 제품 상태 확인 표시 */}
+                {form.category && defectQuestions[form.category] && (
                   <Box>
-                    <Typography variant="subtitle1" gutterBottom>
+                    <Typography variant="subtitle1" sx={{ mb: 2 }}>
                       제품 상태 확인
                     </Typography>
-                    {defectQuestions[formData.category].map((question) => (
-                      <FormControl key={question} component="fieldset" sx={{ mb: 2 }}>
-                        <FormLabel component="legend">{question}</FormLabel>
-                        <RadioGroup
-                          value={formData.defectAnswers[question] || ''}
-                          onChange={(e) => handleDefectQuestionChange(question, e.target.value)}
-                        >
-                          <FormControlLabel value="정상" control={<Radio />} label="정상" />
-                          <FormControlLabel value="불량" control={<Radio />} label="불량" />
-                        </RadioGroup>
-                      </FormControl>
-                    ))}
+                    <Stack spacing={2}>
+                      {defectQuestions[form.category].map((question) => (
+                        <TextField
+                          key={question}
+                          label={question}
+                          value={form.defectAnswers[question] || ""}
+                          onChange={(e) =>
+                            handleDefectQuestionChange(question, e.target.value)
+                          }
+                          fullWidth
+                          required
+                        />
+                      ))}
+                    </Stack>
                   </Box>
                 )}
 
+                {/* 상세 설명 */}
                 <TextField
                   label="상세 설명"
                   name="description"
-                  value={formData.description}
+                  value={form.description}
                   onChange={handleChange}
+                  fullWidth
                   multiline
                   rows={4}
-                  fullWidth
+                  required
                 />
               </>
             )}
-          </>
-        )}
 
-        <Button
-          type="submit"
-          variant="contained"
-          size="large"
-          fullWidth
-          disabled={!formData.title || !formData.tradeType || !formData.category}
-        >
-          등록하기
-        </Button>
+            {/* 구매일 때만 수량 표시 */}
+            {form.tradeType === "buy" && (
+              <>
+                {/* 카테고리 */}
+                <FormControl fullWidth required>
+                  <InputLabel>카테고리</InputLabel>
+                  <Select
+                    name="category"
+                    value={form.category}
+                    label="카테고리"
+                    onChange={handleSelectChange}
+                  >
+                    <MenuItem value="refrigerator">냉장고</MenuItem>
+                    <MenuItem value="washer">세탁기</MenuItem>
+                    <MenuItem value="aircon">에어컨</MenuItem>
+                  </Select>
+                </FormControl>
+
+                <TextField
+                  label="수량"
+                  name="quantity"
+                  value={form.quantity}
+                  onChange={handleChange}
+                  fullWidth
+                  required
+                  type="number"
+                  InputProps={{
+                    inputProps: { min: 3 },
+                  }}
+                />
+                <TextField
+                  label="상세 설명"
+                  name="description"
+                  value={form.description}
+                  onChange={handleChange}
+                  fullWidth
+                  multiline
+                  rows={4}
+                  required
+                />
+              </>
+            )}
+
+            {/* 등록 버튼 */}
+            <Button
+              type="submit"
+              variant="contained"
+              size="large"
+              sx={{ mt: 2 }}
+              disabled={
+                !form.title ||
+                !form.tradeType ||
+                !form.category ||
+                (form.tradeType === "sell" && form.images.length === 0) ||
+                !form.description
+              }
+            >
+              등록
+            </Button>
+          </Stack>
+        </form>
       </Paper>
     </Container>
   );
 };
 
-export default PostCreate; 
+export default PostCreate;

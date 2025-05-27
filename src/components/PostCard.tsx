@@ -1,30 +1,26 @@
-import React from 'react';
-import {
-  Box,
-  Paper,
-  Typography,
-  IconButton,
-  Stack,
-} from '@mui/material';
-import BookmarkBorderIcon from '@mui/icons-material/BookmarkBorder';
-import BookmarkIcon from '@mui/icons-material/Bookmark';
+import React from "react";
+import { Box, Paper, Typography, IconButton, Stack } from "@mui/material";
+import BookmarkBorderIcon from "@mui/icons-material/BookmarkBorder";
+import BookmarkIcon from "@mui/icons-material/Bookmark";
+import { getImageUrl } from "../utils/image";
 
 interface PostCardProps {
   id: number;
   title: string;
   modelName: string;
-  price: number;
-  imageUrl: string;
+  minPrice: number;
+  images?: string[];
   isScraped: boolean;
   onScrapClick: () => void;
   onClick: () => void;
+  specifications?: string;
 }
 
 const PostCard: React.FC<PostCardProps> = ({
   title,
   modelName,
-  price,
-  imageUrl,
+  minPrice,
+  images,
   isScraped,
   onScrapClick,
   onClick,
@@ -39,32 +35,36 @@ const PostCard: React.FC<PostCardProps> = ({
       onClick={onClick}
       sx={{
         p: 2,
-        cursor: 'pointer',
-        height: '100%',
-        display: 'flex',
-        flexDirection: 'column',
+        cursor: "pointer",
+        height: "100%",
+        display: "flex",
+        flexDirection: "column",
         gap: 1,
-        '&:hover': {
-          bgcolor: 'action.hover',
+        "&:hover": {
+          bgcolor: "action.hover",
         },
       }}
     >
       <Box
         sx={{
-          width: '100%',
+          width: "100%",
           height: 120,
-          overflow: 'hidden',
+          overflow: "hidden",
           borderRadius: 1,
-          bgcolor: 'grey.200',
+          bgcolor: "grey.200",
         }}
       >
         <img
-          src={imageUrl}
+          src={getImageUrl(images?.[0])}
           alt={title}
           style={{
-            width: '100%',
-            height: '100%',
-            objectFit: 'cover',
+            width: "100%",
+            height: "100%",
+            objectFit: "cover",
+          }}
+          onError={(e) => {
+            const target = e.target as HTMLImageElement;
+            target.src = getImageUrl(null);
           }}
         />
       </Box>
@@ -73,12 +73,12 @@ const PostCard: React.FC<PostCardProps> = ({
         variant="subtitle1"
         sx={{
           fontWeight: 600,
-          overflow: 'hidden',
-          textOverflow: 'ellipsis',
-          display: '-webkit-box',
+          overflow: "hidden",
+          textOverflow: "ellipsis",
+          display: "-webkit-box",
           WebkitLineClamp: 2,
-          WebkitBoxOrient: 'vertical',
-          wordBreak: 'break-all',
+          WebkitBoxOrient: "vertical",
+          wordBreak: "break-all",
         }}
       >
         {title}
@@ -88,10 +88,10 @@ const PostCard: React.FC<PostCardProps> = ({
         variant="body2"
         color="text.secondary"
         sx={{
-          overflow: 'hidden',
-          textOverflow: 'ellipsis',
-          whiteSpace: 'nowrap',
-          wordBreak: 'break-all',
+          overflow: "hidden",
+          textOverflow: "ellipsis",
+          whiteSpace: "nowrap",
+          wordBreak: "break-all",
         }}
       >
         {modelName}
@@ -101,18 +101,18 @@ const PostCard: React.FC<PostCardProps> = ({
         direction="row"
         justifyContent="space-between"
         alignItems="center"
-        sx={{ mt: 'auto' }}
+        sx={{ mt: "auto" }}
       >
         <Typography
           variant="subtitle1"
           fontWeight="bold"
           sx={{
-            overflow: 'hidden',
-            textOverflow: 'ellipsis',
-            whiteSpace: 'nowrap',
+            overflow: "hidden",
+            textOverflow: "ellipsis",
+            whiteSpace: "nowrap",
           }}
         >
-          ₩{price.toLocaleString()}
+          ₩{(minPrice ?? 0).toLocaleString()}
         </Typography>
 
         <IconButton
@@ -120,7 +120,7 @@ const PostCard: React.FC<PostCardProps> = ({
           size="small"
           sx={{
             p: 0.5,
-            '&:hover': {
+            "&:hover": {
               opacity: 0.8,
             },
           }}
@@ -136,4 +136,4 @@ const PostCard: React.FC<PostCardProps> = ({
   );
 };
 
-export default PostCard; 
+export default PostCard;

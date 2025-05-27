@@ -1,5 +1,5 @@
-import React from 'react';
-import { useNavigate } from 'react-router-dom';
+import React from "react";
+import { useNavigate } from "react-router-dom";
 import {
   Box,
   Container,
@@ -9,17 +9,32 @@ import {
   Stack,
   Paper,
   IconButton,
-} from '@mui/material';
-import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
-import { useAuthStore } from '@/store/useAuthStore';
+} from "@mui/material";
+import ArrowForwardIcon from "@mui/icons-material/ArrowForward";
+import { useAuthStore } from "@/store/useAuthStore";
 
 // 타입 정의
 interface Post {
   id: number;
   title: string;
-  price: number;
-  isAuthor: boolean;
+  tradeType: "sell" | "buy";
+  category: string;
+  modelNumber: string;
+  modelName: string;
+  brand: string;
+  minPrice: number;
+  description: string;
+  quantity: number;
+  images: string[];
   isScraped: boolean;
+  author: {
+    id: number;
+    nickname: string;
+    profileImage: string;
+  };
+  isAuthor: boolean;
+  defectAnswers: Record<string, string>;
+  createdAt: string;
 }
 
 const MyPage = () => {
@@ -27,42 +42,46 @@ const MyPage = () => {
   const logout = useAuthStore((state) => state.logout);
 
   // 예시 유저 정보
-  const nickname = 'HGD';
-  const userName = '홍길동';
+  const nickname = "HGD";
+  const userName = "홍길동";
 
   // 실제 글 데이터 불러오기
-  const savedPosts = localStorage.getItem('posts');
+  const savedPosts = localStorage.getItem("posts");
   const posts: Post[] = savedPosts ? JSON.parse(savedPosts) : [];
   const myPosts = posts.filter((post) => post.isAuthor);
   const scrappedPosts = posts.filter((post) => post.isScraped);
 
   const getRandomColor = () => {
     const colors = [
-      '#FF9AA2',
-      '#FFB7B2',
-      '#FFDAC1',
-      '#E2F0CB',
-      '#B5EAD7',
-      '#C7CEEA',
-      '#9FB3DF',
-      '#B8B3E9',
-      '#D4A5A5',
-      '#9CADCE',
+      "#FF9AA2",
+      "#FFB7B2",
+      "#FFDAC1",
+      "#E2F0CB",
+      "#B5EAD7",
+      "#C7CEEA",
+      "#9FB3DF",
+      "#B8B3E9",
+      "#D4A5A5",
+      "#9CADCE",
     ];
     return colors[Math.floor(Math.random() * colors.length)];
   };
 
   return (
-    <Container maxWidth="sm" sx={{ pb: '76px' }}>
+    <Container maxWidth="sm" sx={{ pb: "76px" }}>
       {/* 헤더 */}
       <Paper
         sx={{
-          position: 'sticky',
+          position: "sticky",
           top: 0,
           zIndex: 100,
           p: 2,
           mb: 2,
+          borderRadius: 0,
+          borderBottom: "1px solid",
+          borderColor: "grey.200",
         }}
+        elevation={0}
       >
         <Typography variant="h6" align="center">
           마이페이지
@@ -89,26 +108,13 @@ const MyPage = () => {
             </Typography>
           </Stack>
         </Stack>
-        <Stack spacing={1} sx={{ mt: 2 }}>
-          <Button
-            variant="outlined"
-            sx={{ width: '60%', mx: 'auto' }}
-            onClick={() => navigate('/my-page/edit-profile')}
-          >
-            회원 정보 수정
-          </Button>
-          <Button
-            variant="outlined"
-            color="error"
-            sx={{ width: '60%', mx: 'auto' }}
-            onClick={() => {
-              logout();
-              navigate('/login');
-            }}
-          >
-            로그아웃
-          </Button>
-        </Stack>
+        <Button
+          variant="outlined"
+          sx={{ width: "60%", mx: "auto" }}
+          onClick={() => navigate("/my-page/edit-profile")}
+        >
+          회원 정보 수정
+        </Button>
       </Paper>
 
       {/* 내가 쓴 글 */}
@@ -123,7 +129,7 @@ const MyPage = () => {
             내가 쓴 글
           </Typography>
           <IconButton
-            onClick={() => navigate('/my-page/my-posts')}
+            onClick={() => navigate("/my-page/my-posts")}
             size="small"
           >
             <ArrowForwardIcon />
@@ -131,15 +137,15 @@ const MyPage = () => {
         </Stack>
         <Box
           sx={{
-            display: 'flex',
+            display: "flex",
             gap: 1.5,
-            overflowX: 'auto',
+            overflowX: "auto",
             pb: 1,
-            '&::-webkit-scrollbar': {
+            "&::-webkit-scrollbar": {
               height: 4,
             },
-            '&::-webkit-scrollbar-thumb': {
-              backgroundColor: 'rgba(0,0,0,0.2)',
+            "&::-webkit-scrollbar-thumb": {
+              backgroundColor: "rgba(0,0,0,0.2)",
               borderRadius: 2,
             },
           }}
@@ -151,34 +157,62 @@ const MyPage = () => {
               sx={{
                 flexShrink: 0,
                 width: 140,
-                cursor: 'pointer',
-                '&:hover': {
-                  bgcolor: 'action.hover',
+                cursor: "pointer",
+                "&:hover": {
+                  bgcolor: "action.hover",
                 },
               }}
             >
               <Box
                 sx={{
                   height: 70,
-                  bgcolor: 'grey.200',
-                  borderRadius: '8px 8px 0 0',
+                  bgcolor: "grey.200",
+                  borderRadius: "8px 8px 0 0",
+                  overflow: "hidden",
                 }}
-              />
+              >
+                <img
+                  src={
+                    post.images && post.images.length > 0
+                      ? post.images[0]
+                      : `${process.env.PUBLIC_URL}/images/placeholder.svg`
+                  }
+                  alt={post.title}
+                  style={{
+                    width: "100%",
+                    height: "100%",
+                    objectFit: "cover",
+                  }}
+                  onError={(e) => {
+                    const target = e.target as HTMLImageElement;
+                    target.src = `${process.env.PUBLIC_URL}/images/placeholder.svg`;
+                  }}
+                />
+              </Box>
               <Box sx={{ p: 1 }}>
-                <Typography
-                  variant="body2"
-                  noWrap
-                  sx={{ mb: 0.5 }}
-                >
+                <Typography variant="body2" noWrap sx={{ mb: 0.5 }}>
                   {post.title}
                 </Typography>
-                <Typography
-                  variant="body2"
-                  color="primary"
-                  fontWeight="bold"
-                >
-                  ₩{post.price.toLocaleString()}
-                </Typography>
+                {post.tradeType === "sell" &&
+                  typeof post.minPrice === "number" && (
+                    <Typography
+                      variant="body2"
+                      color="primary"
+                      fontWeight="bold"
+                    >
+                      ₩{post.minPrice.toLocaleString()}
+                    </Typography>
+                  )}
+                {post.tradeType === "buy" &&
+                  typeof post.quantity === "number" && (
+                    <Typography
+                      variant="body2"
+                      color="primary"
+                      fontWeight="bold"
+                    >
+                      수량: {post.quantity}개
+                    </Typography>
+                  )}
               </Box>
             </Paper>
           ))}
@@ -197,7 +231,7 @@ const MyPage = () => {
             스크랩한 글
           </Typography>
           <IconButton
-            onClick={() => navigate('/my-page/scrapped')}
+            onClick={() => navigate("/my-page/scrapped")}
             size="small"
           >
             <ArrowForwardIcon />
@@ -205,15 +239,15 @@ const MyPage = () => {
         </Stack>
         <Box
           sx={{
-            display: 'flex',
+            display: "flex",
             gap: 1.5,
-            overflowX: 'auto',
+            overflowX: "auto",
             pb: 1,
-            '&::-webkit-scrollbar': {
+            "&::-webkit-scrollbar": {
               height: 4,
             },
-            '&::-webkit-scrollbar-thumb': {
-              backgroundColor: 'rgba(0,0,0,0.2)',
+            "&::-webkit-scrollbar-thumb": {
+              backgroundColor: "rgba(0,0,0,0.2)",
               borderRadius: 2,
             },
           }}
@@ -225,34 +259,62 @@ const MyPage = () => {
               sx={{
                 flexShrink: 0,
                 width: 140,
-                cursor: 'pointer',
-                '&:hover': {
-                  bgcolor: 'action.hover',
+                cursor: "pointer",
+                "&:hover": {
+                  bgcolor: "action.hover",
                 },
               }}
             >
               <Box
                 sx={{
                   height: 70,
-                  bgcolor: 'grey.200',
-                  borderRadius: '8px 8px 0 0',
+                  bgcolor: "grey.200",
+                  borderRadius: "8px 8px 0 0",
+                  overflow: "hidden",
                 }}
-              />
+              >
+                <img
+                  src={
+                    post.images && post.images.length > 0
+                      ? post.images[0]
+                      : `${process.env.PUBLIC_URL}/images/placeholder.svg`
+                  }
+                  alt={post.title}
+                  style={{
+                    width: "100%",
+                    height: "100%",
+                    objectFit: "cover",
+                  }}
+                  onError={(e) => {
+                    const target = e.target as HTMLImageElement;
+                    target.src = `${process.env.PUBLIC_URL}/images/placeholder.svg`;
+                  }}
+                />
+              </Box>
               <Box sx={{ p: 1 }}>
-                <Typography
-                  variant="body2"
-                  noWrap
-                  sx={{ mb: 0.5 }}
-                >
+                <Typography variant="body2" noWrap sx={{ mb: 0.5 }}>
                   {post.title}
                 </Typography>
-                <Typography
-                  variant="body2"
-                  color="primary"
-                  fontWeight="bold"
-                >
-                  ₩{post.price.toLocaleString()}
-                </Typography>
+                {post.tradeType === "sell" &&
+                  typeof post.minPrice === "number" && (
+                    <Typography
+                      variant="body2"
+                      color="primary"
+                      fontWeight="bold"
+                    >
+                      ₩{post.minPrice.toLocaleString()}
+                    </Typography>
+                  )}
+                {post.tradeType === "buy" &&
+                  typeof post.quantity === "number" && (
+                    <Typography
+                      variant="body2"
+                      color="primary"
+                      fontWeight="bold"
+                    >
+                      수량: {post.quantity}개
+                    </Typography>
+                  )}
               </Box>
             </Paper>
           ))}
@@ -262,4 +324,4 @@ const MyPage = () => {
   );
 };
 
-export default MyPage; 
+export default MyPage;

@@ -1,5 +1,5 @@
-import React, { useState, useRef, useEffect } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import React, { useState, useRef, useEffect } from "react";
+import { useNavigate, useParams } from "react-router-dom";
 import {
   Box,
   Container,
@@ -10,100 +10,81 @@ import {
   Stack,
   Avatar,
   Divider,
-} from '@mui/material';
-import ArrowBackIcon from '@mui/icons-material/ArrowBack';
-import SendIcon from '@mui/icons-material/Send';
-import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
-
-// 타입 정의
-interface Message {
-  id: number;
-  content: string;
-  time: string;
-  isMine: boolean;
-}
-
-interface MessageGroup {
-  id: number;
-  date: string;
-  items: Message[];
-}
-
-interface PostInfo {
-  id: string;
-  title: string;
-}
+} from "@mui/material";
+import ArrowBackIcon from "@mui/icons-material/ArrowBack";
+import SendIcon from "@mui/icons-material/Send";
+import ArrowForwardIcon from "@mui/icons-material/ArrowForward";
+import { chatRooms, MessageGroup } from "@/data/chatData";
 
 const ChatRoom = () => {
   const navigate = useNavigate();
-  const { id } = useParams();
-  const [message, setMessage] = useState('');
+  const { chatId } = useParams();
+  const [message, setMessage] = useState("");
+  const [messages, setMessages] = useState<MessageGroup[]>([]);
   const chatAreaRef = useRef<HTMLDivElement>(null);
 
-  // 더미 데이터 - 실제로는 API에서 받아와야 함
-  const postInfo: PostInfo = {
-    id: 'post123',
-    title: '맥북 프로 M1 2020 13인치 판매합니다',
-  };
+  const chatRoom = chatRooms.find((room) => room.id === Number(chatId));
 
-  const messages: MessageGroup[] = [
-    {
-      id: 1,
-      date: '2024년 3월 15일',
-      items: [
-        {
-          id: 1,
-          content: '안녕하세요! 상품 아직 있나요?',
-          time: '14:30',
-          isMine: false,
-        },
-        {
-          id: 2,
-          content: '네, 아직 있습니다!',
-          time: '14:31',
-          isMine: true,
-        },
-      ],
-    },
-    {
-      id: 2,
-      date: '2024년 3월 16일',
-      items: [
-        {
-          id: 3,
-          content: '가격은 얼마인가요?',
-          time: '10:15',
-          isMine: false,
-        },
-        {
-          id: 4,
-          content: '50만원입니다. 협의 가능합니다.',
-          time: '10:20',
-          isMine: true,
-        },
-        {
-          id: 5,
-          content: '직거래 가능한가요?',
-          time: '10:25',
-          isMine: false,
-        },
-      ],
-    },
-  ];
+  useEffect(() => {
+    if (chatRoom) {
+      setMessages(chatRoom.messages);
+    }
+  }, [chatId]);
 
   const handleBack = () => {
     navigate(-1);
   };
 
   const handlePostClick = () => {
-    navigate(`/posts/${postInfo.id}`);
+    if (chatRoom) {
+      navigate(`/post/detail/${chatRoom.postId}`);
+    }
   };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (message.trim()) {
-      // TODO: 메시지 전송 로직 구현
-      setMessage('');
+    if (message.trim() && chatRoom) {
+      const now = new Date();
+      const today = now.toLocaleDateString("ko-KR", {
+        year: "numeric",
+        month: "long",
+        day: "numeric",
+      });
+      const time = now.toLocaleTimeString("ko-KR", {
+        hour: "2-digit",
+        minute: "2-digit",
+      });
+
+      const newMessage = {
+        id: Date.now(),
+        content: message,
+        time,
+        isMine: true,
+      };
+
+      setMessages((prev) => {
+        const lastGroup = prev[prev.length - 1];
+        if (lastGroup && lastGroup.date === today) {
+          return [
+            ...prev.slice(0, -1),
+            {
+              ...lastGroup,
+              items: [...lastGroup.items, newMessage],
+            },
+          ];
+        } else {
+          return [
+            ...prev,
+            {
+              id: Date.now(),
+              date: today,
+              items: [newMessage],
+            },
+          ];
+        }
+      });
+
+      setMessage("");
     }
   };
 
@@ -113,55 +94,59 @@ const ChatRoom = () => {
     }
   }, [messages]);
 
+  if (!chatRoom) {
+    return (
+      <Container maxWidth="sm" sx={{ p: 2 }}>
+        <Typography>채팅방을 찾을 수 없습니다.</Typography>
+      </Container>
+    );
+  }
+
   return (
     <Container
       maxWidth="sm"
       sx={{
-        height: '100vh',
-        display: 'flex',
-        flexDirection: 'column',
+        height: "100vh",
+        display: "flex",
+        flexDirection: "column",
         p: 0,
       }}
     >
       {/* 헤더 */}
       <Paper
         sx={{
-          position: 'sticky',
+          position: "sticky",
           top: 0,
           zIndex: 100,
-          bgcolor: 'primary.main',
-          color: 'white',
+          bgcolor: "primary.main",
+          color: "white",
           p: 2,
         }}
       >
         <Stack direction="row" alignItems="center" spacing={1}>
-          <IconButton
-            onClick={handleBack}
-            sx={{ color: 'white' }}
-            size="small"
-          >
+          <IconButton onClick={handleBack} sx={{ color: "white" }} size="small">
             <ArrowBackIcon />
           </IconButton>
           <Box
             onClick={handlePostClick}
             sx={{
               flex: 1,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
               gap: 0.5,
-              cursor: 'pointer',
+              cursor: "pointer",
             }}
           >
             <Typography
               variant="h6"
               sx={{
-                overflow: 'hidden',
-                textOverflow: 'ellipsis',
-                whiteSpace: 'nowrap',
+                overflow: "hidden",
+                textOverflow: "ellipsis",
+                whiteSpace: "nowrap",
               }}
             >
-              {postInfo.title}
+              {chatRoom.postTitle}
             </Typography>
             <ArrowForwardIcon fontSize="small" />
           </Box>
@@ -173,10 +158,10 @@ const ChatRoom = () => {
         ref={chatAreaRef}
         sx={{
           flex: 1,
-          overflowY: 'auto',
+          overflowY: "auto",
           p: 2,
-          display: 'flex',
-          flexDirection: 'column',
+          display: "flex",
+          flexDirection: "column",
           gap: 2,
         }}
       >
@@ -195,7 +180,7 @@ const ChatRoom = () => {
                   spacing={1}
                   alignItems="flex-end"
                   sx={{
-                    flexDirection: msg.isMine ? 'row-reverse' : 'row',
+                    flexDirection: msg.isMine ? "row-reverse" : "row",
                   }}
                 >
                   {!msg.isMine && (
@@ -203,22 +188,24 @@ const ChatRoom = () => {
                       sx={{
                         width: 36,
                         height: 36,
-                        bgcolor: 'grey.300',
+                        bgcolor: "grey.300",
                       }}
-                    />
+                    >
+                      {chatRoom.nickname.charAt(0)}
+                    </Avatar>
                   )}
                   <Stack
                     spacing={0.5}
                     sx={{
-                      maxWidth: '70%',
-                      alignItems: msg.isMine ? 'flex-end' : 'flex-start',
+                      maxWidth: "70%",
+                      alignItems: msg.isMine ? "flex-end" : "flex-start",
                     }}
                   >
                     <Paper
                       sx={{
                         p: 1.5,
-                        bgcolor: msg.isMine ? 'primary.main' : 'grey.100',
-                        color: msg.isMine ? 'white' : 'text.primary',
+                        bgcolor: msg.isMine ? "primary.main" : "grey.100",
+                        color: msg.isMine ? "white" : "text.primary",
                         borderRadius: 2,
                         borderBottomRightRadius: msg.isMine ? 0 : 2,
                         borderBottomLeftRadius: msg.isMine ? 2 : 0,
@@ -244,7 +231,7 @@ const ChatRoom = () => {
         sx={{
           p: 2,
           borderTop: 1,
-          borderColor: 'divider',
+          borderColor: "divider",
         }}
       >
         <Stack direction="row" spacing={1}>
@@ -255,7 +242,7 @@ const ChatRoom = () => {
             placeholder="메시지를 입력하세요"
             size="small"
             sx={{
-              '& .MuiOutlinedInput-root': {
+              "& .MuiOutlinedInput-root": {
                 borderRadius: 20,
               },
             }}
@@ -264,10 +251,10 @@ const ChatRoom = () => {
             type="submit"
             color="primary"
             sx={{
-              bgcolor: 'primary.main',
-              color: 'white',
-              '&:hover': {
-                bgcolor: 'primary.dark',
+              bgcolor: "primary.main",
+              color: "white",
+              "&:hover": {
+                bgcolor: "primary.dark",
               },
             }}
           >
@@ -279,4 +266,4 @@ const ChatRoom = () => {
   );
 };
 
-export default ChatRoom; 
+export default ChatRoom;

@@ -1,15 +1,15 @@
-import React from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
-import { Paper, BottomNavigation, BottomNavigationAction } from '@mui/material';
-import { useAuthStore } from '@/store/useAuthStore';
+import React from "react";
+import { useNavigate, useLocation } from "react-router-dom";
+import { Paper, BottomNavigation, BottomNavigationAction } from "@mui/material";
+import { useAuthStore } from "@/store/useAuthStore";
 
 // MUI 아이콘 임포트
-import ChatIcon from '@mui/icons-material/Chat';
-import ChatBubbleIcon from '@mui/icons-material/ChatBubble';
-import ArticleIcon from '@mui/icons-material/Article';
-import ArticleOutlinedIcon from '@mui/icons-material/ArticleOutlined';
-import PersonIcon from '@mui/icons-material/Person';
-import PersonOutlineIcon from '@mui/icons-material/PersonOutline';
+import ChatIcon from "@mui/icons-material/Chat";
+import ChatBubbleIcon from "@mui/icons-material/ChatBubble";
+import ArticleIcon from "@mui/icons-material/Article";
+import ArticleOutlinedIcon from "@mui/icons-material/ArticleOutlined";
+import PersonIcon from "@mui/icons-material/Person";
+import PersonOutlineIcon from "@mui/icons-material/PersonOutline";
 
 const BottomNav = () => {
   const navigate = useNavigate();
@@ -18,31 +18,31 @@ const BottomNav = () => {
 
   const tabs = [
     {
-      path: '/chat',
+      path: "/chat",
       icon: <ChatIcon />,
       activeIcon: <ChatBubbleIcon />,
-      label: '채팅',
-      requiresAuth: true,
+      label: "채팅",
+      requiresAuth: false, // true
     },
     {
-      path: '/post/list',
+      path: "/post/list",
       icon: <ArticleOutlinedIcon />,
       activeIcon: <ArticleIcon />,
-      label: '게시판',
+      label: "게시판",
       requiresAuth: false,
     },
     {
-      path: '/my-page',
+      path: "/my-page",
       icon: <PersonOutlineIcon />,
       activeIcon: <PersonIcon />,
-      label: '마이페이지',
-      requiresAuth: true,
+      label: "마이페이지",
+      requiresAuth: false, // true
     },
   ];
 
   const handleTabClick = (path: string, requiresAuth: boolean) => {
     if (requiresAuth && !isAuthenticated) {
-      navigate('/login');
+      navigate("/login");
       return;
     }
     navigate(path);
@@ -51,12 +51,12 @@ const BottomNav = () => {
   return (
     <Paper
       sx={{
-        position: 'fixed',
+        position: "fixed",
         bottom: 0,
         left: 0,
         right: 0,
         zIndex: 1000,
-        pb: 'env(safe-area-inset-bottom)', // iOS safe area
+        pb: "env(safe-area-inset-bottom)", // iOS safe area
       }}
       elevation={3}
     >
@@ -70,10 +70,10 @@ const BottomNav = () => {
         }}
         sx={{
           height: 64,
-          '& .MuiBottomNavigationAction-root': {
-            color: 'text.secondary',
-            '&.Mui-selected': {
-              color: 'primary.main',
+          "& .MuiBottomNavigationAction-root": {
+            color: "text.secondary",
+            "&.Mui-selected": {
+              color: "primary.main",
             },
           },
         }}
@@ -91,4 +91,4 @@ const BottomNav = () => {
   );
 };
 
-export default BottomNav; 
+export default BottomNav;

@@ -1,6 +1,6 @@
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import Provider from "./provider";
-import BottomNavLayout from "./components/Layout/BottomNavLayout";
+import Layout from "./components/Layout/Layout";
 
 import Login from "./pages/Account/Login/Login";
 import SignUp from "./pages/Account/SignUp/SignUp";
@@ -13,6 +13,7 @@ import MyPage from "./pages/My/MyPage/MyPage";
 import MyPosts from "./pages/My/MyPosts/MyPosts";
 import ScrappedPosts from "./pages/My/ScrappedPosts/ScrappedPosts";
 import EditProfile from "./pages/My/EditProfile/EditProfile";
+import Alarm from "./pages/Alarm/Alarm";
 
 export function App() {
   return (
@@ -21,7 +22,9 @@ export function App() {
         <Routes>
           <Route path="/signup" element={<SignUp />} />
           <Route path="/login" element={<Login />} />
-          <Route element={<BottomNavLayout />}>
+
+          {/* 헤더와 바텀 네비게이션이 필요한 페이지들 */}
+          <Route element={<Layout showHeader showBottomNav />}>
             <Route path="/" element={<Navigate to="/post/list" replace />} />
             <Route path="/post/list" element={<PostList />} />
             <Route path="/post/create" element={<PostCreate />} />
@@ -32,6 +35,11 @@ export function App() {
             <Route path="/my-page/my-posts" element={<MyPosts />} />
             <Route path="/my-page/scrapped" element={<ScrappedPosts />} />
             <Route path="/my-page/edit-profile" element={<EditProfile />} />
+          </Route>
+
+          {/* 알람 페이지 - 헤더와 바텀 네비게이션 모두 없음 */}
+          <Route element={<Layout showHeader={false} showBottomNav={false} />}>
+            <Route path="/alarm" element={<Alarm />} />
           </Route>
         </Routes>
       </BrowserRouter>

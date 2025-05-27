@@ -1,13 +1,13 @@
-import axios from 'axios';
-import { useAuthStore } from '@/store/useAuthStore';
+import axios from "axios";
+import { useAuthStore } from "@/store/useAuthStore";
 
-const baseURL = process.env.REACT_APP_API_URL || 'http://localhost:8080';
+const BASE_URL = process.env.REACT_APP_API_URL || "http://localhost:8080";
 
 export const axiosInstance = axios.create({
-  baseURL,
+  baseURL: BASE_URL,
   timeout: 10000,
   headers: {
-    'Content-Type': 'application/json',
+    "Content-Type": "application/json",
   },
   withCredentials: true, // CORS 요청에 credentials 포함
 });
@@ -21,7 +21,9 @@ axiosInstance.interceptors.request.use(
     }
     return config;
   },
-  (error) => Promise.reject(error)
+  (error) => {
+    return Promise.reject(error);
+  }
 );
 
 // Response interceptor
@@ -35,16 +37,16 @@ axiosInstance.interceptors.response.use(
       originalRequest._retry = true;
 
       try {
-        await useAuthStore.getState().reissueToken();
+        await useAuthStore.getState().reissue();
         const newAccessToken = useAuthStore.getState().accessToken;
         originalRequest.headers.Authorization = `Bearer ${newAccessToken}`;
         return axiosInstance(originalRequest);
       } catch (refreshError) {
-        await useAuthStore.getState().logout();
+        useAuthStore.getState().logout();
         return Promise.reject(refreshError);
       }
     }
 
     return Promise.reject(error);
   }
-); 
+);

@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import {
   Box,
   Container,
@@ -9,17 +9,31 @@ import {
   Stack,
   Pagination,
   Grid,
-} from '@mui/material';
-import ArrowBackIcon from '@mui/icons-material/ArrowBack';
-import PostCard from '../../../components/PostCard';
+} from "@mui/material";
+import ArrowBackIcon from "@mui/icons-material/ArrowBack";
+import PostCard from "../../../components/PostCard";
 
 // 타입 정의
 interface Post {
   id: number;
   title: string;
-  price: number;
+  minPrice: number;
   isAuthor: boolean;
   isScraped: boolean;
+  modelName: string;
+  imageUrl: string;
+  category: string;
+  status: "available" | "sold";
+  author?: string;
+  authorId?: string;
+  type?: "sell" | "buy";
+  specifications: string;
+  defectAnswers?: {
+    cooling: string;
+    noise: string;
+    exterior: string;
+  };
+  description: string;
 }
 
 const MyPosts = () => {
@@ -28,15 +42,31 @@ const MyPosts = () => {
   const postsPerPage = 10;
 
   // 실제 글 데이터 불러오기
-  const savedPosts = localStorage.getItem('posts');
+  const savedPosts = localStorage.getItem("posts");
   const posts: Post[] = savedPosts ? JSON.parse(savedPosts) : [];
-  const myPosts = posts.filter((post) => post.isAuthor);
+
+  const formatSpecifications = (specs: any) => {
+    if (typeof specs === "string") return specs;
+    if (typeof specs === "object" && specs !== null) {
+      return Object.entries(specs)
+        .map(([key, value]) => `${key}: ${value}`)
+        .join(", ");
+    }
+    return "";
+  };
+
+  const myPosts = posts
+    .filter((post) => post.isAuthor)
+    .map((post) => ({
+      ...post,
+      specifications: formatSpecifications(post.specifications),
+    }));
 
   const handleScrap = (postId: number) => {
     const updatedPosts = posts.map((post) =>
       post.id === postId ? { ...post, isScraped: !post.isScraped } : post
     );
-    localStorage.setItem('posts', JSON.stringify(updatedPosts));
+    localStorage.setItem("posts", JSON.stringify(updatedPosts));
     // Force re-render
     window.location.reload();
   };
@@ -47,31 +77,38 @@ const MyPosts = () => {
   const endIndex = startIndex + postsPerPage;
   const currentPosts = myPosts.slice(startIndex, endIndex);
 
-  const handlePageChange = (_event: React.ChangeEvent<unknown>, value: number) => {
+  const handlePageChange = (
+    _event: React.ChangeEvent<unknown>,
+    value: number
+  ) => {
     setCurrentPage(value);
   };
 
   const handleBack = () => {
-    navigate('/my-page');
+    navigate("/my-page");
   };
 
   return (
-    <Container maxWidth="sm" sx={{ pb: '76px' }}>
+    <Container maxWidth="sm" sx={{ pb: "76px" }}>
       {/* 헤더 */}
       <Paper
         sx={{
-          position: 'sticky',
+          position: "sticky",
           top: 0,
           zIndex: 100,
           p: 2,
           mb: 2,
+          borderRadius: 0,
+          borderBottom: "1px solid",
+          borderColor: "grey.200",
         }}
+        elevation={0}
       >
         <Stack direction="row" alignItems="center" spacing={1}>
           <IconButton onClick={handleBack} size="small">
             <ArrowBackIcon />
           </IconButton>
-          <Typography variant="h6" sx={{ flex: 1, textAlign: 'center' }}>
+          <Typography variant="h6" sx={{ flex: 1, textAlign: "center" }}>
             내가 쓴 글
           </Typography>
         </Stack>
@@ -80,11 +117,14 @@ const MyPosts = () => {
       {/* 게시글 그리드 */}
       <Grid container spacing={2} sx={{ px: 2 }}>
         {currentPosts.map((post) => (
-          <Grid item xs={6} key={post.id} component="div">
+          <Grid item xs={6} key={post.id}>
             <PostCard
-              {...post}
-              modelName="기본 모델"
-              imageUrl="/placeholder.jpg"
+              id={post.id}
+              title={post.title}
+              modelName={post.modelName || ""}
+              minPrice={post.minPrice}
+              images={[post.imageUrl]}
+              isScraped={post.isScraped}
               onScrapClick={() => handleScrap(post.id)}
               onClick={() => navigate(`/post/detail/${post.id}`)}
             />
@@ -94,7 +134,7 @@ const MyPosts = () => {
 
       {/* 페이지네이션 */}
       {totalPages > 1 && (
-        <Box sx={{ display: 'flex', justifyContent: 'center', mt: 3, mb: 2 }}>
+        <Box sx={{ display: "flex", justifyContent: "center", mt: 3, mb: 2 }}>
           <Pagination
             count={totalPages}
             page={currentPage}
@@ -108,4 +148,4 @@ const MyPosts = () => {
   );
 };
 
-export default MyPosts; 
+export default MyPosts;

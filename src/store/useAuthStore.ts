@@ -1,7 +1,7 @@
-import { create } from 'zustand';
-import { devtools } from 'zustand/middleware';
-import { authApi } from '@/api/auth';
-import { LoginRequest } from '@/types/auth';
+import { create } from "zustand";
+import { devtools } from "zustand/middleware";
+import { authApi } from "@/api/auth";
+import { LoginRequest } from "@/types/auth";
 
 interface AuthState {
   accessToken: string | null;
@@ -9,16 +9,13 @@ interface AuthState {
   isAuthenticated: boolean;
   isLoading: boolean;
   error: string | null;
-}
-
-interface AuthStore extends AuthState {
   login: (data: LoginRequest) => Promise<void>;
   logout: () => Promise<void>;
-  reissueToken: () => Promise<void>;
+  reissue: () => Promise<void>;
   clearError: () => void;
 }
 
-const initialState: AuthState = {
+const initialState = {
   accessToken: null,
   refreshToken: null,
   isAuthenticated: false,
@@ -26,70 +23,78 @@ const initialState: AuthState = {
   error: null,
 };
 
-export const useAuthStore = create<AuthStore>()(
+export const useAuthStore = create<AuthState>()(
   devtools(
     (set) => ({
       ...initialState,
 
       login: async (data: LoginRequest) => {
+        set({ isLoading: true, error: null });
         try {
-          set({ isLoading: true, error: null });
           const response = await authApi.login(data);
           set({
-            accessToken: response['access-token'],
-            refreshToken: response['refresh-token'],
+            accessToken: response.accessToken,
+            refreshToken: response.refreshToken,
             isAuthenticated: true,
             isLoading: false,
           });
         } catch (error) {
           set({
-            error: error instanceof Error ? error.message : '로그인 중 오류가 발생했습니다.',
+            error:
+              error instanceof Error
+                ? error.message
+                : "로그인 중 오류가 발생했습니다.",
             isLoading: false,
           });
-          throw error;
         }
       },
 
       logout: async () => {
+        set({ isLoading: true, error: null });
         try {
-          set({ isLoading: true, error: null });
           await authApi.logout();
-          set(initialState);
-        } catch (error) {
           set({
-            error: error instanceof Error ? error.message : '로그아웃 중 오류가 발생했습니다.',
+            accessToken: null,
+            refreshToken: null,
+            isAuthenticated: false,
             isLoading: false,
           });
-          set(initialState);
-          throw error;
+        } catch (error) {
+          set({
+            error:
+              error instanceof Error
+                ? error.message
+                : "로그아웃 중 오류가 발생했습니다.",
+            isLoading: false,
+          });
         }
       },
 
-      reissueToken: async () => {
+      reissue: async () => {
+        set({ isLoading: true, error: null });
         try {
-          set({ isLoading: true, error: null });
           const response = await authApi.reissue();
           set({
-            accessToken: response.data['access-token'],
-            refreshToken: response.data['refresh-token'],
+            accessToken: response.accessToken,
+            refreshToken: response.refreshToken,
             isAuthenticated: true,
             isLoading: false,
           });
         } catch (error) {
           set({
-            error: error instanceof Error ? error.message : '토큰 갱신 중 오류가 발생했습니다.',
+            error:
+              error instanceof Error
+                ? error.message
+                : "토큰 갱신 중 오류가 발생했습니다.",
             isLoading: false,
-            isAuthenticated: false,
           });
-          throw error;
         }
       },
 
       clearError: () => set({ error: null }),
     }),
     {
-      name: 'auth-store',
-      enabled: process.env.NODE_ENV === 'development',
+      name: "auth-store",
     }
   )
-); 
+);

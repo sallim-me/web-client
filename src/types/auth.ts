@@ -4,23 +4,31 @@ export interface LoginRequest {
 }
 
 export interface LoginResponse {
-  'access-token': string;
-  'refresh-token': string;
+  accessToken: string;
+  refreshToken: string;
 }
 
 export interface TokenResponse {
-  status: number;
-  code: string;
-  message: string;
-  data: {
-    'access-token': string;
-    'refresh-token': string;
-  };
+  accessToken: string;
+  refreshToken: string;
 }
 
 export interface LogoutResponse {
-  status: number;
-  code: string;
   message: string;
-  data: string;
-} 
+}
+
+export interface SignUpRequest {
+  username: string;
+  password: string;
+  nickname: string;
+  name: string;
+  isBuyer: boolean;
+}
+
+export interface SignUpResponse {
+  id: number;
+  username: string;
+  nickname: string;
+  name: string;
+  isBuyer: boolean;
+}
