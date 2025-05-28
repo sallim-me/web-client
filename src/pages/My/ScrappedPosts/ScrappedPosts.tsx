@@ -17,6 +17,7 @@ import PostCard from "../../../components/PostCard";
 interface Post {
   id: number;
   title: string;
+  price: number;
   minPrice: number;
   imageUrl: string;
   isAuthor: boolean;

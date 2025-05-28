@@ -50,6 +50,13 @@
       "last 1 safari version"
     ]
   },
+  "proxy": {
+    "/member": {
+      "target": "https://dev-back.sallim.me",
+      "changeOrigin": true,
+      "secure": false
+    }
+  },
   "devDependencies": {
     "@craco/craco": "^7.1.0"
   }

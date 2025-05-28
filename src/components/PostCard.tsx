@@ -55,7 +55,7 @@ const PostCard: React.FC<PostCardProps> = ({
         }}
       >
         <img
-          src={getImageUrl(images?.[0])}
+          src={getImageUrl(images?.[0] ?? "")}
           alt={title}
           style={{
             width: "100%",
