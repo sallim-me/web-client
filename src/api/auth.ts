@@ -9,6 +9,22 @@ import {
   UserProfile,
 } from "@/types/auth";
 
+// 사용자 프로필 API 응답 타입을 정의합니다.
+interface UserProfileApiResponse {
+  status: number;
+  code: string;
+  message: string;
+  data: UserProfile; // 실제 사용자 정보는 data 속성에 포함
+}
+
+// 프로필 수정 요청 타입
+interface EditProfileRequest {
+  nickname: string;
+  name: string;
+  password?: string; // 선택적 필드로 변경
+  isBuyer: boolean;
+}
+
 const AUTH_URL = "/auth";
 const MEMBER_URL = "/member";
 
@@ -70,14 +86,39 @@ export const authApi = {
     return response.data;
   },
 
-  getProfile: async (): Promise<UserProfile> => {
+  // 반환 타입을 UserProfileApiResponse로 수정
+  getProfile: async (): Promise<UserProfileApiResponse> => {
     try {
       console.log("Fetching user profile...");
-      const response = await axiosInstance.get<UserProfile>(`${MEMBER_URL}/me`);
+      const response = await axiosInstance.get<UserProfileApiResponse>(
+        `${MEMBER_URL}/me`
+      );
       console.log("Profile response:", response.data);
       return response.data;
     } catch (error: any) {
       console.error("Get profile error:", {
+        status: error.response?.status,
+        data: error.response?.data,
+        headers: error.response?.headers,
+      });
+      throw error;
+    }
+  },
+
+  // 프로필 수정 API 추가
+  editProfile: async (
+    data: EditProfileRequest
+  ): Promise<UserProfileApiResponse> => {
+    try {
+      console.log("Editing profile with data:", data);
+      const response = await axiosInstance.put<UserProfileApiResponse>(
+        `${MEMBER_URL}/profile`,
+        data
+      );
+      console.log("Profile edit response:", response.data);
+      return response.data;
+    } catch (error: any) {
+      console.error("Edit profile error:", {
         status: error.response?.status,
         data: error.response?.data,
         headers: error.response?.headers,
