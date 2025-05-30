@@ -175,7 +175,15 @@ const MyPage = () => {
                   src={
                     post.images && post.images.length > 0
                       ? post.images[0]
-                      : `${process.env.PUBLIC_URL}/images/placeholder.svg`
+                      : post.tradeType === "buy" // 구매 글인 경우
+                      ? post.category === "refrigerator" // 카테고리에 따라 다른 이미지
+                        ? `${process.env.PUBLIC_URL}/images/refrigerator.svg`
+                        : post.category === "washer"
+                        ? `${process.env.PUBLIC_URL}/images/washer.svg`
+                        : post.category === "aircon"
+                        ? `${process.env.PUBLIC_URL}/images/airconditioner.svg`
+                        : `${process.env.PUBLIC_URL}/images/placeholder.svg` // 정의되지 않은 카테고리 또는 이미지 없는 판매 글
+                      : `${process.env.PUBLIC_URL}/images/placeholder.svg` // 이미지 없는 판매 글
                   }
                   alt={post.title}
                   style={{
@@ -185,6 +193,7 @@ const MyPage = () => {
                   }}
                   onError={(e) => {
                     const target = e.target as HTMLImageElement;
+                    target.onerror = null;
                     target.src = `${process.env.PUBLIC_URL}/images/placeholder.svg`;
                   }}
                 />
@@ -277,7 +286,15 @@ const MyPage = () => {
                   src={
                     post.images && post.images.length > 0
                       ? post.images[0]
-                      : `${process.env.PUBLIC_URL}/images/placeholder.svg`
+                      : post.tradeType === "buy" // 구매 글인 경우
+                      ? post.category === "refrigerator" // 카테고리에 따라 다른 이미지
+                        ? `${process.env.PUBLIC_URL}/images/refrigerator.svg`
+                        : post.category === "washer"
+                        ? `${process.env.PUBLIC_URL}/images/washer.svg`
+                        : post.category === "aircon"
+                        ? `${process.env.PUBLIC_URL}/images/airconditioner.svg`
+                        : `${process.env.PUBLIC_URL}/images/placeholder.svg` // 정의되지 않은 카테고리 또는 이미지 없는 판매 글
+                      : `${process.env.PUBLIC_URL}/images/placeholder.svg` // 이미지 없는 판매 글
                   }
                   alt={post.title}
                   style={{
@@ -287,6 +304,7 @@ const MyPage = () => {
                   }}
                   onError={(e) => {
                     const target = e.target as HTMLImageElement;
+                    target.onerror = null;
                     target.src = `${process.env.PUBLIC_URL}/images/placeholder.svg`;
                   }}
                 />
