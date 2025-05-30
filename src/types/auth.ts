@@ -34,9 +34,9 @@ export interface SignUpResponse {
 }
 
 export interface UserProfile {
-  id: number;
+  id?: number;
   username: string;
-  nickname: string;
   name: string;
+  nickname: string;
   isBuyer: boolean;
 }

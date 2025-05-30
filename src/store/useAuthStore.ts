@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import { devtools } from "zustand/middleware";
+import { devtools, persist, createJSONStorage } from "zustand/middleware";
 import { authApi } from "@/api/auth";
 import { LoginRequest, UserProfile } from "@/types/auth";
 
@@ -28,152 +28,162 @@ const initialState = {
 
 export const useAuthStore = create<AuthState>()(
   devtools(
-    (set, get) => ({
-      ...initialState,
+    persist(
+      (set, get) => ({
+        ...initialState,
 
-      login: async (username: string, password: string) => {
-        set({ isLoading: true, error: null });
-        try {
-          console.log("Login attempt with username:", username);
-          const response = await authApi.login({ username, password });
-          console.log("Login response received:", response);
+        login: async (username: string, password: string) => {
+          set({ isLoading: true, error: null });
+          try {
+            console.log("Login attempt with username:", username);
+            const response = await authApi.login({ username, password });
+            console.log("Login response received:", response);
 
-          // 응답이 없거나 토큰이 없는 경우 에러 처리
-          if (
-            !response ||
-            !response["access-token"] ||
-            !response["refresh-token"]
-          ) {
-            console.error("Invalid login response:", response);
-            throw new Error("로그인 응답이 올바르지 않습니다.");
+            // 응답이 없거나 토큰이 없는 경우 에러 처리
+            if (
+              !response ||
+              !response["access-token"] ||
+              !response["refresh-token"]
+            ) {
+              console.error("Invalid login response:", response);
+              throw new Error("로그인 응답이 올바르지 않습니다.");
+            }
+
+            // 로그인 성공 시 토큰 저장
+            const tokens = {
+              accessToken: response["access-token"],
+              refreshToken: response["refresh-token"],
+            };
+            console.log("Storing tokens:", tokens);
+
+            set({
+              ...tokens,
+              isAuthenticated: true,
+              isLoading: false,
+            });
+
+            // 사용자 프로필 정보 가져오기
+            console.log("Fetching user profile...");
+            await get().fetchUserProfile();
+            console.log("User profile fetched successfully");
+          } catch (error) {
+            console.error("Login error:", error);
+            set({
+              isAuthenticated: false,
+              isLoading: false,
+              error:
+                error instanceof Error
+                  ? error.message
+                  : "로그인에 실패했습니다.",
+            });
+            throw error;
+          }
+        },
+
+        logout: async () => {
+          set({ isLoading: true, error: null });
+          try {
+            await authApi.logout();
+            set({
+              accessToken: null,
+              refreshToken: null,
+              isAuthenticated: false,
+              isLoading: false,
+              userProfile: null,
+            });
+          } catch (error) {
+            console.error("Logout error:", error);
+            set({
+              isLoading: false,
+              error:
+                error instanceof Error
+                  ? error.message
+                  : "로그아웃에 실패했습니다.",
+            });
+            throw error;
+          }
+        },
+
+        reissueToken: async () => {
+          const { refreshToken } = get();
+          if (!refreshToken) {
+            throw new Error("리프레시 토큰이 없습니다.");
           }
 
-          // 로그인 성공 시 토큰 저장
-          const tokens = {
-            accessToken: response["access-token"],
-            refreshToken: response["refresh-token"],
-          };
-          console.log("Storing tokens:", tokens);
+          set({ isLoading: true, error: null });
+          try {
+            console.log("Attempting to reissue token...");
+            const response = await authApi.reissue();
+            console.log("Token reissue response:", response);
 
-          set({
-            ...tokens,
-            isAuthenticated: true,
-            isLoading: false,
-          });
+            if (
+              !response ||
+              !response["access-token"] ||
+              !response["refresh-token"]
+            ) {
+              console.error("Invalid token reissue response:", response);
+              throw new Error("토큰 갱신에 실패했습니다.");
+            }
 
-          // 사용자 프로필 정보 가져오기
-          console.log("Fetching user profile...");
-          await get().fetchUserProfile();
-          console.log("User profile fetched successfully");
-        } catch (error) {
-          console.error("Login error:", error);
-          set({
-            isAuthenticated: false,
-            isLoading: false,
-            error:
-              error instanceof Error ? error.message : "로그인에 실패했습니다.",
-          });
-          throw error;
-        }
-      },
+            const tokens = {
+              accessToken: response["access-token"],
+              refreshToken: response["refresh-token"],
+            };
+            console.log("Storing new tokens:", tokens);
 
-      logout: async () => {
-        set({ isLoading: true, error: null });
-        try {
-          await authApi.logout();
-          set({
-            accessToken: null,
-            refreshToken: null,
-            isAuthenticated: false,
-            isLoading: false,
-            userProfile: null,
-          });
-        } catch (error) {
-          console.error("Logout error:", error);
-          set({
-            isLoading: false,
-            error:
-              error instanceof Error
-                ? error.message
-                : "로그아웃에 실패했습니다.",
-          });
-          throw error;
-        }
-      },
-
-      reissueToken: async () => {
-        const { refreshToken } = get();
-        if (!refreshToken) {
-          throw new Error("리프레시 토큰이 없습니다.");
-        }
-
-        set({ isLoading: true, error: null });
-        try {
-          console.log("Attempting to reissue token...");
-          const response = await authApi.reissue();
-          console.log("Token reissue response:", response);
-
-          if (
-            !response ||
-            !response["access-token"] ||
-            !response["refresh-token"]
-          ) {
-            console.error("Invalid token reissue response:", response);
-            throw new Error("토큰 갱신에 실패했습니다.");
+            set({
+              ...tokens,
+              isAuthenticated: true,
+              isLoading: false,
+            });
+          } catch (error) {
+            console.error("Token reissue error:", error);
+            set({
+              isAuthenticated: false,
+              isLoading: false,
+              error:
+                error instanceof Error
+                  ? error.message
+                  : "토큰 갱신에 실패했습니다.",
+            });
+            throw error;
           }
+        },
 
-          const tokens = {
-            accessToken: response["access-token"],
-            refreshToken: response["refresh-token"],
-          };
-          console.log("Storing new tokens:", tokens);
+        fetchUserProfile: async () => {
+          set({ isLoading: true, error: null });
+          try {
+            console.log("Fetching user profile...");
+            console.log(
+              "Current access token for profile fetch:",
+              get().accessToken
+            );
+            const profile = await authApi.getProfile();
+            console.log("Profile fetched:", profile);
+            set({
+              userProfile: profile.data,
+              isLoading: false,
+            });
+          } catch (error) {
+            console.error("Fetch profile error:", error);
+            set({
+              isLoading: false,
+              error:
+                error instanceof Error
+                  ? error.message
+                  : "프로필 정보를 가져오는데 실패했습니다.",
+              userProfile: null,
+            });
+            throw error;
+          }
+        },
 
-          set({
-            ...tokens,
-            isAuthenticated: true,
-            isLoading: false,
-          });
-        } catch (error) {
-          console.error("Token reissue error:", error);
-          set({
-            isAuthenticated: false,
-            isLoading: false,
-            error:
-              error instanceof Error
-                ? error.message
-                : "토큰 갱신에 실패했습니다.",
-          });
-          throw error;
-        }
-      },
-
-      fetchUserProfile: async () => {
-        set({ isLoading: true, error: null });
-        try {
-          console.log("Current access token:", get().accessToken);
-          const profile = await authApi.getProfile();
-          console.log("Profile fetched:", profile);
-          set({
-            userProfile: profile,
-            isLoading: false,
-          });
-        } catch (error) {
-          console.error("Fetch profile error:", error);
-          set({
-            isLoading: false,
-            error:
-              error instanceof Error
-                ? error.message
-                : "프로필 정보를 가져오는데 실패했습니다.",
-          });
-          throw error;
-        }
-      },
-
-      clearError: () => set({ error: null }),
-    }),
-    {
-      name: "auth-store",
-    }
+        clearError: () => set({ error: null }),
+      }),
+      {
+        name: "auth-store",
+        storage: createJSONStorage(() => localStorage),
+      }
+    )
   )
 );

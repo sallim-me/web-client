@@ -40,10 +40,10 @@ interface Post {
 const MyPage = () => {
   const navigate = useNavigate();
   const logout = useAuthStore((state) => state.logout);
+  const userProfile = useAuthStore((state) => state.userProfile);
 
-  // 예시 유저 정보
-  const nickname = "HGD";
-  const userName = "홍길동";
+  const nickname = userProfile?.nickname || "N/A";
+  const userName = userProfile?.name || "N/A";
 
   // 실제 글 데이터 불러오기
   const savedPosts = localStorage.getItem("posts");
