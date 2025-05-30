@@ -276,15 +276,24 @@ const PostList = () => {
     }));
   });
 
+  // localStorage 업데이트는 필요한 경우에만 실행
   useEffect(() => {
-    localStorage.setItem("posts", JSON.stringify(posts));
+    const savedPosts = localStorage.getItem("posts");
+    const parsedPosts = savedPosts ? JSON.parse(savedPosts) : [];
+
+    // 현재 posts와 localStorage의 데이터가 다를 때만 업데이트
+    if (JSON.stringify(parsedPosts) !== JSON.stringify(posts)) {
+      localStorage.setItem("posts", JSON.stringify(posts));
+    }
   }, [posts]);
 
   const handleScrap = (postId: number) => {
-    const updatedPosts = posts.map((post) =>
-      post.id === postId ? { ...post, isScraped: !post.isScraped } : post
-    );
-    setPosts(updatedPosts);
+    setPosts((prevPosts) => {
+      const updatedPosts = prevPosts.map((post) =>
+        post.id === postId ? { ...post, isScraped: !post.isScraped } : post
+      );
+      return updatedPosts;
+    });
   };
 
   const toggleCategory = (category: string) => {

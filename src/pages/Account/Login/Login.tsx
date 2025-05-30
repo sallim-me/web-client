@@ -11,18 +11,14 @@ import {
   Alert,
 } from "@mui/material";
 import { useAuthStore } from "@/store/useAuthStore";
-
-interface LoginForm {
-  username: string;
-  password: string;
-}
+import { LoginRequest } from "@/types/auth";
 
 const Login = () => {
   const navigate = useNavigate();
-  const login = useAuthStore((state) => state.login);
+  const { login } = useAuthStore();
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
-  const [formData, setFormData] = useState<LoginForm>({
+  const [formData, setFormData] = useState<LoginRequest>({
     username: "",
     password: "",
   });
@@ -33,39 +29,21 @@ const Login = () => {
       ...prev,
       [name]: value,
     }));
-    // 에러 메시지 초기화
     setError(null);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsLoading(true);
     setError(null);
 
     try {
-      await login(formData);
+      await login(formData.username, formData.password);
       navigate("/post/list");
     } catch (error) {
-      if (error instanceof Error) {
-        if (
-          error.message.includes("Network Error") ||
-          error.message.includes("Failed to fetch")
-        ) {
-          setError("서버에 연결할 수 없습니다. 잠시 후 다시 시도해주세요.");
-        } else if (
-          error.message.includes("401") ||
-          error.message.includes("Unauthorized")
-        ) {
-          setError("아이디 또는 비밀번호가 올바르지 않습니다.");
-        } else {
-          setError("로그인 중 오류가 발생했습니다. 잠시 후 다시 시도해주세요.");
-        }
-      } else {
-        setError("로그인 중 오류가 발생했습니다. 잠시 후 다시 시도해주세요.");
-      }
       console.error("Login error:", error);
-    } finally {
-      setIsLoading(false);
+      setError(
+        error instanceof Error ? error.message : "로그인에 실패했습니다."
+      );
     }
   };
 
@@ -103,6 +81,8 @@ const Login = () => {
                   fullWidth
                   required
                   disabled={isLoading}
+                  autoComplete="username"
+                  error={!!error && error.includes("아이디")}
                 />
 
                 <TextField
@@ -114,6 +94,8 @@ const Login = () => {
                   fullWidth
                   required
                   disabled={isLoading}
+                  autoComplete="current-password"
+                  error={!!error && error.includes("비밀번호")}
                 />
 
                 <Button
