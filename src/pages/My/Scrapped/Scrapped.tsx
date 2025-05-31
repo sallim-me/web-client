@@ -12,36 +12,37 @@ import {
   CircularProgress,
 } from "@mui/material";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
-import PostCard from "../../../components/PostCard";
-import { memberApi, MyPost } from "@/api/member";
+import PostCard from "@/components/PostCard";
+import { scrapApi, Scrap } from "@/api/scrap";
 
-const MyPosts = () => {
+const Scrapped = () => {
   const navigate = useNavigate();
   const [currentPage, setCurrentPage] = useState(1);
-  const [posts, setPosts] = useState<MyPost[]>([]);
+  const [scraps, setScraps] = useState<Scrap[]>([]);
   const [loading, setLoading] = useState(true);
+  const [totalPages, setTotalPages] = useState(0);
   const postsPerPage = 10;
 
+  const fetchScraps = async () => {
+    try {
+      setLoading(true);
+      const response = await scrapApi.getScraps({
+        page: currentPage - 1,
+        size: postsPerPage,
+      });
+      console.log("Scraps response:", response);
+      setScraps(response.scraps);
+      setTotalPages(response.totalPages);
+    } catch (error) {
+      console.error("Failed to fetch scraps:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
-    const fetchPosts = async () => {
-      try {
-        const response = await memberApi.getMyPosts();
-        setPosts(response.data);
-      } catch (error) {
-        console.error("Failed to fetch posts:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchPosts();
-  }, []);
-
-  // 페이지네이션 계산
-  const totalPages = Math.ceil(posts.length / postsPerPage);
-  const startIndex = (currentPage - 1) * postsPerPage;
-  const endIndex = startIndex + postsPerPage;
-  const currentPosts = posts.slice(startIndex, endIndex);
+    fetchScraps();
+  }, [currentPage]);
 
   const handlePageChange = (
     _event: React.ChangeEvent<unknown>,
@@ -52,6 +53,16 @@ const MyPosts = () => {
 
   const handleBack = () => {
     navigate("/my-page");
+  };
+
+  const handleScrapClick = async (productId: number) => {
+    try {
+      await scrapApi.deleteScrap(productId);
+      // 스크랩 취소 후 목록 새로고침
+      await fetchScraps();
+    } catch (error) {
+      console.error("Failed to delete scrap:", error);
+    }
   };
 
   return (
@@ -75,7 +86,7 @@ const MyPosts = () => {
             <ArrowBackIcon />
           </IconButton>
           <Typography variant="h6" sx={{ flex: 1, textAlign: "center" }}>
-            내가 쓴 글
+            스크랩한 글
           </Typography>
         </Stack>
       </Paper>
@@ -84,24 +95,32 @@ const MyPosts = () => {
         <Box sx={{ display: "flex", justifyContent: "center", mt: 4 }}>
           <CircularProgress />
         </Box>
+      ) : scraps.length === 0 ? (
+        <Box sx={{ textAlign: "center", mt: 4 }}>
+          <Typography color="text.secondary">
+            스크랩한 글이 없습니다.
+          </Typography>
+        </Box>
       ) : (
         <>
           {/* 게시글 그리드 */}
           <Grid container spacing={2} sx={{ px: 2 }}>
-            {currentPosts.map((post) => (
-              <Grid item xs={6} key={post.productId}>
+            {scraps.map((scrap) => (
+              <Grid item xs={6} key={scrap.id}>
                 <PostCard
-                  id={post.productId}
-                  title={post.title}
-                  modelName=""
-                  minPrice={0}
-                  images={[]}
-                  isScraped={false}
-                  onScrapClick={() => {}}
-                  onClick={() => navigate(`/post/detail/${post.productId}`)}
-                  postType={post.postType.toLowerCase() as "buying" | "selling"}
-                  isActive={post.isActive}
-                  createdAt={post.createdAt}
+                  id={scrap.productId}
+                  title={scrap.productTitle}
+                  modelName={scrap.modelName || ""}
+                  minPrice={scrap.minPrice || 0}
+                  images={scrap.images || []}
+                  isScraped={true}
+                  onScrapClick={() => handleScrapClick(scrap.productId)}
+                  onClick={() => navigate(`/post/detail/${scrap.productId}`)}
+                  postType={
+                    scrap.postType.toLowerCase() as "buying" | "selling"
+                  }
+                  isActive={scrap.isActive}
+                  createdAt={scrap.createdAt}
                 />
               </Grid>
             ))}
@@ -127,4 +146,4 @@ const MyPosts = () => {
   );
 };
 
-export default MyPosts;
+export default Scrapped;

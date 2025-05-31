@@ -17,6 +17,22 @@ export interface EditProfileResponse {
   data: Record<string, never>; // 빈 객체 반환
 }
 
+// 내가 쓴 글 응답 타입
+export interface MyPost {
+  productId: number;
+  title: string;
+  postType: "BUYING" | "SELLING";
+  isActive: boolean;
+  createdAt: string;
+}
+
+export interface GetMyPostsResponse {
+  status: number;
+  code: string;
+  message: string;
+  data: MyPost[];
+}
+
 const MEMBER_URL = "/member";
 
 export const memberApi = {
@@ -38,6 +54,22 @@ export const memberApi = {
         status: error.response?.status,
         data: error.response?.data,
         headers: error.response?.headers,
+      });
+      throw error;
+    }
+  },
+
+  // 내가 쓴 글 목록 조회
+  getMyPosts: async (): Promise<GetMyPostsResponse> => {
+    try {
+      const response = await axiosInstance.get<GetMyPostsResponse>(
+        `${MEMBER_URL}/me/posts`
+      );
+      return response.data;
+    } catch (error: any) {
+      console.error("Get my posts error:", {
+        status: error.response?.status,
+        data: error.response?.data,
       });
       throw error;
     }
