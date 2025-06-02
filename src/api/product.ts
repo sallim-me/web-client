@@ -22,6 +22,8 @@ export interface ProductListResponse {
 }
 
 export const getAllProducts = async (): Promise<ProductListResponse> => {
+  console.log("Calling getAllProducts API...");
   const response = await axios.get("https://dev-back.sallim.me/product/all");
+  console.log("getAllProducts response:", response);
   return response.data;
 };

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   Box,
@@ -15,6 +15,8 @@ import {
 import AddIcon from "@mui/icons-material/Add";
 import PostCard from "../../../components/PostCard";
 import { getAllProducts, Product } from "../../../api/product";
+import { scrapApi } from "../../../api/scrap";
+import { Scrap } from "../../../api/scrap";
 
 const PostList = () => {
   const navigate = useNavigate();
@@ -32,20 +34,53 @@ const PostList = () => {
     세탁기: "WASHING_MACHINE",
   };
 
-  useEffect(() => {
-    const fetchProducts = async () => {
-      try {
-        const response = await getAllProducts();
-        setProducts(response.data);
-        setLoading(false);
-      } catch (err) {
-        setError("상품 목록을 불러오는데 실패했습니다.");
-        setLoading(false);
-      }
-    };
+  const fetchProductsAndScraps = useCallback(async () => {
+    try {
+      setLoading(true);
+      console.log("Fetching products and scraps...");
 
-    fetchProducts();
+      const [productResponse, scrapResponse] = await Promise.all([
+        getAllProducts(),
+        scrapApi.getScraps({ size: 1000 }),
+      ]);
+
+      console.log("Product response:", productResponse);
+      console.log("Scrap response:", scrapResponse);
+
+      // Create a map of product IDs to scrap information
+      const scrapMap = new Map<number, Scrap>();
+      scrapResponse.scraps.forEach((scrap) => {
+        if (scrap.productId) {
+          scrapMap.set(scrap.productId, scrap);
+        }
+      });
+
+      console.log("Scrap map:", Object.fromEntries(scrapMap));
+
+      // Map products with scrap information
+      const productsWithScrapInfo = productResponse.data.map((product) => {
+        const scrapInfo = scrapMap.get(product.id);
+        return {
+          ...product,
+          isScraped: !!scrapInfo,
+          scrapId: scrapInfo?.id,
+        };
+      });
+
+      console.log("Products with scrap info:", productsWithScrapInfo);
+      setProducts(productsWithScrapInfo);
+      setError(null);
+    } catch (err) {
+      console.error("데이터 로딩 실패:", err);
+      setError("상품 목록을 불러오는데 실패했습니다.");
+    } finally {
+      setLoading(false);
+    }
   }, []);
+
+  useEffect(() => {
+    fetchProductsAndScraps();
+  }, [fetchProductsAndScraps]);
 
   const toggleCategory = (category: string) => {
     setSelectedCategories((prev) =>
