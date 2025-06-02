@@ -16,4 +16,12 @@ module.exports = function (app) {
       changeOrigin: true,
     })
   );
+
+  app.use(
+    "/scrap",
+    createProxyMiddleware({
+      target: "https://dev-back.sallim.me",
+      changeOrigin: true,
+    })
+  );
 };

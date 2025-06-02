@@ -1,5 +1,5 @@
 import React from "react";
-import { Box, Paper, Typography, IconButton, Stack } from "@mui/material";
+import { Box, Paper, Typography, IconButton, Stack, Chip } from "@mui/material";
 import BookmarkBorderIcon from "@mui/icons-material/BookmarkBorder";
 import BookmarkIcon from "@mui/icons-material/Bookmark";
 import { getImageUrl } from "../utils/image";
@@ -14,6 +14,9 @@ interface PostCardProps {
   onScrapClick: () => void;
   onClick: () => void;
   specifications?: string;
+  postType?: "buying" | "selling";
+  isActive?: boolean;
+  createdAt?: string;
 }
 
 const PostCard: React.FC<PostCardProps> = ({
@@ -24,6 +27,9 @@ const PostCard: React.FC<PostCardProps> = ({
   isScraped,
   onScrapClick,
   onClick,
+  postType,
+  isActive,
+  createdAt,
 }) => {
   const handleScrapClick = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -68,6 +74,25 @@ const PostCard: React.FC<PostCardProps> = ({
           }}
         />
       </Box>
+
+      <Stack direction="row" spacing={1} alignItems="center">
+        {postType && (
+          <Chip
+            label={postType === "buying" ? "구매" : "판매"}
+            size="small"
+            color={postType === "buying" ? "secondary" : "primary"}
+            sx={{ height: 20 }}
+          />
+        )}
+        {isActive === false && (
+          <Chip
+            label="비활성"
+            size="small"
+            color="default"
+            sx={{ height: 20 }}
+          />
+        )}
+      </Stack>
 
       <Typography
         variant="subtitle1"
