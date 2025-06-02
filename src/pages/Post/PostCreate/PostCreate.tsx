@@ -18,6 +18,7 @@ import {
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import DeleteIcon from "@mui/icons-material/Delete";
 import AddPhotoAlternateIcon from "@mui/icons-material/AddPhotoAlternate";
+import { createBuyingPost } from "../../../api/product";
 
 interface PostForm {
   title: string;
@@ -75,34 +76,35 @@ const PostCreate = () => {
     navigate(-1);
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSubmit = async () => {
+    if (!validateForm()) return;
 
-    // 기존 게시물 목록 가져오기
-    const savedPosts = localStorage.getItem("posts");
-    const posts = savedPosts ? JSON.parse(savedPosts) : [];
+    try {
+      if (form.tradeType === "buy") {
+        const response = await createBuyingPost({
+          title: form.title,
+          content: form.description,
+          quantity: parseInt(form.quantity),
+          applianceType: form.category as
+            | "REFRIGERATOR"
+            | "WASHING_MACHINE"
+            | "AIR_CONDITIONER",
+          price: parseInt(form.minPrice),
+        });
 
-    // 새 게시물 생성
-    const newPost = {
-      id: Date.now(),
-      ...form,
-      minPrice: Number(form.minPrice),
-      quantity: Number(form.quantity),
-      isScraped: false,
-      author: {
-        id: 1, // 임시 사용자 ID
-        nickname: "홍길동", // 임시 닉네임
-        profileImage: "/images/refrigerator.svg",
-      },
-      isAuthor: true,
-      createdAt: new Date().toISOString(),
-    };
-
-    // 게시물 목록에 추가
-    const updatedPosts = [...posts, newPost];
-    localStorage.setItem("posts", JSON.stringify(updatedPosts));
-
-    navigate("/post/list");
+        if (response.status === 200) {
+          navigate("/post/list");
+        } else {
+          alert("글 작성에 실패했습니다.");
+        }
+      } else {
+        // 판매 글 작성 API는 아직 연결되지 않음
+        alert("판매 글 작성 기능은 아직 준비 중입니다.");
+      }
+    } catch (error) {
+      console.error("글 작성 중 오류 발생:", error);
+      alert("글 작성 중 오류가 발생했습니다.");
+    }
   };
 
   const handleChange = (
@@ -152,6 +154,25 @@ const PostCreate = () => {
         [question]: answer,
       },
     }));
+  };
+
+  const validateForm = () => {
+    // 모든 필수 필드가 채워져 있는지 확인
+    if (!form.title || !form.tradeType || !form.category || !form.description) {
+      alert("모든 필수 항목을 입력해주세요.");
+      return false;
+    }
+
+    // 구매 글일 경우 수량이 3 이상인지 확인
+    if (form.tradeType === "buy") {
+      const quantity = parseInt(form.quantity);
+      if (isNaN(quantity) || quantity < 3) {
+        alert("수량은 3 이상이어야 합니다.");
+        return false;
+      }
+    }
+
+    return true;
   };
 
   return (

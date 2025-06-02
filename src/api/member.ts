@@ -21,7 +21,9 @@ export interface EditProfileResponse {
 export interface MyPost {
   productId: number;
   title: string;
-  postType: "BUYING" | "SELLING";
+  modelName: string;
+  price: number;
+  postType: string;
   isActive: boolean;
   createdAt: string;
 }

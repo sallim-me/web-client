@@ -105,25 +105,38 @@ const Scrapped = () => {
         <>
           {/* 게시글 그리드 */}
           <Grid container spacing={2} sx={{ px: 2 }}>
-            {scraps.map((scrap) => (
-              <Grid item xs={6} key={scrap.id}>
-                <PostCard
-                  id={scrap.productId}
-                  title={scrap.productTitle}
-                  modelName={scrap.modelName || ""}
-                  minPrice={scrap.minPrice || 0}
-                  images={scrap.images || []}
-                  isScraped={true}
-                  onScrapClick={() => handleScrapClick(scrap.productId)}
-                  onClick={() => navigate(`/post/detail/${scrap.productId}`)}
-                  postType={
-                    scrap.postType.toLowerCase() as "buying" | "selling"
-                  }
-                  isActive={scrap.isActive}
-                  createdAt={scrap.createdAt}
-                />
-              </Grid>
-            ))}
+            {scraps.map((scrap) => {
+              console.log("Scrap item data:", {
+                id: scrap.productId,
+                scrapId: scrap.id,
+                postType: scrap.postType,
+                title: scrap.title,
+                modelName: scrap.modelName,
+                price: scrap.price,
+                isActive: scrap.isActive,
+                images: scrap.images,
+              });
+              return (
+                <Grid item xs={6} key={scrap.productId}>
+                  <PostCard
+                    key={scrap.productId}
+                    id={scrap.productId}
+                    scrapId={scrap.id}
+                    title={scrap.title}
+                    modelName={scrap.modelName}
+                    minPrice={scrap.price}
+                    images={scrap.images}
+                    isScraped={true}
+                    onScrapClick={() => handleScrapClick(scrap.productId)}
+                    postType={
+                      scrap.postType.toLowerCase() as "buying" | "selling"
+                    }
+                    isActive={scrap.isActive}
+                    createdAt={scrap.createdAt}
+                  />
+                </Grid>
+              );
+            })}
           </Grid>
 
           {/* 페이지네이션 */}
