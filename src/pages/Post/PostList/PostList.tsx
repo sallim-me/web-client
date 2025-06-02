@@ -114,6 +114,39 @@ const PostList = () => {
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
+  const handleScrapClick = async (
+    productId: number,
+    isScraped: boolean,
+    scrapId?: number
+  ) => {
+    try {
+      if (isScraped && scrapId) {
+        await scrapApi.removeScrap(scrapId);
+        // 스크랩 취소 시 해당 상품의 상태만 업데이트
+        setProducts((prevProducts) =>
+          prevProducts.map((product) =>
+            product.id === productId
+              ? { ...product, isScraped: false, scrapId: undefined }
+              : product
+          )
+        );
+      } else {
+        const newScrap = await scrapApi.addScrap({ productId });
+        // 스크랩 추가 시 해당 상품의 상태만 업데이트
+        setProducts((prevProducts) =>
+          prevProducts.map((product) =>
+            product.id === productId
+              ? { ...product, isScraped: true, scrapId: newScrap.id }
+              : product
+          )
+        );
+      }
+    } catch (error) {
+      console.error("스크랩 처리 중 오류 발생:", error);
+      // TODO: 에러 메시지 표시
+    }
+  };
+
   if (loading) return <div>로딩 중...</div>;
   if (error) return <div>{error}</div>;
 
@@ -188,7 +221,13 @@ const PostList = () => {
                   minPrice={0}
                   images={[]}
                   isScraped={product.isScraped}
-                  onScrapClick={() => {}}
+                  onScrapClick={() =>
+                    handleScrapClick(
+                      product.id,
+                      product.isScraped,
+                      product.scrapId
+                    )
+                  }
                   onClick={() => navigate(`/post/detail/${product.id}`)}
                 />
               </Grid>

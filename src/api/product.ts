@@ -12,6 +12,7 @@ export interface Product {
   isAuthor: boolean;
   createdAt: string;
   memberId: number;
+  scrapId?: number;
 }
 
 export interface ProductListResponse {

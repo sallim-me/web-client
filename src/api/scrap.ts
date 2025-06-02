@@ -27,6 +27,11 @@ export interface GetScrapsParams {
   sort?: string;
 }
 
+export interface AddScrapRequest {
+  productId: number;
+  memo?: string;
+}
+
 const SCRAP_URL = "/scrap";
 
 export const scrapApi = {
@@ -61,5 +66,14 @@ export const scrapApi = {
       });
       throw error;
     }
+  },
+
+  addScrap: async (data: AddScrapRequest): Promise<Scrap> => {
+    const response = await axiosInstance.post("/scrap", data);
+    return response.data;
+  },
+
+  removeScrap: async (scrapId: number): Promise<void> => {
+    await axiosInstance.delete(`/scrap/${scrapId}`);
   },
 };
