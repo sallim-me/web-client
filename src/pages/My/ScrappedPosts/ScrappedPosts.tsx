@@ -120,14 +120,16 @@ const ScrappedPosts = () => {
         {currentPosts.map((post) => (
           <Grid item xs={6} key={post.id}>
             <PostCard
+              key={post.id}
               id={post.id}
               title={post.title}
-              modelName={post.modelName || ""}
+              modelName={post.modelName}
               minPrice={post.minPrice}
               images={[post.imageUrl]}
               isScraped={post.isScraped}
               onScrapClick={() => handleScrap(post.id)}
-              onClick={() => navigate(`/post/detail/${post.id}`)}
+              postType={post.type === "buy" ? "buying" : "selling"}
+              isActive={post.status === "available"}
             />
           </Grid>
         ))}

@@ -5,14 +5,15 @@ export interface Scrap {
   memberId: number;
   memberNickname: string;
   productId: number;
+  title: string;
   productTitle: string;
+  modelName: string;
+  price: number;
   memo: string;
   createdAt: string;
   postType: "BUYING" | "SELLING";
   isActive: boolean;
-  minPrice?: number;
-  images?: string[];
-  modelName?: string;
+  images: string[];
 }
 
 export interface GetScrapsResponse {

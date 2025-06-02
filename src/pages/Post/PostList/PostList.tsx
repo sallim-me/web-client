@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   Box,
@@ -16,11 +16,11 @@ import AddIcon from "@mui/icons-material/Add";
 import PostCard from "../../../components/PostCard";
 import { getAllProducts, Product } from "../../../api/product";
 import { scrapApi } from "../../../api/scrap";
-import { Scrap } from "../../../api/scrap";
 
 const PostList = () => {
   const navigate = useNavigate();
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
+  const [selectedStatuses, setSelectedStatuses] = useState<string[]>([]);
   const [currentPage, setCurrentPage] = useState(1);
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
@@ -34,59 +34,46 @@ const PostList = () => {
     세탁기: "WASHING_MACHINE",
   };
 
-  const fetchProductsAndScraps = useCallback(async () => {
-    try {
-      setLoading(true);
-      console.log("Fetching products and scraps...");
-
-      const [productResponse, scrapResponse] = await Promise.all([
-        getAllProducts(),
-        scrapApi.getScraps({ size: 1000 }),
-      ]);
-
-      console.log("Product response:", productResponse);
-      console.log("Scrap response:", scrapResponse);
-
-      // Create a map of product IDs to scrap information
-      const scrapMap = new Map<number, Scrap>();
-      scrapResponse.scraps.forEach((scrap) => {
-        if (scrap.productId) {
-          scrapMap.set(scrap.productId, scrap);
-        }
-      });
-
-      console.log("Scrap map:", Object.fromEntries(scrapMap));
-
-      // Map products with scrap information
-      const productsWithScrapInfo = productResponse.data.map((product) => {
-        const scrapInfo = scrapMap.get(product.id);
-        return {
-          ...product,
-          isScraped: !!scrapInfo,
-          scrapId: scrapInfo?.id,
-        };
-      });
-
-      console.log("Products with scrap info:", productsWithScrapInfo);
-      setProducts(productsWithScrapInfo);
-      setError(null);
-    } catch (err) {
-      console.error("데이터 로딩 실패:", err);
-      setError("상품 목록을 불러오는데 실패했습니다.");
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+  const statuses = ["판매중", "판매완료", "구매중", "구매완료"];
+  const statusMapping: Record<
+    string,
+    { type: "SELLING" | "BUYING"; isActive: boolean }
+  > = {
+    판매중: { type: "SELLING", isActive: true },
+    판매완료: { type: "SELLING", isActive: false },
+    구매중: { type: "BUYING", isActive: true },
+    구매완료: { type: "BUYING", isActive: false },
+  };
 
   useEffect(() => {
-    fetchProductsAndScraps();
-  }, [fetchProductsAndScraps]);
+    const fetchProducts = async () => {
+      try {
+        const response = await getAllProducts();
+        console.log("Fetched products:", response.data);
+        setProducts(response.data);
+        setLoading(false);
+      } catch (err) {
+        setError("상품 목록을 불러오는데 실패했습니다.");
+        setLoading(false);
+      }
+    };
+
+    fetchProducts();
+  }, []);
 
   const toggleCategory = (category: string) => {
     setSelectedCategories((prev) =>
       prev.includes(category)
         ? prev.filter((c) => c !== category)
         : [...prev, category]
+    );
+  };
+
+  const toggleStatus = (status: string) => {
+    setSelectedStatuses((prev) =>
+      prev.includes(status)
+        ? prev.filter((s) => s !== status)
+        : [...prev, status]
     );
   };
 
@@ -97,7 +84,20 @@ const PostList = () => {
         (cat) => product.category === categoryMapping[cat]
       );
 
-    return categoryMatch;
+    const statusMatch =
+      selectedStatuses.length === 0 ||
+      selectedStatuses.some((status) => {
+        const { type, isActive } = statusMapping[status];
+        console.log(`Checking product ${product.id}:`, {
+          productTradeType: product.tradeType,
+          productIsActive: product.isActive,
+          filterType: type,
+          filterIsActive: isActive,
+        });
+        return product.tradeType === type && product.isActive === isActive;
+      });
+
+    return categoryMatch && statusMatch;
   });
 
   // Pagination calculations
@@ -114,36 +114,25 @@ const PostList = () => {
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
-  const handleScrapClick = async (
-    productId: number,
-    isScraped: boolean,
-    scrapId?: number
-  ) => {
+  const handleScrapClick = async (productId: number) => {
     try {
-      if (isScraped && scrapId) {
-        await scrapApi.removeScrap(scrapId);
-        // 스크랩 취소 시 해당 상품의 상태만 업데이트
-        setProducts((prevProducts) =>
-          prevProducts.map((product) =>
-            product.id === productId
-              ? { ...product, isScraped: false, scrapId: undefined }
-              : product
-          )
-        );
+      const product = products.find((p) => p.id === productId);
+      if (!product) return;
+
+      if (product.isScraped) {
+        await scrapApi.deleteScrap(productId);
       } else {
-        const newScrap = await scrapApi.addScrap({ productId });
-        // 스크랩 추가 시 해당 상품의 상태만 업데이트
-        setProducts((prevProducts) =>
-          prevProducts.map((product) =>
-            product.id === productId
-              ? { ...product, isScraped: true, scrapId: newScrap.id }
-              : product
-          )
-        );
+        await scrapApi.addScrap({ productId });
       }
+
+      // Update the product's scrap status in the local state
+      setProducts((prevProducts) =>
+        prevProducts.map((p) =>
+          p.id === productId ? { ...p, isScraped: !p.isScraped } : p
+        )
+      );
     } catch (error) {
-      console.error("스크랩 처리 중 오류 발생:", error);
-      // TODO: 에러 메시지 표시
+      console.error("Failed to toggle scrap:", error);
     }
   };
 
@@ -208,6 +197,40 @@ const PostList = () => {
             ))}
           </Box>
 
+          {/* 거래 상태 필터 */}
+          <Box sx={{ display: "flex", flexWrap: "wrap", gap: 0.75 }}>
+            {statuses.map((status) => (
+              <Button
+                key={status}
+                variant={
+                  selectedStatuses.includes(status) ? "contained" : "outlined"
+                }
+                size="small"
+                onClick={() => toggleStatus(status)}
+                sx={{
+                  borderRadius: "16px",
+                  textTransform: "none",
+                  minWidth: "auto",
+                  px: 1.5,
+                  py: 0.75,
+                  fontSize: "13px",
+                  borderColor: "primary.main",
+                  color: selectedStatuses.includes(status)
+                    ? "white"
+                    : "primary.main",
+                  "&:hover": {
+                    borderColor: "primary.main",
+                    color: selectedStatuses.includes(status)
+                      ? "white"
+                      : "primary.main",
+                  },
+                }}
+              >
+                {status}
+              </Button>
+            ))}
+          </Box>
+
           <Divider />
 
           {/* 게시물 목록 */}
@@ -215,20 +238,18 @@ const PostList = () => {
             {currentProducts.map((product) => (
               <Grid item xs={6} key={product.id}>
                 <PostCard
+                  key={product.id}
                   id={product.id}
                   title={product.title}
                   modelName={product.modelName}
-                  minPrice={0}
+                  minPrice={product.priceOrQuantity}
                   images={[]}
                   isScraped={product.isScraped}
-                  onScrapClick={() =>
-                    handleScrapClick(
-                      product.id,
-                      product.isScraped,
-                      product.scrapId
-                    )
+                  onScrapClick={() => handleScrapClick(product.id)}
+                  postType={
+                    product.tradeType.toLowerCase() as "buying" | "selling"
                   }
-                  onClick={() => navigate(`/post/detail/${product.id}`)}
+                  isActive={product.isActive}
                 />
               </Grid>
             ))}

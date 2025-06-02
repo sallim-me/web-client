@@ -2,43 +2,53 @@ import React from "react";
 import { Box, Paper, Typography, IconButton, Stack, Chip } from "@mui/material";
 import BookmarkBorderIcon from "@mui/icons-material/BookmarkBorder";
 import BookmarkIcon from "@mui/icons-material/Bookmark";
+import ImageIcon from "@mui/icons-material/Image";
 import { getImageUrl } from "../utils/image";
+import { useNavigate } from "react-router-dom";
 
 interface PostCardProps {
   id: number;
+  scrapId?: number;
   title: string;
   modelName: string;
   minPrice: number;
   images?: string[];
   isScraped: boolean;
   onScrapClick: () => void;
-  onClick: () => void;
-  specifications?: string;
-  postType?: "buying" | "selling";
+  postType: "buying" | "selling";
   isActive?: boolean;
   createdAt?: string;
 }
 
 const PostCard: React.FC<PostCardProps> = ({
+  id,
+  scrapId,
   title,
   modelName,
   minPrice,
   images,
   isScraped,
   onScrapClick,
-  onClick,
   postType,
   isActive,
   createdAt,
 }) => {
+  const navigate = useNavigate();
+
   const handleScrapClick = (e: React.MouseEvent) => {
     e.stopPropagation();
     onScrapClick();
   };
 
+  const handleClick = () => {
+    navigate(`/post/detail/${id}?type=${postType}`);
+  };
+
+  const imageUrl = images?.[0] ? getImageUrl(images[0]) : null;
+
   return (
     <Paper
-      onClick={onClick}
+      onClick={handleClick}
       sx={{
         p: 2,
         cursor: "pointer",
@@ -58,41 +68,29 @@ const PostCard: React.FC<PostCardProps> = ({
           overflow: "hidden",
           borderRadius: 1,
           bgcolor: "grey.200",
+          display: "flex",
+          justifyContent: "center",
+          alignItems: "center",
         }}
       >
-        <img
-          src={getImageUrl(images?.[0] ?? "")}
-          alt={title}
-          style={{
-            width: "100%",
-            height: "100%",
-            objectFit: "cover",
-          }}
-          onError={(e) => {
-            const target = e.target as HTMLImageElement;
-            target.src = getImageUrl(null);
-          }}
-        />
+        {imageUrl ? (
+          <img
+            src={imageUrl}
+            alt={title}
+            style={{
+              width: "100%",
+              height: "100%",
+              objectFit: "cover",
+            }}
+            onError={(e) => {
+              const target = e.target as HTMLImageElement;
+              target.src = getImageUrl(null);
+            }}
+          />
+        ) : (
+          <ImageIcon sx={{ fontSize: 60, color: "grey.400" }} />
+        )}
       </Box>
-
-      <Stack direction="row" spacing={1} alignItems="center">
-        {postType && (
-          <Chip
-            label={postType === "buying" ? "구매" : "판매"}
-            size="small"
-            color={postType === "buying" ? "secondary" : "primary"}
-            sx={{ height: 20 }}
-          />
-        )}
-        {isActive === false && (
-          <Chip
-            label="비활성"
-            size="small"
-            color="default"
-            sx={{ height: 20 }}
-          />
-        )}
-      </Stack>
 
       <Typography
         variant="subtitle1"
@@ -151,9 +149,9 @@ const PostCard: React.FC<PostCardProps> = ({
           }}
         >
           {isScraped ? (
-            <BookmarkIcon color="primary" />
+            <BookmarkIcon color="primary" sx={{ fontSize: 24 }} />
           ) : (
-            <BookmarkBorderIcon />
+            <BookmarkBorderIcon sx={{ fontSize: 24 }} />
           )}
         </IconButton>
       </Stack>

@@ -15,6 +15,7 @@ import ArrowForwardIcon from "@mui/icons-material/ArrowForward";
 import { useAuthStore } from "@/store/useAuthStore";
 import { memberApi, MyPost } from "@/api/member";
 import { scrapApi, Scrap } from "@/api/scrap";
+import PostCard from "@/components/PostCard";
 
 // 타입 정의
 interface Post {
@@ -273,61 +274,58 @@ const MyPage = () => {
             }}
           >
             {scraps.map((scrap) => (
-              <Paper
+              <Box
                 key={scrap.id}
-                onClick={() => navigate(`/post/detail/${scrap.productId}`)}
                 sx={{
                   flexShrink: 0,
-                  width: 140,
+                  width: 120,
+                  height: 180,
                   cursor: "pointer",
                   "&:hover": {
                     bgcolor: "action.hover",
                   },
+                  "& .MuiPaper-root": {
+                    p: 1,
+                    gap: 0.5,
+                  },
+                  "& .MuiBox-root": {
+                    height: 80,
+                  },
+                  "& .MuiTypography-subtitle1": {
+                    fontSize: "0.8rem",
+                  },
+                  "& .MuiTypography-body2": {
+                    fontSize: "0.7rem",
+                  },
+                  "& .MuiChip-root": {
+                    height: 16,
+                    fontSize: "0.7rem",
+                  },
+                  "& .MuiIconButton-root": {
+                    p: 0.25,
+                  },
+                  "& .MuiSvgIcon-root": {
+                    fontSize: 18,
+                  },
                 }}
               >
-                <Box
-                  sx={{
-                    height: 70,
-                    bgcolor: "grey.200",
-                    borderRadius: "8px 8px 0 0",
-                    overflow: "hidden",
-                  }}
-                >
-                  <img
-                    src={
-                      scrap.images && scrap.images.length > 0
-                        ? scrap.images[0]
-                        : `${process.env.PUBLIC_URL}/images/${
-                            scrap.postType === "BUYING" ? "buy" : "sell"
-                          }.svg`
-                    }
-                    alt={scrap.productTitle}
-                    style={{
-                      width: "100%",
-                      height: "100%",
-                      objectFit: "cover",
-                    }}
-                  />
-                </Box>
-                <Box sx={{ p: 1 }}>
-                  <Typography variant="body2" noWrap sx={{ mb: 0.5 }}>
-                    {scrap.productTitle}
-                  </Typography>
-                  <Stack direction="row" spacing={0.5} alignItems="center">
-                    <Typography
-                      variant="caption"
-                      color={scrap.isActive ? "primary" : "text.secondary"}
-                    >
-                      {scrap.postType === "SELLING" ? "판매" : "구매"}
-                    </Typography>
-                    {!scrap.isActive && (
-                      <Typography variant="caption" color="text.secondary">
-                        (비활성)
-                      </Typography>
-                    )}
-                  </Stack>
-                </Box>
-              </Paper>
+                <PostCard
+                  key={scrap.productId}
+                  id={scrap.productId}
+                  scrapId={scrap.id}
+                  title={scrap.productTitle}
+                  modelName={scrap.modelName || ""}
+                  minPrice={scrap.price || 0}
+                  images={scrap.images || []}
+                  isScraped={true}
+                  onScrapClick={() => {}}
+                  postType={
+                    (scrap.postType?.toLowerCase() as "buying" | "selling") ||
+                    "buying"
+                  }
+                  isActive={scrap.isActive ?? true}
+                />
+              </Box>
             ))}
           </Box>
         )}

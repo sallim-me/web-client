@@ -91,14 +91,14 @@ const MyPosts = () => {
             {currentPosts.map((post) => (
               <Grid item xs={6} key={post.productId}>
                 <PostCard
+                  key={post.productId}
                   id={post.productId}
                   title={post.title}
-                  modelName=""
-                  minPrice={0}
+                  modelName={post.modelName}
+                  minPrice={post.price}
                   images={[]}
                   isScraped={false}
                   onScrapClick={() => {}}
-                  onClick={() => navigate(`/post/detail/${post.productId}`)}
                   postType={post.postType.toLowerCase() as "buying" | "selling"}
                   isActive={post.isActive}
                   createdAt={post.createdAt}
