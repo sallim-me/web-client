@@ -76,6 +76,39 @@ export interface BuyingPostDetail {
   isActive: boolean;
 }
 
+interface SellingPostAnswer {
+  questionId: number;
+  answerContent: string;
+}
+
+interface CreateSellingPostRequest {
+  title: string;
+  content: string;
+  applianceType: "REFRIGERATOR" | "WASHING_MACHINE" | "AIR_CONDITIONER";
+  modelNumber: string;
+  modelName: string;
+  brand: string;
+  price: number;
+  userPrice: number;
+  answers: SellingPostAnswer[];
+}
+
+interface ApplianceQuestion {
+  id: number;
+  applianceType: "REFRIGERATOR" | "WASHING_MACHINE" | "AIR_CONDITIONER";
+  questionContent: string;
+  createdAt: string;
+  updatedAt: string;
+  deletedAt: string | null;
+}
+
+interface ApplianceQuestionsResponse {
+  status: number;
+  code: string;
+  message: string;
+  data: ApplianceQuestion[];
+}
+
 export const getAllProducts = async (): Promise<ProductListResponse> => {
   console.log("Calling getAllProducts API...");
   const response = await axiosInstance.get("/product/all");
@@ -87,6 +120,11 @@ export const createBuyingPost = async (
   data: CreateBuyingPostRequest
 ): Promise<CreateBuyingPostResponse> => {
   const response = await axiosInstance.post("/product/buying", data);
+  return response.data;
+};
+
+export const createSellingPost = async (data: CreateSellingPostRequest) => {
+  const response = await axiosInstance.post("/product/selling", data);
   return response.data;
 };
 
@@ -106,4 +144,13 @@ export const productApi = {
     );
     return response.data.data;
   },
+};
+
+export const getApplianceQuestions = async (
+  applianceType: "REFRIGERATOR" | "WASHING_MACHINE" | "AIR_CONDITIONER"
+): Promise<ApplianceQuestionsResponse> => {
+  const response = await axiosInstance.get(
+    `/appliance-questions/${applianceType}`
+  );
+  return response.data;
 };

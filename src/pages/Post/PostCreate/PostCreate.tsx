@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   Box,
@@ -18,7 +18,11 @@ import {
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import DeleteIcon from "@mui/icons-material/Delete";
 import AddPhotoAlternateIcon from "@mui/icons-material/AddPhotoAlternate";
-import { createBuyingPost } from "../../../api/product";
+import {
+  createBuyingPost,
+  createSellingPost,
+  getApplianceQuestions,
+} from "../../../api/product";
 import { memberApi } from "../../../api/member";
 import { useAuthStore } from "../../../store/useAuthStore";
 
@@ -29,15 +33,18 @@ interface PostForm {
   modelNumber: string;
   modelName: string;
   brand: string;
-  minPrice: string;
+  price: string;
+  userPrice: string;
   description: string;
   quantity: string;
   images: string[];
   defectAnswers: Record<string, string>;
 }
 
-interface DefectQuestions {
-  [key: string]: string[];
+interface ApplianceQuestion {
+  id: number;
+  applianceType: "REFRIGERATOR" | "WASHING_MACHINE" | "AIR_CONDITIONER";
+  questionContent: string;
 }
 
 const PostCreate = () => {
@@ -49,30 +56,14 @@ const PostCreate = () => {
     modelNumber: "",
     modelName: "",
     brand: "",
-    minPrice: "",
+    price: "",
+    userPrice: "",
     description: "",
     quantity: "",
     images: [],
     defectAnswers: {},
   });
-
-  const defectQuestions: DefectQuestions = {
-    REFRIGERATOR: [
-      "냉각 기능에 문제가 있나요?",
-      "문이 제대로 닫히나요?",
-      "내부 부품이 모두 있나요?",
-    ],
-    WASHING_MACHINE: [
-      "세탁 기능에 문제가 있나요?",
-      "배수가 잘 되나요?",
-      "소음이 심한가요?",
-    ],
-    AIR_CONDITIONER: [
-      "냉방 기능에 문제가 있나요?",
-      "실외기 상태는 어떤가요?",
-      "필터 상태는 어떤가요?",
-    ],
-  };
+  const [questions, setQuestions] = useState<ApplianceQuestion[]>([]);
 
   const handleBack = () => {
     navigate(-1);
@@ -105,9 +96,36 @@ const PostCreate = () => {
         console.log("Submitting buying post data:", data);
         await createBuyingPost(data);
       } else {
-        // 판매 글 작성 API는 아직 연결되지 않음
-        alert("판매 글 작성 기능은 아직 준비 중입니다.");
-        return;
+        const userProfile = useAuthStore.getState().userProfile;
+        if (!userProfile) {
+          alert("로그인이 필요합니다.");
+          navigate("/login");
+          return;
+        }
+
+        // 판매글 작성
+        const answers = questions.map((question) => ({
+          questionId: question.id,
+          answerContent: form.defectAnswers[question.questionContent] || "",
+        }));
+
+        const data = {
+          title: form.title,
+          content: form.description,
+          applianceType: form.category.toUpperCase() as
+            | "REFRIGERATOR"
+            | "WASHING_MACHINE"
+            | "AIR_CONDITIONER",
+          modelNumber: form.modelNumber,
+          modelName: form.modelName,
+          brand: form.brand,
+          price: parseInt(form.price),
+          userPrice: parseInt(form.userPrice),
+          answers,
+        };
+
+        console.log("Submitting selling post data:", data);
+        await createSellingPost(data);
       }
 
       navigate("/");
@@ -147,6 +165,21 @@ const PostCreate = () => {
       }
 
       console.log("User is a buyer, proceeding with post creation");
+    }
+
+    if (name === "category") {
+      try {
+        const response = await getApplianceQuestions(
+          value.toUpperCase() as
+            | "REFRIGERATOR"
+            | "WASHING_MACHINE"
+            | "AIR_CONDITIONER"
+        );
+        setQuestions(response.data);
+      } catch (error) {
+        console.error("Error fetching questions:", error);
+        alert("질문을 불러오는데 실패했습니다.");
+      }
     }
 
     setForm((prev) => ({
@@ -380,24 +413,61 @@ const PostCreate = () => {
                   required
                 />
 
+                {/* 가격 */}
+                <TextField
+                  label="판매가"
+                  name="price"
+                  value={form.price}
+                  onChange={handleChange}
+                  fullWidth
+                  required
+                  type="number"
+                  InputProps={{
+                    inputProps: { min: 0 },
+                  }}
+                />
+
+                {/* 희망가 */}
+                <TextField
+                  label="희망가"
+                  name="userPrice"
+                  value={form.userPrice}
+                  onChange={handleChange}
+                  fullWidth
+                  required
+                  type="number"
+                  InputProps={{
+                    inputProps: { min: 0 },
+                  }}
+                />
+
                 {/* 카테고리가 선택되었을 때만 제품 상태 확인 표시 */}
-                {form.category && defectQuestions[form.category] && (
+                {form.category && questions.length > 0 && (
                   <Box>
                     <Typography variant="subtitle1" sx={{ mb: 2 }}>
                       제품 상태 확인
                     </Typography>
                     <Stack spacing={2}>
-                      {defectQuestions[form.category].map((question) => (
-                        <TextField
-                          key={question}
-                          label={question}
-                          value={form.defectAnswers[question] || ""}
-                          onChange={(e) =>
-                            handleDefectQuestionChange(question, e.target.value)
-                          }
-                          fullWidth
-                          required
-                        />
+                      {questions.map((question) => (
+                        <Box key={question.id}>
+                          <Typography variant="body1" sx={{ mb: 1 }}>
+                            {question.questionContent}
+                          </Typography>
+                          <TextField
+                            value={
+                              form.defectAnswers[question.questionContent] || ""
+                            }
+                            onChange={(e) =>
+                              handleDefectQuestionChange(
+                                question.questionContent,
+                                e.target.value
+                              )
+                            }
+                            fullWidth
+                            required
+                            placeholder="답변을 입력해주세요"
+                          />
+                        </Box>
                       ))}
                     </Stack>
                   </Box>
