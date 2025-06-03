@@ -19,6 +19,8 @@ import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import DeleteIcon from "@mui/icons-material/Delete";
 import AddPhotoAlternateIcon from "@mui/icons-material/AddPhotoAlternate";
 import { createBuyingPost } from "../../../api/product";
+import { memberApi } from "../../../api/member";
+import { useAuthStore } from "../../../store/useAuthStore";
 
 interface PostForm {
   title: string;
@@ -40,6 +42,7 @@ interface DefectQuestions {
 
 const PostCreate = () => {
   const navigate = useNavigate();
+  const { userProfile } = useAuthStore();
   const [form, setForm] = useState<PostForm>({
     title: "",
     tradeType: "",
@@ -76,7 +79,8 @@ const PostCreate = () => {
     navigate(-1);
   };
 
-  const handleSubmit = async () => {
+  const handleSubmit = async (event: React.FormEvent) => {
+    event.preventDefault(); // 기본 폼 제출 방지
     if (!validateForm()) return;
 
     try {
@@ -93,6 +97,7 @@ const PostCreate = () => {
         });
 
         if (response.status === 200) {
+          alert("글 작성에 성공했습니다."); // 성공 메시지 추가
           navigate("/post/list");
         } else {
           alert("글 작성에 실패했습니다.");
@@ -117,8 +122,22 @@ const PostCreate = () => {
     }));
   };
 
-  const handleSelectChange = (e: SelectChangeEvent<string>) => {
+  const handleSelectChange = async (e: SelectChangeEvent<string>) => {
     const { name, value } = e.target;
+
+    if (name === "tradeType" && value === "buy") {
+      if (!userProfile) {
+        alert("로그인이 필요합니다.");
+        navigate("/login");
+        return;
+      }
+
+      if (!userProfile.isBuyer) {
+        alert("바이어로 등록된 사용자만 구매글을 작성할 수 있습니다.");
+        return;
+      }
+    }
+
     setForm((prev) => ({
       ...prev,
       [name]: value,
