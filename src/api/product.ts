@@ -28,7 +28,6 @@ export interface CreateBuyingPostRequest {
   content: string;
   quantity: number;
   applianceType: "REFRIGERATOR" | "WASHING_MACHINE" | "AIR_CONDITIONER";
-  price: number;
 }
 
 export interface CreateBuyingPostResponse {
@@ -40,7 +39,6 @@ export interface CreateBuyingPostResponse {
     content: string;
     quantity: number;
     applianceType: "REFRIGERATOR" | "WASHING_MACHINE" | "AIR_CONDITIONER";
-    price: number;
     isActive: boolean;
   };
 }
@@ -75,7 +73,6 @@ export interface BuyingPostDetail {
   content: string;
   quantity: number;
   applianceType: "REFRIGERATOR" | "WASHING_MACHINE" | "AIR_CONDITIONER";
-  price: number;
   isActive: boolean;
 }
 

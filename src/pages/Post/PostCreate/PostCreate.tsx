@@ -42,7 +42,6 @@ interface DefectQuestions {
 
 const PostCreate = () => {
   const navigate = useNavigate();
-  const { userProfile } = useAuthStore();
   const [form, setForm] = useState<PostForm>({
     title: "",
     tradeType: "",
@@ -58,17 +57,17 @@ const PostCreate = () => {
   });
 
   const defectQuestions: DefectQuestions = {
-    refrigerator: [
+    REFRIGERATOR: [
       "냉각 기능에 문제가 있나요?",
       "문이 제대로 닫히나요?",
       "내부 부품이 모두 있나요?",
     ],
-    washer: [
+    WASHING_MACHINE: [
       "세탁 기능에 문제가 있나요?",
       "배수가 잘 되나요?",
       "소음이 심한가요?",
     ],
-    aircon: [
+    AIR_CONDITIONER: [
       "냉방 기능에 문제가 있나요?",
       "실외기 상태는 어떤가요?",
       "필터 상태는 어떤가요?",
@@ -79,36 +78,42 @@ const PostCreate = () => {
     navigate(-1);
   };
 
-  const handleSubmit = async (event: React.FormEvent) => {
-    event.preventDefault(); // 기본 폼 제출 방지
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
     if (!validateForm()) return;
 
     try {
       if (form.tradeType === "buy") {
-        const response = await createBuyingPost({
+        const userProfile = useAuthStore.getState().userProfile;
+        console.log("Submitting as buyer, user profile:", userProfile);
+
+        if (!userProfile?.isBuyer) {
+          alert("바이어로 등록된 사용자만 구매글을 작성할 수 있습니다.");
+          return;
+        }
+
+        const data = {
           title: form.title,
           content: form.description,
-          quantity: parseInt(form.quantity),
-          applianceType: form.category as
+          applianceType: form.category.toUpperCase() as
             | "REFRIGERATOR"
             | "WASHING_MACHINE"
             | "AIR_CONDITIONER",
-          price: parseInt(form.minPrice),
-        });
+          quantity: parseInt(form.quantity),
+        };
 
-        if (response.status === 200) {
-          alert("글 작성에 성공했습니다."); // 성공 메시지 추가
-          navigate("/post/list");
-        } else {
-          alert("글 작성에 실패했습니다.");
-        }
+        console.log("Submitting buying post data:", data);
+        await createBuyingPost(data);
       } else {
         // 판매 글 작성 API는 아직 연결되지 않음
         alert("판매 글 작성 기능은 아직 준비 중입니다.");
+        return;
       }
+
+      navigate("/");
     } catch (error) {
-      console.error("글 작성 중 오류 발생:", error);
-      alert("글 작성 중 오류가 발생했습니다.");
+      console.error("Error creating post:", error);
+      alert("게시글 작성에 실패했습니다.");
     }
   };
 
@@ -126,6 +131,9 @@ const PostCreate = () => {
     const { name, value } = e.target;
 
     if (name === "tradeType" && value === "buy") {
+      const userProfile = useAuthStore.getState().userProfile;
+      console.log("User profile:", userProfile);
+
       if (!userProfile) {
         alert("로그인이 필요합니다.");
         navigate("/login");
@@ -133,14 +141,17 @@ const PostCreate = () => {
       }
 
       if (!userProfile.isBuyer) {
+        console.error("User is not a buyer:", userProfile);
         alert("바이어로 등록된 사용자만 구매글을 작성할 수 있습니다.");
         return;
       }
+
+      console.log("User is a buyer, proceeding with post creation");
     }
 
     setForm((prev) => ({
       ...prev,
-      [name]: value,
+      [name]: name === "category" ? value.toUpperCase() : value,
     }));
   };
 
@@ -333,9 +344,9 @@ const PostCreate = () => {
                     label="카테고리"
                     onChange={handleSelectChange}
                   >
-                    <MenuItem value="refrigerator">냉장고</MenuItem>
-                    <MenuItem value="washer">세탁기</MenuItem>
-                    <MenuItem value="aircon">에어컨</MenuItem>
+                    <MenuItem value="REFRIGERATOR">냉장고</MenuItem>
+                    <MenuItem value="WASHING_MACHINE">세탁기</MenuItem>
+                    <MenuItem value="AIR_CONDITIONER">에어컨</MenuItem>
                   </Select>
                 </FormControl>
 
@@ -367,20 +378,6 @@ const PostCreate = () => {
                   onChange={handleChange}
                   fullWidth
                   required
-                />
-
-                {/* 최저가 */}
-                <TextField
-                  label="최저가"
-                  name="minPrice"
-                  value={form.minPrice}
-                  onChange={handleChange}
-                  fullWidth
-                  required
-                  type="number"
-                  InputProps={{
-                    inputProps: { min: 0 },
-                  }}
                 />
 
                 {/* 카테고리가 선택되었을 때만 제품 상태 확인 표시 */}
@@ -432,9 +429,9 @@ const PostCreate = () => {
                     label="카테고리"
                     onChange={handleSelectChange}
                   >
-                    <MenuItem value="refrigerator">냉장고</MenuItem>
-                    <MenuItem value="washer">세탁기</MenuItem>
-                    <MenuItem value="aircon">에어컨</MenuItem>
+                    <MenuItem value="REFRIGERATOR">냉장고</MenuItem>
+                    <MenuItem value="WASHING_MACHINE">세탁기</MenuItem>
+                    <MenuItem value="AIR_CONDITIONER">에어컨</MenuItem>
                   </Select>
                 </FormControl>
 

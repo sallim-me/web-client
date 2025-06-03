@@ -48,24 +48,31 @@ axiosInstance.interceptors.request.use(
       delete config.headers.Authorization;
     } else {
       // 그 외의 요청에는 토큰 추가
-      const accessToken = useAuthStore.getState().accessToken;
-      if (accessToken) {
+      const token = localStorage.getItem("accessToken");
+      if (token) {
         // Bearer 토큰 형식으로 설정
-        config.headers["Authorization"] = `Bearer ${accessToken}`;
+        config.headers["Authorization"] = `Bearer ${token}`;
       }
     }
 
-    console.log("Request config:", {
+    // 상세 로깅 추가
+    console.log("🚀 Request Details:", {
       url: config.url,
       method: config.method,
-      headers: config.headers,
+      headers: {
+        ...config.headers,
+        Authorization: config.headers.Authorization
+          ? "Bearer [TOKEN]"
+          : undefined,
+      },
       data: config.data,
+      withCredentials: config.withCredentials,
     });
 
     return config;
   },
   (error) => {
-    console.error("Request error:", error);
+    console.error("❌ Request Error:", error);
     return Promise.reject(error);
   }
 );
@@ -73,25 +80,31 @@ axiosInstance.interceptors.request.use(
 // Response interceptor
 axiosInstance.interceptors.response.use(
   (response) => {
-    console.log("Response:", {
+    // 성공 응답 로깅
+    console.log("✅ Response Success:", {
+      url: response.config.url,
       status: response.status,
+      statusText: response.statusText,
       headers: response.headers,
       data: response.data,
     });
     return response;
   },
   async (error) => {
-    console.error("Response error details:", {
+    // 에러 응답 상세 로깅
+    console.error("❌ Response Error:", {
+      url: error.config?.url,
+      method: error.config?.method,
       status: error.response?.status,
       statusText: error.response?.statusText,
-      data: error.response?.data,
-      headers: error.response?.headers,
-      config: {
-        url: error.config?.url,
-        method: error.config?.method,
-        headers: error.config?.headers,
-        data: error.config?.data,
+      headers: {
+        ...error.config?.headers,
+        Authorization: error.config?.headers?.Authorization
+          ? "Bearer [TOKEN]"
+          : undefined,
       },
+      data: error.response?.data,
+      withCredentials: error.config?.withCredentials,
     });
 
     if (!error.response) {

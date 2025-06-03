@@ -56,6 +56,10 @@ export const useAuthStore = create<AuthState>()(
             };
             console.log("Storing tokens:", tokens);
 
+            // localStorage에 토큰 저장
+            localStorage.setItem("accessToken", tokens.accessToken);
+            localStorage.setItem("refreshToken", tokens.refreshToken);
+
             set({
               ...tokens,
               isAuthenticated: true,
@@ -84,6 +88,9 @@ export const useAuthStore = create<AuthState>()(
           set({ isLoading: true, error: null });
           try {
             await authApi.logout();
+            // localStorage에서 토큰 제거
+            localStorage.removeItem("accessToken");
+            localStorage.removeItem("refreshToken");
             set({
               accessToken: null,
               refreshToken: null,
@@ -130,6 +137,10 @@ export const useAuthStore = create<AuthState>()(
               refreshToken: response["refresh-token"],
             };
             console.log("Storing new tokens:", tokens);
+
+            // localStorage에 새 토큰 저장
+            localStorage.setItem("accessToken", tokens.accessToken);
+            localStorage.setItem("refreshToken", tokens.refreshToken);
 
             set({
               ...tokens,
