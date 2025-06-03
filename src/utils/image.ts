@@ -1,14 +1,14 @@
 const DEFAULT_IMAGES = {
-  airconditioner: "/images/airconditioner.svg",
-  refrigerator: "/images/refrigerator.svg",
-  washer: "/images/washer.svg",
+  AIRCONDITIONER: "/images/airconditioner.svg",
+  REFRIGERATOR: "/images/refrigerator.svg",
+  WASHER: "/images/washer.svg",
 } as const;
 
 type DefaultImageType = keyof typeof DEFAULT_IMAGES;
 
 export const getImageUrl = (
   imageUrl: string | null | undefined,
-  type: DefaultImageType = "refrigerator"
+  type: DefaultImageType = "REFRIGERATOR"
 ): string => {
   if (!imageUrl) {
     return DEFAULT_IMAGES[type];

@@ -161,13 +161,16 @@ const PostDetail = () => {
                   </Typography>
                   <Typography>
                     판매가:{" "}
-                    {(postDetail as SellingPostDetail).price.toLocaleString()}원
+                    {(
+                      postDetail as SellingPostDetail
+                    ).price?.toLocaleString() || 0}
+                    원
                   </Typography>
                   <Typography>
                     희망가:{" "}
                     {(
                       postDetail as SellingPostDetail
-                    ).userPrice.toLocaleString()}
+                    ).userPrice?.toLocaleString() || 0}
                     원
                   </Typography>
                 </>
@@ -176,10 +179,6 @@ const PostDetail = () => {
                 <>
                   <Typography>
                     수량: {(postDetail as BuyingPostDetail).quantity}개
-                  </Typography>
-                  <Typography>
-                    희망가:{" "}
-                    {(postDetail as BuyingPostDetail).price.toLocaleString()}원
                   </Typography>
                 </>
               )}

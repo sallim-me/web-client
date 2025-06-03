@@ -26,7 +26,7 @@ module.exports = function (app) {
   );
 
   app.use(
-    "/product",
+    "/product/buying",
     createProxyMiddleware({
       target: "https://dev-back.sallim.me",
       changeOrigin: true,

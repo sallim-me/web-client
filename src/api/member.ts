@@ -35,6 +35,34 @@ export interface GetMyPostsResponse {
   data: MyPost[];
 }
 
+// 회원 정보 조회 응답 타입
+export interface MemberInfo {
+  username: string;
+  name: string;
+  nickname: string;
+  isBuyer: boolean;
+}
+
+export interface GetMemberResponse {
+  status: number;
+  code: string;
+  message: string;
+  data: MemberInfo;
+}
+
+// 내 프로필 정보 조회 응답 타입
+export interface GetMyProfileResponse {
+  status: number;
+  code: string;
+  message: string;
+  data: {
+    username: string;
+    name: string;
+    nickname: string;
+    isBuyer: boolean;
+  };
+}
+
 const MEMBER_URL = "/member";
 
 export const memberApi = {
@@ -70,6 +98,38 @@ export const memberApi = {
       return response.data;
     } catch (error: any) {
       console.error("Get my posts error:", {
+        status: error.response?.status,
+        data: error.response?.data,
+      });
+      throw error;
+    }
+  },
+
+  // 특정 회원 정보 조회
+  getMember: async (memberId: number): Promise<GetMemberResponse> => {
+    try {
+      const response = await axiosInstance.get<GetMemberResponse>(
+        `${MEMBER_URL}/${memberId}`
+      );
+      return response.data;
+    } catch (error: any) {
+      console.error("Get member info error:", {
+        status: error.response?.status,
+        data: error.response?.data,
+      });
+      throw error;
+    }
+  },
+
+  // 내 프로필 정보 조회
+  getMyProfile: async (): Promise<GetMyProfileResponse> => {
+    try {
+      const response = await axiosInstance.get<GetMyProfileResponse>(
+        `${MEMBER_URL}/me`
+      );
+      return response.data;
+    } catch (error: any) {
+      console.error("Get my profile error:", {
         status: error.response?.status,
         data: error.response?.data,
       });
