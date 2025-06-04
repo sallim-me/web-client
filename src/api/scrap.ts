@@ -78,3 +78,18 @@ export const scrapApi = {
     await axiosInstance.delete(`/scrap/${scrapId}`);
   },
 };
+
+export const checkScrap = async (productId: number): Promise<boolean> => {
+  const response = await axiosInstance.get(`/scrap/check/${productId}`);
+  return response.data;
+};
+
+export const createScrap = async (productId: number) => {
+  const response = await axiosInstance.post(`/scrap/${productId}`);
+  return response.data;
+};
+
+export const deleteScrap = async (productId: number) => {
+  const response = await axiosInstance.delete(`/scrap/${productId}`);
+  return response.data;
+};

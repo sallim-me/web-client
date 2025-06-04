@@ -60,6 +60,7 @@ export interface SellingPostDetail {
   brand: string;
   price: number;
   userPrice: number;
+  memberId: number;
   answers: {
     id: number;
     questionId: number;
@@ -74,6 +75,7 @@ export interface BuyingPostDetail {
   quantity: number;
   applianceType: "REFRIGERATOR" | "WASHING_MACHINE" | "AIR_CONDITIONER";
   isActive: boolean;
+  memberId: number;
 }
 
 interface SellingPostAnswer {
@@ -107,6 +109,22 @@ interface ApplianceQuestionsResponse {
   code: string;
   message: string;
   data: ApplianceQuestion[];
+}
+
+export interface UpdateSellingPostRequest {
+  title: string;
+  content: string;
+  applianceType: "REFRIGERATOR" | "WASHING_MACHINE" | "AIR_CONDITIONER";
+  isActive: boolean;
+  modelNumber: string;
+  modelName: string;
+  brand: string;
+  price: number;
+  userPrice: number;
+  answers: {
+    questionId: number;
+    answerContent: string;
+  }[];
 }
 
 export const getAllProducts = async (): Promise<ProductListResponse> => {
@@ -144,6 +162,14 @@ export const productApi = {
     );
     return response.data.data;
   },
+
+  deletePost: async (productId: number) => {
+    const response = await axiosInstance.delete(`/product/${productId}`);
+    return response.data;
+  },
+
+  deleteSellingPost: (productId: number) =>
+    axiosInstance.delete(`/product/selling/${productId}`),
 };
 
 export const getApplianceQuestions = async (
@@ -151,6 +177,17 @@ export const getApplianceQuestions = async (
 ): Promise<ApplianceQuestionsResponse> => {
   const response = await axiosInstance.get(
     `/appliance-questions/${applianceType}`
+  );
+  return response.data;
+};
+
+export const updateSellingPost = async (
+  productId: number,
+  data: UpdateSellingPostRequest
+) => {
+  const response = await axiosInstance.patch(
+    `/product/selling/${productId}`,
+    data
   );
   return response.data;
 };
