@@ -9,6 +9,7 @@ import {
   Paper,
   styled,
 } from "@mui/material";
+import { PWAInstallPrompt } from "@/components/PWAInstallPrompt";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import { Alarm } from "../../types/alarm";
 
@@ -67,6 +68,8 @@ const AlarmPage: React.FC = () => {
 
   return (
     <Box sx={{ height: "100vh", display: "flex", flexDirection: "column" }}>
+      {/* PWA 설치 프롬프트 */}
+      <PWAInstallPrompt />
       <Paper
         elevation={0}
         sx={{

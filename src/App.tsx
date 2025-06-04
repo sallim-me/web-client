@@ -2,6 +2,7 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import Provider from "./provider";
 import Layout from "./components/Layout/Layout";
 import ProtectedRoute from "./components/ProtectedRoute";
+// import { PWAInstallPrompt } from "./components/PWAInstallPrompt";
 
 import Login from "./pages/Account/Login/Login";
 import SignUp from "./pages/Account/SignUp/SignUp";
@@ -53,6 +54,9 @@ export function App() {
           {/* 필요하다면 인증되지 않은 사용자에게 보여줄 404 페이지 등을 여기에 추가 */}
           {/* <Route path="*" element={<NotFoundPage />} /> */}
         </Routes>
+        
+        {/* PWA 설치 프롬프트 */}
+        {/* <PWAInstallPrompt /> */}
       </BrowserRouter>
     </Provider>
   );
