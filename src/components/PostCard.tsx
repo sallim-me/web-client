@@ -12,7 +12,7 @@ interface PostCardProps {
   title: string;
   modelName: string;
   minPrice: number;
-  images?: string[];
+  thumbnailUrl?: string;
   isScraped: boolean;
   onScrapClick: () => void;
   postType: "buying" | "selling";
@@ -26,7 +26,7 @@ const PostCard: React.FC<PostCardProps> = ({
   title,
   modelName,
   minPrice,
-  images,
+  thumbnailUrl,
   isScraped,
   onScrapClick,
   postType,
@@ -44,7 +44,7 @@ const PostCard: React.FC<PostCardProps> = ({
     navigate(`/post/detail/${id}?type=${postType}`);
   };
 
-  const imageUrl = images?.[0] ? getImageUrl(images[0]) : null;
+  const imageUrl = thumbnailUrl ? thumbnailUrl : null;
 
   return (
     <Paper

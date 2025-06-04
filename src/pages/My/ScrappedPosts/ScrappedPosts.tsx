@@ -125,7 +125,7 @@ const ScrappedPosts = () => {
               title={post.title}
               modelName={post.modelName}
               minPrice={post.minPrice}
-              images={[post.imageUrl]}
+              thumbnailUrl={post.imageUrl}
               isScraped={post.isScraped}
               onScrapClick={() => handleScrap(post.id)}
               postType={post.type === "buy" ? "buying" : "selling"}

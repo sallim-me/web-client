@@ -316,7 +316,10 @@ const MyPage = () => {
                   title={scrap.productTitle}
                   modelName={scrap.modelName || ""}
                   minPrice={scrap.price || 0}
-                  images={scrap.images || []}
+                  // thumbnailUrl={scrap.images[0] || ""}
+                  thumbnailUrl={
+                    scrap.images?.length > 0 ? scrap.images[0] : undefined
+                  }
                   isScraped={true}
                   onScrapClick={() => {}}
                   postType={

@@ -14,6 +14,7 @@ export interface Product {
   createdAt: string;
   memberId: number;
   scrapId?: number;
+  thumbnailUrl: string;
 }
 
 export interface ProductListResponse {

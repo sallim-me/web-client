@@ -125,7 +125,7 @@ const Scrapped = () => {
                     title={scrap.title}
                     modelName={scrap.modelName}
                     minPrice={scrap.price}
-                    images={scrap.images}
+                    thumbnailUrl={scrap.images[0] || ""}
                     isScraped={true}
                     onScrapClick={() => handleScrapClick(scrap.productId)}
                     postType={

@@ -243,7 +243,7 @@ const PostList = () => {
                   title={product.title}
                   modelName={product.modelName}
                   minPrice={product.priceOrQuantity}
-                  images={[]}
+                  thumbnailUrl={product?.thumbnailUrl}
                   isScraped={product.isScraped}
                   onScrapClick={() => handleScrapClick(product.id)}
                   postType={
