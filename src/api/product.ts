@@ -127,6 +127,14 @@ export interface UpdateSellingPostRequest {
   }[];
 }
 
+export interface UpdateBuyingPostRequest {
+  title: string;
+  content: string;
+  quantity: number;
+  applianceType: "REFRIGERATOR" | "WASHING_MACHINE" | "AIR_CONDITIONER";
+  isActive: boolean;
+}
+
 export const getAllProducts = async (): Promise<ProductListResponse> => {
   console.log("Calling getAllProducts API...");
   const response = await axiosInstance.get("/product/all");
@@ -170,6 +178,20 @@ export const productApi = {
 
   deleteSellingPost: (productId: number) =>
     axiosInstance.delete(`/product/selling/${productId}`),
+
+  updateBuyingPost: async (
+    productId: number,
+    data: UpdateBuyingPostRequest
+  ) => {
+    const response = await axiosInstance.patch(
+      `/product/buying/${productId}`,
+      data
+    );
+    return response.data;
+  },
+
+  deleteBuyingPost: (productId: number) =>
+    axiosInstance.delete(`/product/buying/${productId}`),
 };
 
 export const getApplianceQuestions = async (

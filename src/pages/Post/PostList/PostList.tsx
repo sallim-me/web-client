@@ -122,7 +122,7 @@ const PostList = () => {
       if (product.isScraped) {
         await scrapApi.deleteScrap(productId);
       } else {
-        await scrapApi.addScrap({ productId });
+        await scrapApi.createScrap({ productId });
       }
 
       // Update the product's scrap status in the local state

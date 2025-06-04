@@ -29,8 +29,9 @@ import BookmarkBorderIcon from "@mui/icons-material/BookmarkBorder";
 import { productApi } from "../../../api/product";
 import type { SellingPostDetail, BuyingPostDetail } from "../../../api/product";
 import { useAuthStore } from "../../../store/useAuthStore";
-import { checkScrap, createScrap, deleteScrap } from "../../../api/scrap";
+import { checkScrap, scrapApi } from "../../../api/scrap";
 import { updateSellingPost, getApplianceQuestions } from "../../../api/product";
+import axios, { AxiosError } from "axios";
 
 const PostDetail = () => {
   const { id } = useParams<{ id: string }>();
@@ -43,6 +44,7 @@ const PostDetail = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isScrapped, setIsScrapped] = useState(false);
+  const [scrapId, setScrapId] = useState<number | null>(null);
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const userProfile = useAuthStore((state) => state.userProfile);
   const [editOpen, setEditOpen] = useState(false);
@@ -87,7 +89,7 @@ const PostDetail = () => {
         // 스크랩 상태 확인
         const scrapStatus = await checkScrap(Number(id));
         setIsScrapped(scrapStatus);
-      } catch (error) {
+      } catch (error: AxiosError | any) {
         console.error("Error fetching post detail:", error);
         setError("게시글을 불러오는데 실패했습니다.");
         setPostDetail(null); // Reset postDetail on error
@@ -118,7 +120,7 @@ const PostDetail = () => {
     setEditForm({
       ...postDetail,
       isActive: postDetail.isActive,
-      answers: (postDetail as any).answers.map((a: any) => ({ ...a })),
+      answers: (postDetail as any).answers?.map((a: any) => ({ ...a })) || [],
     });
     // 질문 불러오기
     setEditLoading(true);
@@ -179,23 +181,33 @@ const PostDetail = () => {
     if (!id) return;
     setEditLoading(true);
     try {
-      await updateSellingPost(Number(id), {
-        title: editForm.title,
-        content: editForm.content,
-        applianceType: editForm.applianceType,
-        isActive: editForm.isActive,
-        modelNumber: editForm.modelNumber,
-        modelName: editForm.modelName,
-        brand: editForm.brand,
-        price: Number(editForm.price),
-        userPrice: Number(editForm.userPrice),
-        answers: editQuestions.map((q: any) => ({
-          questionId: q.id,
-          answerContent:
-            editForm.answers.find((a: any) => a.questionId === q.id)
-              ?.answerContent || "",
-        })),
-      });
+      if (postType === "selling") {
+        await updateSellingPost(Number(id), {
+          title: editForm.title,
+          content: editForm.content,
+          applianceType: editForm.applianceType,
+          isActive: editForm.isActive,
+          modelNumber: editForm.modelNumber,
+          modelName: editForm.modelName,
+          brand: editForm.brand,
+          price: Number(editForm.price),
+          userPrice: Number(editForm.userPrice),
+          answers: editQuestions.map((q: any) => ({
+            questionId: q.id,
+            answerContent:
+              editForm.answers.find((a: any) => a.questionId === q.id)
+                ?.answerContent || "",
+          })),
+        });
+      } else if (postType === "buying") {
+        await productApi.updateBuyingPost(Number(id), {
+          title: editForm.title,
+          content: editForm.content,
+          quantity: Number(editForm.quantity), // Ensure quantity is a number
+          applianceType: editForm.applianceType,
+          isActive: editForm.isActive,
+        });
+      }
       setEditOpen(false);
       window.location.reload();
     } catch (e) {
@@ -212,6 +224,8 @@ const PostDetail = () => {
       try {
         if (postType === "selling") {
           await productApi.deleteSellingPost(Number(id));
+        } else if (postType === "buying") {
+          await productApi.deleteBuyingPost(Number(id));
         }
         navigate("/");
       } catch (error) {
@@ -223,16 +237,57 @@ const PostDetail = () => {
 
   const handleScrap = async () => {
     if (!id) return;
+
+    // Check if user is logged in
+    if (!userProfile || !userProfile.id) {
+      alert("로그인이 필요합니다.");
+      // Optionally redirect to login page
+      // navigate('/login');
+      return;
+    }
+
     try {
       if (isScrapped) {
-        await deleteScrap(Number(id));
+        // 스크랩 취소
+        if (scrapId) {
+          await scrapApi.deleteScrap(scrapId); // Use scrapApi.deleteScrap with scrapId
+          setIsScrapped(false);
+          setScrapId(null); // Reset scrapId after deletion
+        } else {
+          // This case might happen if the page is loaded with isScrapped true, but scrapId wasn't fetched (checkScrap limitation)
+          // Ideally, checkScrap would return the scrapId.
+          // For now, alert the user or try to find the scrapId (e.g., by fetching scrap list). Alerting for now.
+          console.error("Scrap ID not available for deletion.");
+          alert(
+            "스크랩 취소에 실패했습니다. (스크랩 ID 없음 - 새로고침 후 다시 시도해주세요.)"
+          );
+        }
       } else {
-        await createScrap(Number(id));
+        // 스크랩 요청
+        const response = await scrapApi.createScrap({ productId: Number(id) }); // Use scrapApi.createScrap with data object
+        // Assuming createScrap returns the created Scrap object, which has an 'id' field
+        if (response && response.id) {
+          // Check if response and response.id exist
+          setScrapId(response.id); // Set scrapId from the response
+          setIsScrapped(true);
+        } else {
+          console.error(
+            "Failed to get scrap ID from createScrap response.",
+            response
+          );
+          alert("스크랩 요청에 실패했습니다. (스크랩 ID 응답 오류)");
+        }
       }
-      setIsScrapped(!isScrapped);
-    } catch (error) {
+    } catch (error: AxiosError | any) {
       console.error("Error toggling scrap:", error);
-      alert("스크랩 상태 변경에 실패했습니다.");
+      if (axios.isAxiosError(error)) {
+        alert(
+          "스크랩 상태 변경에 실패했습니다: " +
+            (error.response?.data?.message || error.message)
+        ); // Provide more specific error
+      } else {
+        alert("스크랩 상태 변경에 실패했습니다.");
+      }
     }
   };
 
@@ -440,23 +495,29 @@ const PostDetail = () => {
           ) : (
             editForm && (
               <Stack spacing={2} mt={1}>
-                <FormControl fullWidth required>
-                  <InputLabel>거래 유형</InputLabel>
-                  <Select
-                    value={editForm.isActive}
-                    onChange={handleTradeTypeChange}
-                    label="거래 유형"
-                  >
-                    {postType === "selling"
-                      ? [
-                          <MenuItem key="ACTIVE" value="true">
-                            판매
-                          </MenuItem>,
-                          <MenuItem key="COMPLETED" value="false">
-                            판매 완료
-                          </MenuItem>,
-                        ]
-                      : [
+                {/* Fields specific to Selling/Buying */}
+                {postType === "buying" ? (
+                  // Fields for Buying Post Edit (Order: 제목, 거래 유형, 카테고리, 수량, 상세 설명)
+                  <>
+                    {/* 제목 */}
+                    <TextField
+                      label="제목"
+                      name="title"
+                      value={editForm.title}
+                      onChange={handleEditFormChange}
+                      fullWidth
+                      required
+                    />
+                    {/* 거래 유형 */}
+                    <FormControl fullWidth required>
+                      <InputLabel>거래 유형</InputLabel>
+                      <Select
+                        value={editForm.isActive}
+                        onChange={handleTradeTypeChange}
+                        label="거래 유형"
+                      >
+                        {[
+                          // Explicitly wrap MenuItems in an array for buying
                           <MenuItem key="ACTIVE" value="true">
                             구매
                           </MenuItem>,
@@ -464,112 +525,174 @@ const PostDetail = () => {
                             구매 완료
                           </MenuItem>,
                         ]}
-                  </Select>
-                </FormControl>
-                <TextField
-                  label="제목"
-                  name="title"
-                  value={editForm.title}
-                  onChange={handleEditFormChange}
-                  fullWidth
-                  required
-                />
-                <TextField
-                  label="상세 설명"
-                  name="content"
-                  value={editForm.content}
-                  onChange={handleEditFormChange}
-                  fullWidth
-                  multiline
-                  rows={3}
-                  required
-                />
-                <FormControl fullWidth required>
-                  <InputLabel>카테고리</InputLabel>
-                  <Select
-                    name="applianceType"
-                    value={editForm.applianceType}
-                    label="카테고리"
-                    onChange={handleEditCategoryChange}
-                  >
-                    <MenuItem value="REFRIGERATOR">냉장고</MenuItem>
-                    <MenuItem value="WASHING_MACHINE">세탁기</MenuItem>
-                    <MenuItem value="AIR_CONDITIONER">에어컨</MenuItem>
-                  </Select>
-                </FormControl>
-                <TextField
-                  label="모델명"
-                  name="modelName"
-                  value={editForm.modelName}
-                  onChange={handleEditFormChange}
-                  fullWidth
-                  required
-                />
-                <TextField
-                  label="모델 번호"
-                  name="modelNumber"
-                  value={editForm.modelNumber}
-                  onChange={handleEditFormChange}
-                  fullWidth
-                  required
-                />
-                <TextField
-                  label="브랜드"
-                  name="brand"
-                  value={editForm.brand}
-                  onChange={handleEditFormChange}
-                  fullWidth
-                  required
-                />
-                <TextField
-                  label="판매가"
-                  name="price"
-                  value={editForm.price}
-                  onChange={handleEditFormChange}
-                  fullWidth
-                  required
-                  type="number"
-                />
-                <TextField
-                  label="희망가"
-                  name="userPrice"
-                  value={editForm.userPrice}
-                  onChange={handleEditFormChange}
-                  fullWidth
-                  required
-                  type="number"
-                />
-                <Box>
-                  <Typography variant="subtitle2" sx={{ mb: 1 }}>
-                    제품 상태 확인
-                  </Typography>
-                  <Stack spacing={2}>
-                    {editQuestions.map((q: any) => (
-                      <Box key={q.id}>
-                        <Typography
-                          variant="body2"
-                          color="text.secondary"
-                          sx={{ mb: 1 }}
-                        >
-                          {q.questionContent}
-                        </Typography>
-                        <TextField
-                          value={
-                            editForm.answers.find(
-                              (a: any) => a.questionId === q.id
-                            )?.answerContent || ""
-                          }
-                          onChange={(e) =>
-                            handleEditAnswerChange(q.id, e.target.value)
-                          }
-                          fullWidth
-                          required
-                          placeholder="답변을 입력해주세요"
-                        />
-                      </Box>
-                    ))}
-                  </Stack>
-                </Box>
+                      </Select>
+                    </FormControl>
+                    {/* 카테고리 */}
+                    <FormControl fullWidth required>
+                      <InputLabel>카테고리</InputLabel>
+                      <Select
+                        name="applianceType"
+                        value={editForm.applianceType}
+                        label="카테고리"
+                        onChange={handleEditCategoryChange}
+                      >
+                        <MenuItem value="REFRIGERATOR">냉장고</MenuItem>
+                        <MenuItem value="WASHING_MACHINE">세탁기</MenuItem>
+                        <MenuItem value="AIR_CONDITIONER">에어컨</MenuItem>
+                      </Select>
+                    </FormControl>
+                    {/* 수량 */}
+                    <TextField
+                      label="수량"
+                      name="quantity"
+                      value={editForm.quantity}
+                      onChange={handleEditFormChange}
+                      fullWidth
+                      required
+                      type="number"
+                    />
+                    {/* 상세 설명 */}
+                    <TextField
+                      label="상세 설명"
+                      name="content"
+                      value={editForm.content}
+                      onChange={handleEditFormChange}
+                      fullWidth
+                      multiline
+                      rows={3}
+                      required
+                    />
+                  </>
+                ) : postType === "selling" && editForm ? (
+                  // Fields for Selling Post Edit
+                  <>
+                    <TextField
+                      label="제목"
+                      name="title"
+                      value={editForm.title}
+                      onChange={handleEditFormChange}
+                      fullWidth
+                      required
+                    />
+                    <FormControl fullWidth required>
+                      {" "}
+                      // Keep this one for selling
+                      <InputLabel>거래 유형</InputLabel>
+                      <Select
+                        value={editForm.isActive}
+                        onChange={handleTradeTypeChange}
+                        label="거래 유형"
+                      >
+                        {[
+                          // Explicitly wrap MenuItems in an array for selling
+                          <MenuItem key="ACTIVE" value="true">
+                            판매
+                          </MenuItem>,
+                          <MenuItem key="COMPLETED" value="false">
+                            판매 완료
+                          </MenuItem>,
+                        ]}
+                      </Select>
+                    </FormControl>
+                    <TextField
+                      label="상세 설명"
+                      name="content"
+                      value={editForm.content}
+                      onChange={handleEditFormChange}
+                      fullWidth
+                      multiline
+                      rows={3}
+                      required
+                    />
+                    <FormControl fullWidth required>
+                      <InputLabel>카테고리</InputLabel>
+                      <Select
+                        name="applianceType"
+                        value={editForm.applianceType}
+                        label="카테고리"
+                        onChange={handleEditCategoryChange}
+                      >
+                        <MenuItem value="REFRIGERATOR">냉장고</MenuItem>
+                        <MenuItem value="WASHING_MACHINE">세탁기</MenuItem>
+                        <MenuItem value="AIR_CONDITIONER">에어컨</MenuItem>
+                      </Select>
+                    </FormControl>
+
+                    <TextField
+                      label="모델명"
+                      name="modelName"
+                      value={editForm.modelName}
+                      onChange={handleEditFormChange}
+                      fullWidth
+                      required
+                    />
+                    <TextField
+                      label="모델 번호"
+                      name="modelNumber"
+                      value={editForm.modelNumber}
+                      onChange={handleEditFormChange}
+                      fullWidth
+                      required
+                    />
+                    <TextField
+                      label="브랜드"
+                      name="brand"
+                      value={editForm.brand}
+                      onChange={handleEditFormChange}
+                      fullWidth
+                      required
+                    />
+                    <TextField
+                      label="판매가"
+                      name="price"
+                      value={editForm.price}
+                      onChange={handleEditFormChange}
+                      fullWidth
+                      required
+                      type="number"
+                    />
+                    <TextField
+                      label="희망가"
+                      name="userPrice"
+                      value={editForm.userPrice}
+                      onChange={handleEditFormChange}
+                      fullWidth
+                      required
+                      type="number"
+                    />
+                    <Box>
+                      <Typography variant="subtitle2" sx={{ mb: 1 }}>
+                        제품 상태 확인
+                      </Typography>
+                      <Stack spacing={2}>
+                        {editQuestions.map((q: any) => (
+                          <Box key={q.id}>
+                            <Typography
+                              variant="body2"
+                              color="text.secondary"
+                              sx={{ mb: 1 }}
+                            >
+                              {q.questionContent}
+                            </Typography>
+                            <TextField
+                              value={
+                                editForm.answers.find(
+                                  (a: any) => a.questionId === q.id
+                                )?.answerContent || ""
+                              }
+                              onChange={(e) =>
+                                handleEditAnswerChange(q.id, e.target.value)
+                              }
+                              fullWidth
+                              required
+                              placeholder="답변을 입력해주세요"
+                            />
+                          </Box>
+                        ))}
+                      </Stack>
+                    </Box>
+                  </>
+                ) : null}
               </Stack>
             )
           )}

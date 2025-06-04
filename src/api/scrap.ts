@@ -56,40 +56,29 @@ export const scrapApi = {
     }
   },
 
-  // 스크랩 취소
-  deleteScrap: async (productId: number): Promise<void> => {
-    try {
-      await axiosInstance.delete(`${SCRAP_URL}/${productId}`);
-    } catch (error: any) {
-      console.error("Delete scrap error:", {
-        status: error.response?.status,
-        data: error.response?.data,
-      });
-      throw error;
-    }
-  },
-
-  addScrap: async (data: AddScrapRequest): Promise<Scrap> => {
-    const response = await axiosInstance.post("/scrap", data);
+  // 스크랩 생성
+  createScrap: async (data: AddScrapRequest): Promise<Scrap> => {
+    const response = await axiosInstance.post(SCRAP_URL, data);
     return response.data;
   },
 
-  removeScrap: async (scrapId: number): Promise<void> => {
-    await axiosInstance.delete(`/scrap/${scrapId}`);
+  // 스크랩 취소 (ID로 삭제)
+  deleteScrap: async (scrapId: number): Promise<void> => {
+    await axiosInstance.delete(`${SCRAP_URL}/${scrapId}`);
   },
 };
 
 export const checkScrap = async (productId: number): Promise<boolean> => {
-  const response = await axiosInstance.get(`/scrap/check/${productId}`);
-  return response.data;
-};
-
-export const createScrap = async (productId: number) => {
-  const response = await axiosInstance.post(`/scrap/${productId}`);
-  return response.data;
-};
-
-export const deleteScrap = async (productId: number) => {
-  const response = await axiosInstance.delete(`/scrap/${productId}`);
-  return response.data;
+  try {
+    const response = await axiosInstance.get(`/scrap/check/${productId}`);
+    return response.data;
+  } catch (error: any) {
+    console.error("Check scrap error:", {
+      status: error.response?.status,
+      data: error.response?.data,
+    });
+    // API에서 스크랩되지 않은 경우 에러 응답을 줄 수도 있으므로 false 반환
+    if (error.response?.status === 404) return false;
+    throw error;
+  }
 };
