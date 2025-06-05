@@ -33,6 +33,8 @@ import { checkScrap, scrapApi } from "../../../api/scrap";
 import { updateSellingPost, getApplianceQuestions } from "../../../api/product";
 import axios, { AxiosError } from "axios";
 
+import { PostPhoto } from "./PostPhoto";
+
 const PostDetail = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
@@ -239,18 +241,18 @@ const PostDetail = () => {
     if (!id) return;
 
     // Check if user is logged in
-    if (!userProfile || !userProfile.id) {
-      alert("로그인이 필요합니다.");
-      // Optionally redirect to login page
-      // navigate('/login');
-      return;
-    }
+    // if (!userProfile || !userProfile.id) {
+    //   alert("로그인이 필요합니다.");
+    //   // Optionally redirect to login page
+    //   // navigate('/login');
+    //   return;
+    // }
 
     try {
       if (isScrapped) {
         // 스크랩 취소
-        if (scrapId) {
-          await scrapApi.deleteScrap(scrapId); // Use scrapApi.deleteScrap with scrapId
+        if (id) {
+          await scrapApi.deleteScrap(Number(id)); // Use scrapApi.deleteScrap with scrapId
           setIsScrapped(false);
           setScrapId(null); // Reset scrapId after deletion
         } else {
@@ -366,6 +368,9 @@ const PostDetail = () => {
           )}
         </Stack>
       </Paper>
+
+      {/* 사진 */}
+      <PostPhoto productId={1} />
 
       {/* 글 내용 */}
       <Paper sx={{ p: 2 }}>
