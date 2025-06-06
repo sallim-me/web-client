@@ -110,11 +110,10 @@ const Scrapped = () => {
                 id: scrap.productId,
                 scrapId: scrap.id,
                 postType: scrap.postType,
-                title: scrap.title,
-                modelName: scrap.modelName,
-                price: scrap.price,
-                isActive: scrap.isActive,
-                images: scrap.images,
+                title: scrap.productTitle,
+                modelName: scrap.memberNickname,
+                price: scrap.productPrice,
+                createdAt: scrap.createdAt,
               });
               return (
                 <Grid item xs={6} key={scrap.productId}>
@@ -122,16 +121,18 @@ const Scrapped = () => {
                     key={scrap.productId}
                     id={scrap.productId}
                     scrapId={scrap.id}
-                    title={scrap.title}
-                    modelName={scrap.modelName}
-                    minPrice={scrap.price}
-                    thumbnailUrl={scrap.images[0] || ""}
+                    title={scrap.productTitle}
+                    modelName={scrap.memberNickname}
+                    minPrice={scrap.productPrice || 0}
+                    thumbnailUrl={`${process.env.PUBLIC_URL}/images/${
+                      scrap.postType === "BUYING" ? "buy" : "sell"
+                    }.svg`}
                     isScraped={true}
                     onScrapClick={() => handleScrapClick(scrap.productId)}
                     postType={
                       scrap.postType.toLowerCase() as "buying" | "selling"
                     }
-                    isActive={scrap.isActive}
+                    isActive={true}
                     createdAt={scrap.createdAt}
                   />
                 </Grid>

@@ -282,75 +282,59 @@ const MyPage = () => {
               },
             }}
           >
-            {scraps.slice(0, 5).map((scrap) => {
-              console.log("Scrap item postType:", scrap.postType);
-              return (
-                <Paper
-                  key={scrap.id}
-                  onClick={() =>
-                    navigate(
-                      `/post/detail/${scrap.productId}?type=${
-                        typeof scrap.postType === "string"
-                          ? scrap.postType.toLowerCase()
-                          : "selling"
-                      }`
-                    )
-                  }
+            {scraps.slice(0, 5).map((scrap) => (
+              <Paper
+                key={scrap.id}
+                onClick={() =>
+                  navigate(
+                    `/post/detail/${
+                      scrap.productId
+                    }?type=${scrap.postType.toLowerCase()}`
+                  )
+                }
+                sx={{
+                  flexShrink: 0,
+                  width: 140,
+                  cursor: "pointer",
+                  "&:hover": {
+                    bgcolor: "action.hover",
+                  },
+                }}
+              >
+                <Box
                   sx={{
-                    flexShrink: 0,
-                    width: 140,
-                    cursor: "pointer",
-                    "&:hover": {
-                      bgcolor: "action.hover",
-                    },
+                    height: 70,
+                    bgcolor: "grey.200",
+                    borderRadius: "8px 8px 0 0",
+                    overflow: "hidden",
                   }}
                 >
-                  <Box
-                    sx={{
-                      height: 70,
-                      bgcolor: "grey.200",
-                      borderRadius: "8px 8px 0 0",
-                      overflow: "hidden",
+                  <img
+                    src={`${process.env.PUBLIC_URL}/images/${
+                      scrap.postType === "BUYING" ? "buy" : "sell"
+                    }.svg`}
+                    alt={scrap.productTitle}
+                    style={{
+                      width: "100%",
+                      height: "100%",
+                      objectFit: "cover",
                     }}
-                  >
-                    {scrap.images && scrap.images.length > 0 ? (
-                      <img
-                        src={scrap.images[0]}
-                        alt={scrap.title}
-                        style={{
-                          width: "100%",
-                          height: "100%",
-                          objectFit: "cover",
-                        }}
-                      />
-                    ) : (
-                      <Box
-                        sx={{
-                          width: "100%",
-                          height: "100%",
-                          display: "flex",
-                          justifyContent: "center",
-                          alignItems: "center",
-                          bgcolor: "grey.300",
-                        }}
-                      >
-                        <Typography variant="caption" color="text.secondary">
-                          이미지 없음
-                        </Typography>
-                      </Box>
-                    )}
-                  </Box>
-                  <Box sx={{ p: 1 }}>
-                    <Typography variant="body2" noWrap sx={{ mb: 0.5 }}>
-                      {scrap.productTitle}
-                    </Typography>
-                    <Typography variant="body2" fontWeight="bold">
-                      ₩{(scrap.price ?? 0).toLocaleString()}
-                    </Typography>
-                  </Box>
-                </Paper>
-              );
-            })}
+                  />
+                </Box>
+                <Box sx={{ p: 1 }}>
+                  <Typography variant="body2" noWrap sx={{ mb: 0.5 }}>
+                    {scrap.productTitle}
+                  </Typography>
+                  <Typography variant="body2" color="primary" fontWeight="bold">
+                    {scrap.postType === "SELLING" ? "판매" : "구매"}
+                  </Typography>
+                  <Typography variant="body2" fontWeight="bold">
+                    ₩{(scrap.productPrice ?? 0).toLocaleString()}
+                    {scrap.postType === "SELLING" ? "원" : ""}
+                  </Typography>
+                </Box>
+              </Paper>
+            ))}
           </Box>
         )}
       </Box>
