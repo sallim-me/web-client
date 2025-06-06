@@ -13,7 +13,7 @@ import ChatList from "./pages/Chat/ChatList/ChatList";
 import ChatRoom from "./pages/Chat/ChatRoom/ChatRoom";
 import MyPage from "./pages/My/MyPage/MyPage";
 import MyPosts from "./pages/My/MyPosts/MyPosts";
-import ScrappedPosts from "./pages/My/ScrappedPosts/ScrappedPosts";
+import ScrapListPage from "./pages/My/ScrapListPage/ScrapListPage";
 import EditProfile from "./pages/My/EditProfile/EditProfile";
 import Alarm from "./pages/Alarm/Alarm";
 
@@ -39,7 +39,7 @@ export function App() {
               <Route path="/chat/:chatId" element={<ChatRoom />} />
               <Route path="/my-page" element={<MyPage />} />
               <Route path="/my-page/my-posts" element={<MyPosts />} />
-              <Route path="/my-page/scrapped" element={<ScrappedPosts />} />
+              <Route path="/my-page/scraps" element={<ScrapListPage />} />
               <Route path="/my-page/edit-profile" element={<EditProfile />} />
             </Route>
 

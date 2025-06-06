@@ -62,6 +62,8 @@ export interface SellingPostDetail {
   price: number;
   userPrice: number;
   memberId: number;
+  isAuthor: boolean;
+  images: string[];
   answers: {
     id: number;
     questionId: number;
@@ -77,6 +79,9 @@ export interface BuyingPostDetail {
   applianceType: "REFRIGERATOR" | "WASHING_MACHINE" | "AIR_CONDITIONER";
   isActive: boolean;
   memberId: number;
+  buyerNickname: string;
+  buyerId: number;
+  isAuthor: boolean;
 }
 
 interface SellingPostAnswer {
@@ -126,6 +131,8 @@ export interface UpdateSellingPostRequest {
     questionId: number;
     answerContent: string;
   }[];
+  images?: string[];
+  existingImages?: string[];
 }
 
 export interface UpdateBuyingPostRequest {
@@ -193,6 +200,30 @@ export const productApi = {
 
   deleteBuyingPost: (productId: number) =>
     axiosInstance.delete(`/product/buying/${productId}`),
+
+  createComment: async (
+    productId: number,
+    data: CreateCommentRequest
+  ): Promise<ApiResponse<CreateCommentResponseData>> => {
+    const response = await axiosInstance.post<
+      ApiResponse<CreateCommentResponseData>
+    >(`/product/comment/${productId}`, data);
+    return response.data;
+  },
+
+  getComments: async (productId: number): Promise<GetCommentsResponse> => {
+    const response = await axiosInstance.get<GetCommentsResponse>(
+      `/product/comment/${productId}/comments`
+    );
+    return response.data;
+  },
+
+  deleteComment: async (commentId: number) => {
+    const response = await axiosInstance.delete(
+      `/product/comment/${commentId}`
+    );
+    return response.data;
+  },
 };
 
 export const getApplianceQuestions = async (
@@ -206,11 +237,36 @@ export const getApplianceQuestions = async (
 
 export const updateSellingPost = async (
   productId: number,
-  data: UpdateSellingPostRequest
+  data: UpdateSellingPostRequest | FormData
 ) => {
   const response = await axiosInstance.patch(
     `/product/selling/${productId}`,
-    data
+    data,
+    {
+      headers: {
+        "Content-Type":
+          data instanceof FormData ? "multipart/form-data" : "application/json",
+      },
+    }
   );
   return response.data;
 };
+
+// Define interfaces for comment creation
+export interface CreateCommentRequest {
+  content: string;
+}
+
+export interface CreateCommentResponseData {
+  commentId: number;
+  memberId: number;
+  nickname: string;
+  content: string;
+}
+
+export interface GetCommentsResponse {
+  status: number;
+  code: string;
+  message: string;
+  data: CreateCommentResponseData[];
+}

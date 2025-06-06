@@ -141,7 +141,7 @@ const PostList = () => {
 
   return (
     <Box sx={{ pb: "76px" }}>
-      <Container maxWidth="sm" sx={{ px: 1.5, py: 1.5 }}>
+      <Container maxWidth="sm" sx={{ px: 0, py: 1.5 }}>
         <Stack spacing={1.5}>
           <Paper
             sx={{
@@ -234,7 +234,7 @@ const PostList = () => {
           <Divider />
 
           {/* 게시물 목록 */}
-          <Grid container spacing={2}>
+          <Grid container spacing={2} justifyContent="center" sx={{ px: 1 }}>
             {currentProducts.map((product) => (
               <Grid item xs={6} key={product.id}>
                 <PostCard
