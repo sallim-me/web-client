@@ -39,4 +39,5 @@ export interface UserProfile {
   name: string;
   nickname: string;
   isBuyer: boolean;
+  profileColor: string;
 }

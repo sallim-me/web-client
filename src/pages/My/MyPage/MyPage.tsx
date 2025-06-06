@@ -15,7 +15,6 @@ import ArrowForwardIcon from "@mui/icons-material/ArrowForward";
 import { useAuthStore } from "@/store/useAuthStore";
 import { memberApi, MyPost } from "@/api/member";
 import { scrapApi, Scrap } from "@/api/scrap";
-import PostCard from "@/components/PostCard";
 
 // 타입 정의
 interface Post {
@@ -53,8 +52,12 @@ const MyPage = () => {
   const nickname = userProfile?.nickname || "N/A";
   const userName = userProfile?.name || "N/A";
 
+  const [profileDisplayColor, setProfileDisplayColor] = useState<
+    string | undefined
+  >(undefined);
+
   useEffect(() => {
-    const fetchData = async () => {
+    (async () => {
       try {
         const [postsResponse, scrapsResponse] = await Promise.all([
           memberApi.getMyPosts(),
@@ -68,10 +71,16 @@ const MyPage = () => {
         setLoading(false);
         setScrapLoading(false);
       }
-    };
-
-    fetchData();
+    })();
   }, []);
+
+  useEffect(() => {
+    if (userProfile?.profileColor) {
+      setProfileDisplayColor(userProfile.profileColor);
+    } else if (profileDisplayColor === undefined) {
+      setProfileDisplayColor(getRandomColor());
+    }
+  }, [userProfile, profileDisplayColor]);
 
   const getRandomColor = () => {
     const colors = [
@@ -87,6 +96,11 @@ const MyPage = () => {
       "#9CADCE",
     ];
     return colors[Math.floor(Math.random() * colors.length)];
+  };
+
+  const handleScrapClick = (scrapId: number) => {
+    // Implement the logic to handle the scrap click
+    console.log("Scrap clicked:", scrapId);
   };
 
   return (
@@ -117,7 +131,7 @@ const MyPage = () => {
             sx={{
               width: 60,
               height: 60,
-              bgcolor: getRandomColor(),
+              bgcolor: profileDisplayColor,
               fontSize: 24,
             }}
           >
@@ -240,10 +254,7 @@ const MyPage = () => {
           <Typography variant="subtitle1" fontWeight="bold">
             스크랩한 글
           </Typography>
-          <IconButton
-            onClick={() => navigate("/my-page/scrapped")}
-            size="small"
-          >
+          <IconButton onClick={() => navigate("/my-page/scraps")} size="small">
             <ArrowForwardIcon />
           </IconButton>
         </Stack>
@@ -252,11 +263,9 @@ const MyPage = () => {
             <CircularProgress size={24} />
           </Box>
         ) : scraps.length === 0 ? (
-          <Box sx={{ textAlign: "center", py: 2 }}>
-            <Typography color="text.secondary">
-              스크랩한 글이 없습니다.
-            </Typography>
-          </Box>
+          <Typography variant="body2" color="text.secondary" align="center">
+            스크랩한 글이 없습니다.
+          </Typography>
         ) : (
           <Box
             sx={{
@@ -273,60 +282,75 @@ const MyPage = () => {
               },
             }}
           >
-            {scraps.map((scrap) => (
-              <Box
-                key={scrap.id}
-                sx={{
-                  flexShrink: 0,
-                  width: 120,
-                  height: 180,
-                  cursor: "pointer",
-                  "&:hover": {
-                    bgcolor: "action.hover",
-                  },
-                  "& .MuiPaper-root": {
-                    p: 1,
-                    gap: 0.5,
-                  },
-                  "& .MuiBox-root": {
-                    height: 80,
-                  },
-                  "& .MuiTypography-subtitle1": {
-                    fontSize: "0.8rem",
-                  },
-                  "& .MuiTypography-body2": {
-                    fontSize: "0.7rem",
-                  },
-                  "& .MuiChip-root": {
-                    height: 16,
-                    fontSize: "0.7rem",
-                  },
-                  "& .MuiIconButton-root": {
-                    p: 0.25,
-                  },
-                  "& .MuiSvgIcon-root": {
-                    fontSize: 18,
-                  },
-                }}
-              >
-                <PostCard
-                  key={scrap.productId}
-                  id={scrap.productId}
-                  scrapId={scrap.id}
-                  title={scrap.productTitle}
-                  modelName={scrap.modelName || ""}
-                  minPrice={scrap.price || 0}
-                  images={scrap.images || []}
-                  isScraped={true}
-                  onScrapClick={() => {}}
-                  postType={
-                    (scrap.postType?.toLowerCase() as "buying" | "selling") ||
-                    "buying"
+            {scraps.slice(0, 5).map((scrap) => {
+              console.log("Scrap item postType:", scrap.postType);
+              return (
+                <Paper
+                  key={scrap.id}
+                  onClick={() =>
+                    navigate(
+                      `/post/detail/${scrap.productId}?type=${
+                        typeof scrap.postType === "string"
+                          ? scrap.postType.toLowerCase()
+                          : "selling"
+                      }`
+                    )
                   }
-                  isActive={scrap.isActive ?? true}
-                />
-              </Box>
-            ))}
+                  sx={{
+                    flexShrink: 0,
+                    width: 140,
+                    cursor: "pointer",
+                    "&:hover": {
+                      bgcolor: "action.hover",
+                    },
+                  }}
+                >
+                  <Box
+                    sx={{
+                      height: 70,
+                      bgcolor: "grey.200",
+                      borderRadius: "8px 8px 0 0",
+                      overflow: "hidden",
+                    }}
+                  >
+                    {scrap.images && scrap.images.length > 0 ? (
+                      <img
+                        src={scrap.images[0]}
+                        alt={scrap.title}
+                        style={{
+                          width: "100%",
+                          height: "100%",
+                          objectFit: "cover",
+                        }}
+                      />
+                    ) : (
+                      <Box
+                        sx={{
+                          width: "100%",
+                          height: "100%",
+                          display: "flex",
+                          justifyContent: "center",
+                          alignItems: "center",
+                          bgcolor: "grey.300",
+                        }}
+                      >
+                        <Typography variant="caption" color="text.secondary">
+                          이미지 없음
+                        </Typography>
+                      </Box>
+                    )}
+                  </Box>
+                  <Box sx={{ p: 1 }}>
+                    <Typography variant="body2" noWrap sx={{ mb: 0.5 }}>
+                      {scrap.productTitle}
+                    </Typography>
+                    <Typography variant="body2" fontWeight="bold">
+                      ₩{(scrap.price ?? 0).toLocaleString()}
+                    </Typography>
+                  </Box>
+                </Paper>
+              );
+            })}
           </Box>
         )}
       </Box>
