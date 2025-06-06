@@ -96,7 +96,7 @@ const MyPosts = () => {
                   title={post.title}
                   modelName={post.modelName}
                   minPrice={post.price}
-                  images={[]}
+                  thumbnailUrl={""}
                   isScraped={false}
                   onScrapClick={() => {}}
                   postType={post.postType.toLowerCase() as "buying" | "selling"}
