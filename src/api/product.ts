@@ -259,6 +259,7 @@ export interface CreateCommentRequest {
 export interface CreateCommentResponseData {
   commentId: number;
   memberId: number;
+  nickname: string;
   content: string;
 }
 

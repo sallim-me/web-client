@@ -28,7 +28,11 @@ import MoreVertIcon from "@mui/icons-material/MoreVert";
 import BookmarkIcon from "@mui/icons-material/Bookmark";
 import BookmarkBorderIcon from "@mui/icons-material/BookmarkBorder";
 import { productApi } from "../../../api/product";
-import type { SellingPostDetail, BuyingPostDetail } from "../../../api/product";
+import type {
+  SellingPostDetail,
+  BuyingPostDetail,
+  CreateCommentResponseData,
+} from "../../../api/product";
 import { checkScrap, scrapApi } from "../../../api/scrap";
 import { updateSellingPost, getApplianceQuestions } from "../../../api/product";
 import { useAuthStore } from "../../../store/useAuthStore";
@@ -69,11 +73,42 @@ const PostDetail = () => {
   const [isScrapped, setIsScrapped] = useState(false);
   const [scrapId, setScrapId] = useState<number | null>(null);
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
-  const userProfile = useAuthStore((state) => state.userProfile);
+  const {
+    userProfile,
+    fetchUserProfile,
+    isLoading: isProfileLoading,
+  } = useAuthStore();
   const [editOpen, setEditOpen] = useState(false);
   const [editForm, setEditForm] = useState<EditForm | null>(null);
   const [editQuestions, setEditQuestions] = useState<any[]>([]);
   const [editLoading, setEditLoading] = useState(false);
+  const [comments, setComments] = useState<CreateCommentResponseData[]>([]);
+  const [newComment, setNewComment] = useState("");
+  const [commentLoading, setCommentLoading] = useState(false);
+
+  // 컴포넌트 마운트 시 userProfile 가져오기
+  useEffect(() => {
+    const loadUserProfile = async () => {
+      try {
+        console.log("Fetching user profile...");
+        await fetchUserProfile();
+        console.log("User profile fetched:", userProfile);
+        console.log("User nickname:", userProfile?.nickname);
+        console.log("User memberId:", userProfile?.memberId);
+      } catch (error) {
+        console.error("Error fetching user profile:", error);
+      }
+    };
+    loadUserProfile();
+  }, []);
+
+  // userProfile이 변경될 때마다 nickname 로깅
+  useEffect(() => {
+    console.log("Current user profile:", {
+      nickname: userProfile?.nickname,
+      memberId: userProfile?.memberId,
+    });
+  }, [userProfile]);
 
   useEffect(() => {
     const searchParams = new URLSearchParams(location.search);
@@ -307,10 +342,10 @@ const PostDetail = () => {
 
     console.log("handleScrap called.");
     console.log("userProfile in handleScrap:", userProfile);
-    console.log("userProfile?.id in handleScrap:", userProfile?.id);
+    console.log("userProfile?.memberId in handleScrap:", userProfile?.memberId);
 
     // Check if user is logged in
-    if (!userProfile || !userProfile.id) {
+    if (!userProfile || !userProfile.memberId) {
       console.error("User profile not available for scrap operation.");
       alert("로그인이 필요한 서비스입니다.");
       return;
@@ -319,10 +354,6 @@ const PostDetail = () => {
     try {
       if (isScrapped) {
         // 스크랩 취소 (스크랩 ID 사용)
-        // checkScrap 함수가 scrapId를 반환하도록 수정되었다고 가정하거나,
-        // 스크랩 상태 확인 시 scrapId도 함께 가져와야 정확한 취소가 가능합니다.
-        // 현재는 임시로 productId로 취소하거나, scrapId 상태 변수를 활용합니다.
-        // 여기서는 scrapId 상태 변수를 사용하여 취소합니다.
         if (scrapId) {
           await scrapApi.deleteScrap(scrapId);
           setIsScrapped(false);
@@ -390,6 +421,54 @@ const PostDetail = () => {
     // Implement the chat logic here
     console.log(`Chat with buyer ID: ${buyerId}`);
   };
+
+  // 댓글 불러오기
+  const fetchComments = async () => {
+    if (!id) return;
+    try {
+      const response = await productApi.getComments(Number(id));
+      console.log("Comments fetched:", response);
+      setComments(response.data);
+    } catch (error) {
+      console.error("Error fetching comments:", error);
+    }
+  };
+
+  // 댓글 작성
+  const handleCommentSubmit = async () => {
+    if (!id || !newComment.trim()) return;
+    if (!userProfile) {
+      alert("로그인이 필요한 서비스입니다.");
+      return;
+    }
+    try {
+      setCommentLoading(true);
+      await productApi.createComment(Number(id), { content: newComment });
+      setNewComment("");
+      fetchComments();
+    } catch (error) {
+      console.error("Error creating comment:", error);
+      alert("댓글 작성에 실패했습니다.");
+    } finally {
+      setCommentLoading(false);
+    }
+  };
+
+  // 댓글 삭제
+  const handleCommentDelete = async (commentId: number) => {
+    if (!window.confirm("댓글을 삭제하시겠습니까?")) return;
+    try {
+      await productApi.deleteComment(commentId);
+      fetchComments();
+    } catch (error) {
+      console.error("Error deleting comment:", error);
+      alert("댓글 삭제에 실패했습니다.");
+    }
+  };
+
+  useEffect(() => {
+    fetchComments();
+  }, [id]);
 
   if (loading) {
     return (
@@ -674,6 +753,89 @@ const PostDetail = () => {
             </>
           )}
         </Stack>
+      </Paper>
+      <Paper sx={{ p: 2, mt: 2 }}>
+        <Typography variant="h6" gutterBottom>
+          댓글
+        </Typography>
+
+        {/* 댓글 작성 폼 */}
+        <Box sx={{ mb: 2 }}>
+          <TextField
+            fullWidth
+            multiline
+            rows={2}
+            placeholder={
+              userProfile
+                ? "댓글을 작성해주세요"
+                : "로그인이 필요한 서비스입니다."
+            }
+            value={newComment}
+            onChange={(e) => setNewComment(e.target.value)}
+            disabled={commentLoading || !userProfile || isProfileLoading}
+          />
+          <Box sx={{ mt: 1, display: "flex", justifyContent: "flex-end" }}>
+            <Button
+              variant="contained"
+              onClick={handleCommentSubmit}
+              disabled={
+                commentLoading ||
+                !newComment.trim() ||
+                !userProfile ||
+                isProfileLoading
+              }
+            >
+              댓글 작성
+            </Button>
+          </Box>
+        </Box>
+
+        {/* 댓글 목록 */}
+        {isProfileLoading ? (
+          <Box display="flex" justifyContent="center" p={2}>
+            <CircularProgress size={24} />
+          </Box>
+        ) : (
+          <Stack spacing={2}>
+            {comments.map((comment) => {
+              console.log("Comment comparison:", {
+                commentNickname: comment.nickname,
+                userProfileNickname: userProfile?.nickname,
+                isEqual: comment.nickname === userProfile?.nickname,
+              });
+
+              const isMyComment =
+                userProfile && comment.nickname === userProfile.nickname;
+              console.log("Is my comment:", isMyComment);
+
+              return (
+                <Box
+                  key={comment.commentId}
+                  sx={{ p: 1, borderBottom: "1px solid #eee" }}
+                >
+                  <Stack
+                    direction="row"
+                    justifyContent="space-between"
+                    alignItems="center"
+                  >
+                    <Typography variant="body2" color="text.secondary">
+                      {isMyComment ? "나" : comment.nickname}
+                    </Typography>
+                    {isMyComment && (
+                      <IconButton
+                        size="small"
+                        onClick={() => handleCommentDelete(comment.commentId)}
+                      >
+                        <CloseIcon fontSize="small" />
+                      </IconButton>
+                    )}
+                  </Stack>
+                  <Typography variant="body1">{comment.content}</Typography>
+                </Box>
+              );
+            })}
+          </Stack>
+        )}
       </Paper>
       <Dialog
         open={editOpen}
