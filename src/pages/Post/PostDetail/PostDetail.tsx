@@ -533,9 +533,6 @@ const PostDetail = () => {
         </Stack>
       </Paper>
 
-      {/* 사진 */}
-      <PostPhoto productId={1} />
-
       {/* 글 내용 */}
       <Paper sx={{ p: 2 }}>
         <Stack spacing={2}>
