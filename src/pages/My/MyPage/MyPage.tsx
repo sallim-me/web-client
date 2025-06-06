@@ -194,7 +194,13 @@ const MyPage = () => {
             {myPosts.slice(0, 5).map((post) => (
               <Paper
                 key={post.productId}
-                onClick={() => navigate(`/post/detail/${post.productId}`)}
+                onClick={() =>
+                  navigate(
+                    `/post/detail/${
+                      post.productId
+                    }?type=${post.postType.toLowerCase()}`
+                  )
+                }
                 sx={{
                   flexShrink: 0,
                   width: 140,
