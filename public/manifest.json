@@ -1,25 +1,64 @@
 {
-  "short_name": "React App",
-  "name": "Create React App Sample",
+  "short_name": "살림",
+  "name": "살림 - 중고가전 거래 플랫폼",
+  "description": "살림 - AI 기반 중고가전 거래 플랫폼",
   "icons": [
     {
-      "src": "favicon.ico",
+      "src": "favicon.png",
       "sizes": "64x64 32x32 24x24 16x16",
-      "type": "image/x-icon"
+      "type": "image/png"
     },
     {
-      "src": "logo192.png",
+      "src": "icons/Assets.xcassets/AppIcon.appiconset/72.png",
       "type": "image/png",
-      "sizes": "192x192"
+      "sizes": "72x72"
     },
     {
-      "src": "logo512.png",
+      "src": "icons/Assets.xcassets/AppIcon.appiconset/128.png",
+      "type": "image/png",
+      "sizes": "128x128"
+    },
+    {
+      "src": "icons/Assets.xcassets/AppIcon.appiconset/144.png",
+      "type": "image/png",
+      "sizes": "144x144"
+    },
+    {
+      "src": "icons/Assets.xcassets/AppIcon.appiconset/152.png",
+      "type": "image/png",
+      "sizes": "152x152"
+    },
+    {
+      "src": "icons/Assets.xcassets/AppIcon.appiconset/196.png",
+      "type": "image/png",
+      "sizes": "196x196"
+    },
+    {
+      "src": "icons/Assets.xcassets/AppIcon.appiconset/256.png",
+      "type": "image/png",
+      "sizes": "256x256"
+    },
+    {
+      "src": "icons/Assets.xcassets/AppIcon.appiconset/512.png",
       "type": "image/png",
       "sizes": "512x512"
+    },
+    {
+      "src": "icons/Assets.xcassets/AppIcon.appiconset/1024.png",
+      "type": "image/png",
+      "sizes": "1024x1024"
     }
   ],
   "start_url": ".",
   "display": "standalone",
-  "theme_color": "#000000",
-  "background_color": "#ffffff"
+  "orientation": "portrait-primary",
+  "theme_color": "#8B7355",
+  "background_color": "#F5F5DC",
+  "categories": ["shopping", "social", "lifestyle"],
+  "lang": "ko",
+  "scope": "/",
+  "display_override": ["window-controls-overlay", "standalone"],
+  "edge_side_panel": {
+    "preferred_width": 400
+  }
 }

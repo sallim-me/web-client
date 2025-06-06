@@ -1,3 +1,11 @@
 # https://www.robotstxt.org/robotstxt.html
 User-agent: *
-Disallow:
+Allow: /
+
+# Sitemap
+Sitemap: https://sallim.me/sitemap.xml
+
+# PWA 관련 파일들
+Allow: /manifest.json
+Allow: /sw.js
+Allow: /icons/
