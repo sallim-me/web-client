@@ -345,7 +345,7 @@ const PostDetail = () => {
     console.log("userProfile?.memberId in handleScrap:", userProfile?.memberId);
 
     // Check if user is logged in
-    if (!userProfile || !userProfile.memberId) {
+    if (!userProfile?.memberId) {
       console.error("User profile not available for scrap operation.");
       alert("로그인이 필요한 서비스입니다.");
       return;
@@ -380,7 +380,11 @@ const PostDetail = () => {
       }
     } catch (error: AxiosError | any) {
       console.error("Error toggling scrap:", error);
-      alert("스크랩 상태 변경에 실패했습니다.");
+      if (error.response?.status === 401) {
+        alert("로그인이 필요한 서비스입니다.");
+      } else {
+        alert("스크랩 상태 변경에 실패했습니다.");
+      }
     }
   };
 
@@ -804,8 +808,7 @@ const PostDetail = () => {
                 isEqual: comment.nickname === userProfile?.nickname,
               });
 
-              const isMyComment =
-                userProfile && comment.nickname === userProfile.nickname;
+              const isMyComment = userProfile?.nickname === comment.nickname;
               console.log("Is my comment:", isMyComment);
 
               return (

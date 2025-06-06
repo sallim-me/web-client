@@ -171,8 +171,30 @@ export const useAuthStore = create<AuthState>()(
             );
             const profile = await authApi.getProfile();
             console.log("Profile fetched:", profile);
+            console.log("Profile data:", profile.data);
+
+            // JWT 토큰에서 memberId 추출
+            const token = get().accessToken;
+            let memberId: number | undefined;
+            if (token) {
+              try {
+                const payload = JSON.parse(atob(token.split(".")[1]));
+                console.log("JWT payload:", payload);
+                memberId = payload.sub ? Number(payload.sub) : undefined;
+                console.log("Extracted memberId from token:", memberId);
+              } catch (e) {
+                console.error("Error parsing token:", e);
+              }
+            }
+
+            const userProfile = {
+              ...profile.data,
+              memberId: memberId,
+            };
+            console.log("Final user profile:", userProfile);
+
             set({
-              userProfile: profile.data,
+              userProfile,
               isLoading: false,
             });
           } catch (error) {
