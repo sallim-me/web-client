@@ -95,7 +95,8 @@ const MyPosts = () => {
                   id={post.productId}
                   title={post.title}
                   modelName={post.modelName}
-                  minPrice={post.price}
+                  price={post.price}
+                  quantity={null}
                   thumbnailUrl={""}
                   isScraped={false}
                   onScrapClick={() => {}}

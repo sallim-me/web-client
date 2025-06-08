@@ -31,9 +31,6 @@ export function App() {
             <Route element={<Layout showHeader showBottomNav />}>
               <Route path="/" element={<Navigate to="/post/list" replace />} />
               <Route path="/post/list" element={<PostList />} />
-              {/* 게시글 작성/수정 및 상세 페이지는 인증 필요 시 ProtectedRoute 내부로 이동 */}
-              <Route path="/post/create" element={<PostCreate />} />
-              <Route path="/post/detail/:id" element={<PostDetail />} />
               {/* 채팅 및 마이페이지 관련 경로는 인증 필요 */}
               <Route path="/chat" element={<ChatList />} />
               <Route path="/chat/:chatId" element={<ChatRoom />} />
@@ -42,6 +39,10 @@ export function App() {
               <Route path="/my-page/scraps" element={<ScrapListPage />} />
               <Route path="/my-page/edit-profile" element={<EditProfile />} />
             </Route>
+
+              {/* 게시글 작성/수정 및 상세 페이지는 인증 필요 시 ProtectedRoute 내부로 이동 */}
+              <Route path="/post/create" element={<PostCreate />} />
+              <Route path="/post/detail/:id" element={<PostDetail />} />
 
             {/* 알람 페이지 - 헤더와 바텀 네비게이션 모두 없음 (인증 필요 시 ProtectedRoute 내부로 이동) */}
             <Route
