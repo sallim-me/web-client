@@ -143,7 +143,7 @@ const PostList = () => {
     <Box sx={{ pb: "76px" }}>
       <Container maxWidth="sm" sx={{ px: 0, py: 1.5 }}>
         <Stack spacing={1.5}>
-          <Paper
+          {/* <Paper
             sx={{
               position: "sticky",
               top: 0,
@@ -151,7 +151,7 @@ const PostList = () => {
               p: 2,
               mb: 2,
               borderRadius: 0,
-              borderBottom: "1px solid",
+              // borderBottom: "1px solid",
               borderColor: "grey.200",
             }}
             elevation={0}
@@ -159,10 +159,10 @@ const PostList = () => {
             <Typography variant="h6" align="center">
               게시글 목록
             </Typography>
-          </Paper>
+          </Paper> */}
 
           {/* 카테고리 필터 */}
-          <Box sx={{ display: "flex", flexWrap: "wrap", gap: 0.75 }}>
+          <Box sx={{ display: "flex", flexWrap: "wrap", gap: 0.75, px: 2 }}>
             {categories.map((category) => (
               <Button
                 key={category}
@@ -198,7 +198,7 @@ const PostList = () => {
           </Box>
 
           {/* 거래 상태 필터 */}
-          <Box sx={{ display: "flex", flexWrap: "wrap", gap: 0.75 }}>
+          <Box sx={{ display: "flex", flexWrap: "wrap", gap: 0.75, px: 2 }}>
             {statuses.map((status) => (
               <Button
                 key={status}
@@ -234,15 +234,16 @@ const PostList = () => {
           <Divider />
 
           {/* 게시물 목록 */}
-          <Grid container spacing={2} justifyContent="center" sx={{ px: 1 }}>
+          <Grid container spacing={0} justifyContent="center" sx={{ px: 0, width: "100%" }}>
             {currentProducts.map((product) => (
-              <Grid item xs={6} key={product.id}>
+              <Grid item xs={6} key={product.id} sx={{ p: 1 }}>
                 <PostCard
                   key={product.id}
                   id={product.id}
                   title={product.title}
                   modelName={product.modelName}
-                  minPrice={product.priceOrQuantity}
+                  price={product.price}
+                  quantity={product.quantity}
                   thumbnailUrl={product?.thumbnailUrl}
                   isScraped={product.isScraped}
                   onScrapClick={() => handleScrapClick(product.id)}

@@ -124,7 +124,8 @@ const Scrapped = () => {
                     scrapId={scrap.id}
                     title={scrap.title}
                     modelName={scrap.modelName}
-                    minPrice={scrap.price}
+                    price={scrap.price}
+                    quantity={null} // 스크랩에는 수량 정보가 없으므로 null로 설정
                     thumbnailUrl={scrap.images[0] || ""}
                     isScraped={true}
                     onScrapClick={() => handleScrapClick(scrap.productId)}

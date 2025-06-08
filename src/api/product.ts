@@ -6,7 +6,8 @@ export interface Product {
   tradeType: "SELLING" | "BUYING";
   category: "REFRIGERATOR" | "WASHING_MACHINE" | "AIR_CONDITIONER";
   modelName: string;
-  priceOrQuantity: number;
+  price: number | null;
+  quantity: number | null;
   description: string;
   isScraped: boolean;
   isAuthor: boolean;
@@ -52,6 +53,7 @@ export interface ApiResponse<T> {
 }
 
 export interface SellingPostDetail {
+  id: number;
   title: string;
   content: string;
   isActive: boolean;
@@ -73,6 +75,7 @@ export interface SellingPostDetail {
 }
 
 export interface BuyingPostDetail {
+  id: number;
   title: string;
   content: string;
   quantity: number;

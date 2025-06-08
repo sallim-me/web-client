@@ -64,6 +64,7 @@ const PostCreate = () => {
     defectAnswers: {},
   });
   const [questions, setQuestions] = useState<ApplianceQuestion[]>([]);
+  const [autoFilled, setAutofilled] = useState(false);
 
   const handleBack = () => {
     navigate(-1);
@@ -254,7 +255,7 @@ const PostCreate = () => {
         }}
         elevation={0}
       >
-        <Stack direction="row" alignItems="center" spacing={1}>
+        <Stack direction="row" alignItems="center" spacing={0} sx={{ mr: "32px" }}>
           <IconButton onClick={handleBack} size="small">
             <ArrowBackIcon />
           </IconButton>
@@ -265,17 +266,25 @@ const PostCreate = () => {
       </Paper>
 
       {/* 글 작성 폼 */}
-      <Paper sx={{ p: 3 }}>
+      <Paper sx={{ 
+        p: 3,
+        boxShadow: "none",
+      }}>
         <form onSubmit={handleSubmit}>
           <Stack spacing={3}>
             {/* 제목 */}
             <TextField
+            color="primary"
               label="제목"
               name="title"
               value={form.title}
               onChange={handleChange}
               fullWidth
               required
+              sx={{
+                textDecoration: autoFilled ? "underline" : "none",
+                color: autoFilled ? "primary.main" : "text.primary",
+              }}
             />
 
             {/* 거래 유형 */}
@@ -295,9 +304,27 @@ const PostCreate = () => {
             {/* 판매일 때만 이미지 업로드 표시 */}
             {form.tradeType === "sell" && (
               <Box>
-                <Typography variant="subtitle1" sx={{ mb: 1 }}>
-                  제품 사진
-                </Typography>
+                <Box sx={{ display: "flex", alignItems: "center", gap: "8px", mb: 1 }}>
+                  <Typography variant="h6">
+                    제품 사진
+                  </Typography>
+                  <Button
+                    size="small"
+                    onClick={() => setAutofilled(!autoFilled)}
+                    sx={{
+                      borderRadius: 20,
+                      padding: "2px 8px",
+                      color: "white",
+                      backgroundColor: "primary.main",
+                      "&:hover": {
+                        backgroundColor: "primary.dark",
+                      },
+                      display: form.images.length > 0 ? "inline-flex" : "none",
+                    }}
+                  >
+                    AI로 자동 채우기
+                  </Button>
+                </Box>
                 <Box
                   sx={{
                     display: "flex",
@@ -384,14 +411,14 @@ const PostCreate = () => {
                 </FormControl>
 
                 {/* 모델 번호 */}
-                <TextField
+                {/* <TextField
                   label="모델 번호"
                   name="modelNumber"
                   value={form.modelNumber}
                   onChange={handleChange}
                   fullWidth
                   required
-                />
+                /> */}
 
                 {/* 모델명 */}
                 <TextField
@@ -401,6 +428,10 @@ const PostCreate = () => {
                   onChange={handleChange}
                   fullWidth
                   required
+                  sx={{
+                    textDecoration: autoFilled ? "underline" : "none",
+                    color: autoFilled ? "primary.main" : "text.primary",
+                  }}
                 />
 
                 {/* 브랜드 */}
@@ -411,6 +442,10 @@ const PostCreate = () => {
                   onChange={handleChange}
                   fullWidth
                   required
+                  sx={{
+                    textDecoration: autoFilled ? "underline" : "none",
+                    color: autoFilled ? "primary.main" : "text.primary",
+                  }}
                 />
 
                 {/* 가격 */}
@@ -425,10 +460,14 @@ const PostCreate = () => {
                   InputProps={{
                     inputProps: { min: 0 },
                   }}
+                  sx={{
+                    textDecoration: autoFilled ? "underline" : "none",
+                    color: autoFilled ? "primary.main" : "text.primary",
+                  }}
                 />
 
                 {/* 희망가 */}
-                <TextField
+                {/* <TextField
                   label="희망가"
                   name="userPrice"
                   value={form.userPrice}
@@ -439,7 +478,25 @@ const PostCreate = () => {
                   InputProps={{
                     inputProps: { min: 0 },
                   }}
+                /> */}
+
+                {/* 상세 설명 */}
+                <TextField
+                  label="상세 설명"
+                  name="description"
+                  value={form.description}
+                  onChange={handleChange}
+                  fullWidth
+                  multiline
+                  rows={5}
+                  required
+                  sx={{
+                    textDecoration: autoFilled ? "underline" : "none",
+                    color: autoFilled ? "primary.main" : "text.primary",
+                  }}
                 />
+              </>
+            )}
 
                 {/* 카테고리가 선택되었을 때만 제품 상태 확인 표시 */}
                 {form.category && questions.length > 0 && (
@@ -472,20 +529,6 @@ const PostCreate = () => {
                     </Stack>
                   </Box>
                 )}
-
-                {/* 상세 설명 */}
-                <TextField
-                  label="상세 설명"
-                  name="description"
-                  value={form.description}
-                  onChange={handleChange}
-                  fullWidth
-                  multiline
-                  rows={4}
-                  required
-                />
-              </>
-            )}
 
             {/* 구매일 때만 수량 표시 */}
             {form.tradeType === "buy" && (

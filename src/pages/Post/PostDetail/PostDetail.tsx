@@ -40,6 +40,9 @@ import axios, { AxiosError } from "axios";
 import CloseIcon from "@mui/icons-material/Close";
 import AddIcon from "@mui/icons-material/Add";
 
+import { PostPhoto } from "./PostPhoto";
+import { PostPriceCard } from "./PostPriceCard";
+
 // 수정 폼의 타입 정의
 interface EditForm {
   title: string;
@@ -533,8 +536,17 @@ const PostDetail = () => {
         </Stack>
       </Paper>
 
+      {/* 사진 영역 */}
+      {
+        postType === "selling" && postDetail && (
+          <Box sx={{ p: 2 }}>
+            <PostPhoto productId={postDetail.id} />
+          </Box>
+        )
+      }
+
       {/* 글 내용 */}
-      <Paper sx={{ p: 2 }}>
+      <Paper sx={{ p: 2, boxShadow: "none" }}>
         <Stack spacing={2}>
           {/* 상태 */}
           <Box>
@@ -572,13 +584,13 @@ const PostDetail = () => {
                     ).price?.toLocaleString() || 0}
                     원
                   </Typography>
-                  <Typography>
+                  {/* <Typography>
                     희망가:{" "}
                     {(
                       postDetail as SellingPostDetail
                     ).userPrice?.toLocaleString() || 0}
                     원
-                  </Typography>
+                  </Typography> */}
                 </>
               )}
               {postType === "buying" && (
@@ -644,7 +656,7 @@ const PostDetail = () => {
 
           {/* 작성자 정보 및 채팅하기 버튼 (구매글인 경우) */}
           {postType === "buying" && postDetail && !postDetail.isAuthor && (
-            <Paper elevation={0} sx={{ p: 2 }}>
+            <Paper elevation={0} sx={{ p: 2, boxShadow: "none" }}>
               <Stack direction="row" alignItems="center" spacing={2}>
                 {/* 작성자 프로필 */}
                 <Avatar
@@ -712,13 +724,15 @@ const PostDetail = () => {
                 가격: ₩
                 {(postDetail as SellingPostDetail).price?.toLocaleString() || 0}
               </Typography>
-              <Typography variant="subtitle2" fontWeight="bold">
+              {/* <Typography variant="subtitle2" fontWeight="bold">
                 희망가: ₩
                 {(
                   postDetail as SellingPostDetail
                 ).userPrice?.toLocaleString() || 0}
-              </Typography>
+              </Typography> */}
+
               <Divider />
+
               {/* 제품 상태 확인 (판매글만 해당) */}
               {(postDetail as SellingPostDetail).answers &&
                 (postDetail as SellingPostDetail).answers.length > 0 && (
@@ -753,8 +767,23 @@ const PostDetail = () => {
             </>
           )}
         </Stack>
+
+        <Divider sx={{ py: 2 }} />
+
+        {/* 가격 차트는 판매글인 경우에만 표시 */}
+        {postType === "selling" && (
+          <PostPriceCard 
+            modelName={(postDetail as SellingPostDetail).modelName}
+            brand={(postDetail as SellingPostDetail).brand}
+            currentPrice={(postDetail as SellingPostDetail).price}
+            userPrice={(postDetail as SellingPostDetail).userPrice}
+          />
+        )}
       </Paper>
-      <Paper sx={{ p: 2, mt: 2 }}>
+
+      <Divider sx={{ my: 2 }} />
+
+      <Paper sx={{ p: 2, mt: 2, boxShadow: "none" }}>
         <Typography variant="h6" gutterBottom>
           댓글
         </Typography>
@@ -966,7 +995,7 @@ const PostDetail = () => {
                       required
                       type="number"
                     />
-                    <TextField
+                    {/* <TextField
                       label="희망가"
                       name="userPrice"
                       value={editForm.userPrice}
@@ -974,7 +1003,7 @@ const PostDetail = () => {
                       fullWidth
                       required
                       type="number"
-                    />
+                    /> */}
                     <Box>
                       <Typography variant="subtitle2" sx={{ mb: 1 }}>
                         제품 상태 확인
