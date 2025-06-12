@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   Box,
@@ -14,6 +14,8 @@ import {
   Select,
   MenuItem,
   SelectChangeEvent,
+  Skeleton,
+  CircularProgress,
 } from "@mui/material";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import DeleteIcon from "@mui/icons-material/Delete";
@@ -22,8 +24,8 @@ import {
   createBuyingPost,
   createSellingPost,
   getApplianceQuestions,
+  analyzeImage,
 } from "../../../api/product";
-import { memberApi } from "../../../api/member";
 import { useAuthStore } from "../../../store/useAuthStore";
 
 interface PostForm {
@@ -65,6 +67,8 @@ const PostCreate = () => {
   });
   const [questions, setQuestions] = useState<ApplianceQuestion[]>([]);
   const [autoFilled, setAutofilled] = useState(false);
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [autoFilledFields, setAutoFilledFields] = useState<Set<string>>(new Set());
 
   const handleBack = () => {
     navigate(-1);
@@ -140,6 +144,12 @@ const PostCreate = () => {
     e: React.ChangeEvent<HTMLInputElement | { name?: string; value: unknown }>
   ) => {
     const { name, value } = e.target;
+    
+    // 자동완성된 필드가 수정되면 autoFilled를 false로 변경
+    if (autoFilled && autoFilledFields.has(name as string)) {
+      setAutofilled(false);
+    }
+    
     setForm((prev) => ({
       ...prev,
       [name as string]: value,
@@ -149,23 +159,29 @@ const PostCreate = () => {
   const handleSelectChange = async (e: SelectChangeEvent<string>) => {
     const { name, value } = e.target;
 
-    if (name === "tradeType" && value === "buy") {
-      const userProfile = useAuthStore.getState().userProfile;
-      console.log("User profile:", userProfile);
+    // 거래 유형이 변경되면 자동완성 상태 초기화
+    if (name === "tradeType") {
+      setAutofilled(false);
+      setAutoFilledFields(new Set());
+      
+      if (value === "buy") {
+        const userProfile = useAuthStore.getState().userProfile;
+        console.log("User profile:", userProfile);
 
-      if (!userProfile) {
-        alert("로그인이 필요합니다.");
-        navigate("/login");
-        return;
+        if (!userProfile) {
+          alert("로그인이 필요합니다.");
+          navigate("/login");
+          return;
+        }
+
+        if (!userProfile.isBuyer) {
+          console.error("User is not a buyer:", userProfile);
+          alert("바이어로 등록된 사용자만 구매글을 작성할 수 있습니다.");
+          return;
+        }
+
+        console.log("User is a buyer, proceeding with post creation");
       }
-
-      if (!userProfile.isBuyer) {
-        console.error("User is not a buyer:", userProfile);
-        alert("바이어로 등록된 사용자만 구매글을 작성할 수 있습니다.");
-        return;
-      }
-
-      console.log("User is a buyer, proceeding with post creation");
     }
 
     if (name === "category") {
@@ -218,6 +234,78 @@ const PostCreate = () => {
         [question]: answer,
       },
     }));
+  };
+
+  const handleAutoFill = async () => {
+    if (form.images.length === 0) {
+      alert("분석할 이미지를 먼저 업로드해주세요.");
+      return;
+    }
+
+    setIsAnalyzing(true);
+    try {
+      // 첫 번째 이미지를 File 객체로 변환
+      const imageUrl = form.images[0];
+      const response = await fetch(imageUrl);
+      const blob = await response.blob();
+      const file = new File([blob], "image.jpg", { type: "image/jpeg" });
+
+      const result = await analyzeImage(file);
+      
+      if (result.success) {
+        // 자동완성된 필드들을 추적
+        const filledFields = new Set<string>();
+        
+        setForm((prev) => {
+          const newForm = { ...prev };
+          
+          if (result.title) {
+            newForm.title = result.title;
+            filledFields.add('title');
+          }
+          if (result.category) {
+            newForm.category = result.category;
+            filledFields.add('category');
+          }
+          if (result.model_code) {
+            newForm.modelName = result.model_code;
+            filledFields.add('modelName');
+          }
+          if (result.brand) {
+            newForm.brand = result.brand;
+            filledFields.add('brand');
+          }
+          if (result.price) {
+            newForm.price = result.price.toString();
+            filledFields.add('price');
+          }
+          if (result.description) {
+            newForm.description = result.description;
+            filledFields.add('description');
+          }
+          
+          return newForm;
+        });
+        
+        setAutoFilledFields(filledFields);
+        setAutofilled(true);
+
+        // 카테고리가 변경되었으므로 질문들도 다시 불러오기
+        try {
+          const questionsResponse = await getApplianceQuestions(result.category);
+          setQuestions(questionsResponse.data);
+        } catch (error) {
+          console.error("Error fetching questions:", error);
+        }
+      } else {
+        alert("이미지 분석에 실패했습니다. 다른 이미지를 시도해주세요.");
+      }
+    } catch (error) {
+      console.error("Error analyzing image:", error);
+      alert("이미지 분석 중 오류가 발생했습니다.");
+    } finally {
+      setIsAnalyzing(false);
+    }
   };
 
   const validateForm = () => {
@@ -273,19 +361,23 @@ const PostCreate = () => {
         <form onSubmit={handleSubmit}>
           <Stack spacing={3}>
             {/* 제목 */}
-            <TextField
-            color="primary"
-              label="제목"
-              name="title"
-              value={form.title}
-              onChange={handleChange}
-              fullWidth
-              required
-              sx={{
-                textDecoration: autoFilled ? "underline" : "none",
-                color: autoFilled ? "primary.main" : "text.primary",
-              }}
-            />
+            {isAnalyzing ? (
+              <Skeleton variant="rectangular" height={56} />
+            ) : (
+              <TextField
+                color="primary"
+                label="제목"
+                name="title"
+                value={form.title}
+                onChange={handleChange}
+                fullWidth
+                required
+                sx={{
+                  textDecoration: autoFilled && autoFilledFields.has('title') ? "underline" : "none",
+                  color: autoFilled && autoFilledFields.has('title') ? "primary.main" : "text.primary",
+                }}
+              />
+            )}
 
             {/* 거래 유형 */}
             <FormControl fullWidth required>
@@ -295,6 +387,7 @@ const PostCreate = () => {
                 value={form.tradeType}
                 label="거래 유형"
                 onChange={handleSelectChange}
+                disabled={isAnalyzing}
               >
                 <MenuItem value="sell">판매</MenuItem>
                 <MenuItem value="buy">구매</MenuItem>
@@ -310,7 +403,8 @@ const PostCreate = () => {
                   </Typography>
                   <Button
                     size="small"
-                    onClick={() => setAutofilled(!autoFilled)}
+                    onClick={handleAutoFill}
+                    disabled={isAnalyzing}
                     sx={{
                       borderRadius: 20,
                       padding: "2px 8px",
@@ -319,10 +413,20 @@ const PostCreate = () => {
                       "&:hover": {
                         backgroundColor: "primary.dark",
                       },
+                      "&:disabled": {
+                        backgroundColor: "grey.400",
+                      },
                       display: form.images.length > 0 ? "inline-flex" : "none",
                     }}
                   >
-                    AI로 자동 채우기
+                    {isAnalyzing ? (
+                      <>
+                        <CircularProgress size={14} sx={{ mr: 1, color: "white" }} />
+                        분석 중...
+                      </>
+                    ) : (
+                      "AI로 자동 채우기"
+                    )}
                   </Button>
                 </Box>
                 <Box
@@ -403,6 +507,7 @@ const PostCreate = () => {
                     value={form.category}
                     label="카테고리"
                     onChange={handleSelectChange}
+                    disabled={isAnalyzing}
                   >
                     <MenuItem value="REFRIGERATOR">냉장고</MenuItem>
                     <MenuItem value="WASHING_MACHINE">세탁기</MenuItem>
@@ -410,61 +515,63 @@ const PostCreate = () => {
                   </Select>
                 </FormControl>
 
-                {/* 모델 번호 */}
-                {/* <TextField
-                  label="모델 번호"
-                  name="modelNumber"
-                  value={form.modelNumber}
-                  onChange={handleChange}
-                  fullWidth
-                  required
-                /> */}
-
                 {/* 모델명 */}
-                <TextField
-                  label="모델명"
-                  name="modelName"
-                  value={form.modelName}
-                  onChange={handleChange}
-                  fullWidth
-                  required
-                  sx={{
-                    textDecoration: autoFilled ? "underline" : "none",
-                    color: autoFilled ? "primary.main" : "text.primary",
-                  }}
-                />
+                {isAnalyzing ? (
+                  <Skeleton variant="rectangular" height={56} />
+                ) : (
+                  <TextField
+                    label="모델명"
+                    name="modelName"
+                    value={form.modelName}
+                    onChange={handleChange}
+                    fullWidth
+                    required
+                    sx={{
+                      textDecoration: autoFilled && autoFilledFields.has('modelName') ? "underline" : "none",
+                      color: autoFilled && autoFilledFields.has('modelName') ? "primary.main" : "text.primary",
+                    }}
+                  />
+                )}
 
                 {/* 브랜드 */}
-                <TextField
-                  label="브랜드"
-                  name="brand"
-                  value={form.brand}
-                  onChange={handleChange}
-                  fullWidth
-                  required
-                  sx={{
-                    textDecoration: autoFilled ? "underline" : "none",
-                    color: autoFilled ? "primary.main" : "text.primary",
-                  }}
-                />
+                {isAnalyzing ? (
+                  <Skeleton variant="rectangular" height={56} />
+                ) : (
+                  <TextField
+                    label="브랜드"
+                    name="brand"
+                    value={form.brand}
+                    onChange={handleChange}
+                    fullWidth
+                    required
+                    sx={{
+                      textDecoration: autoFilled && autoFilledFields.has('brand') ? "underline" : "none",
+                      color: autoFilled && autoFilledFields.has('brand') ? "primary.main" : "text.primary",
+                    }}
+                  />
+                )}
 
                 {/* 가격 */}
-                <TextField
-                  label="판매가"
-                  name="price"
-                  value={form.price}
-                  onChange={handleChange}
-                  fullWidth
-                  required
-                  type="number"
-                  InputProps={{
-                    inputProps: { min: 0 },
-                  }}
-                  sx={{
-                    textDecoration: autoFilled ? "underline" : "none",
-                    color: autoFilled ? "primary.main" : "text.primary",
-                  }}
-                />
+                {isAnalyzing ? (
+                  <Skeleton variant="rectangular" height={56} />
+                ) : (
+                  <TextField
+                    label="판매가"
+                    name="price"
+                    value={form.price}
+                    onChange={handleChange}
+                    fullWidth
+                    required
+                    type="number"
+                    InputProps={{
+                      inputProps: { min: 0 },
+                    }}
+                    sx={{
+                      textDecoration: autoFilled && autoFilledFields.has('price') ? "underline" : "none",
+                      color: autoFilled && autoFilledFields.has('price') ? "primary.main" : "text.primary",
+                    }}
+                  />
+                )}
 
                 {/* 희망가 */}
                 {/* <TextField
@@ -481,20 +588,24 @@ const PostCreate = () => {
                 /> */}
 
                 {/* 상세 설명 */}
-                <TextField
-                  label="상세 설명"
-                  name="description"
-                  value={form.description}
-                  onChange={handleChange}
-                  fullWidth
-                  multiline
-                  rows={5}
-                  required
-                  sx={{
-                    textDecoration: autoFilled ? "underline" : "none",
-                    color: autoFilled ? "primary.main" : "text.primary",
-                  }}
-                />
+                {isAnalyzing ? (
+                  <Skeleton variant="rectangular" height={140} />
+                ) : (
+                  <TextField
+                    label="상세 설명"
+                    name="description"
+                    value={form.description}
+                    onChange={handleChange}
+                    fullWidth
+                    multiline
+                    rows={5}
+                    required
+                    sx={{
+                      textDecoration: autoFilled && autoFilledFields.has('description') ? "underline" : "none",
+                      color: autoFilled && autoFilledFields.has('description') ? "primary.main" : "text.primary",
+                    }}
+                  />
+                )}
               </>
             )}
 
@@ -505,27 +616,37 @@ const PostCreate = () => {
                       제품 상태 확인
                     </Typography>
                     <Stack spacing={2}>
-                      {questions.map((question) => (
-                        <Box key={question.id}>
-                          <Typography variant="body1" sx={{ mb: 1 }}>
-                            {question.questionContent}
-                          </Typography>
-                          <TextField
-                            value={
-                              form.defectAnswers[question.questionContent] || ""
-                            }
-                            onChange={(e) =>
-                              handleDefectQuestionChange(
-                                question.questionContent,
-                                e.target.value
-                              )
-                            }
-                            fullWidth
-                            required
-                            placeholder="답변을 입력해주세요"
-                          />
-                        </Box>
-                      ))}
+                      {isAnalyzing ? (
+                        // 로딩 중일 때 스켈레톤 표시
+                        Array.from({ length: 3 }).map((_, index) => (
+                          <Box key={index}>
+                            <Skeleton variant="text" width="60%" height={24} sx={{ mb: 1 }} />
+                            <Skeleton variant="rectangular" height={56} />
+                          </Box>
+                        ))
+                      ) : (
+                        questions.map((question) => (
+                          <Box key={question.id}>
+                            <Typography variant="body1" sx={{ mb: 1 }}>
+                              {question.questionContent}
+                            </Typography>
+                            <TextField
+                              value={
+                                form.defectAnswers[question.questionContent] || ""
+                              }
+                              onChange={(e) =>
+                                handleDefectQuestionChange(
+                                  question.questionContent,
+                                  e.target.value
+                                )
+                              }
+                              fullWidth
+                              required
+                              placeholder="답변을 입력해주세요"
+                            />
+                          </Box>
+                        ))
+                      )}
                     </Stack>
                   </Box>
                 )}
@@ -580,6 +701,7 @@ const PostCreate = () => {
               size="large"
               sx={{ mt: 2 }}
               disabled={
+                isAnalyzing ||
                 !form.title ||
                 !form.tradeType ||
                 !form.category ||
