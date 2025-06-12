@@ -172,8 +172,27 @@ export const createBuyingPost = async (
   return response.data;
 };
 
-export const createSellingPost = async (data: CreateSellingPostRequest) => {
-  const response = await axiosInstance.post("/product/selling", data);
+export const createSellingPost = async (data: CreateSellingPostRequest, photos?: File[]) => {
+  const formData = new FormData();
+  
+  // request 데이터를 JSON 문자열로 추가
+  formData.append('request', JSON.stringify(data));
+  
+  // 사진 파일들 추가 (있는 경우)
+  if (photos && photos.length > 0) {
+    photos.forEach((photo) => {
+      formData.append('photos', photo);
+    });
+  } else {
+    // 사진이 없는 경우 빈 photos 필드 추가
+    formData.append('photos', '');
+  }
+
+  const response = await axiosInstance.post("/product/selling", formData, {
+    headers: {
+      'Content-Type': 'multipart/form-data',
+    },
+  });
   return response.data;
 };
 
