@@ -120,6 +120,18 @@ interface ApplianceQuestionsResponse {
   data: ApplianceQuestion[];
 }
 
+// AI 이미지 분석 API 인터페이스 추가
+export interface AnalyzeImageResponse {
+  title: string;
+  category: "REFRIGERATOR" | "WASHING_MACHINE" | "AIR_CONDITIONER";
+  brand: string;
+  price: number;
+  description: string;
+  success: boolean;
+  model_code: string;
+  processing_time: number;
+}
+
 export interface UpdateSellingPostRequest {
   title: string;
   content: string;
@@ -273,3 +285,21 @@ export interface GetCommentsResponse {
   message: string;
   data: CreateCommentResponseData[];
 }
+
+// AI 이미지 분석 API 함수
+export const analyzeImage = async (file: File): Promise<AnalyzeImageResponse> => {
+  const formData = new FormData();
+  formData.append('file', file);
+
+  const response = await axiosInstance.post(
+    '/ai/analyze-image?applyPreprocessing=true',
+    formData,
+    {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    }
+  );
+
+  return response.data;
+};
