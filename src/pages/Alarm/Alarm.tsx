@@ -10,6 +10,7 @@ import {
   styled,
 } from "@mui/material";
 import { PWAInstallPrompt } from "@/components/PWAInstallPrompt";
+import { PWAUpdatePrompt } from "@/components/PWAUpdatePrompt";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import { Alarm } from "../../types/alarm";
 
@@ -53,6 +54,18 @@ const getAlarmTitle = (type: Alarm["type"]): string => {
 const AlarmPage: React.FC = () => {
   const navigate = useNavigate();
   const [alarms, setAlarms] = React.useState<Alarm[]>([]);
+  const [swRegistration, setSwRegistration] = React.useState<ServiceWorkerRegistration | null>(null);
+
+  React.useEffect(() => {
+    // Service Worker 등록 상태 확인
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.getRegistration().then((registration) => {
+        if (registration) {
+          setSwRegistration(registration);
+        }
+      });
+    }
+  }, []);
 
   const handleAlarmClick = (alarm: Alarm) => {
     setAlarms((prev) =>
@@ -70,6 +83,8 @@ const AlarmPage: React.FC = () => {
     <Box sx={{ height: "100vh", display: "flex", flexDirection: "column" }}>
       {/* PWA 설치 프롬프트 */}
       <PWAInstallPrompt />
+      {/* PWA 업데이트 프롬프트 */}
+      <PWAUpdatePrompt registration={swRegistration} />
       <Paper
         elevation={0}
         sx={{
