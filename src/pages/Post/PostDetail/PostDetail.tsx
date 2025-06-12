@@ -22,6 +22,7 @@ import {
   Select,
   CircularProgress,
   Avatar,
+  Skeleton,
 } from "@mui/material";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import MoreVertIcon from "@mui/icons-material/MoreVert";
@@ -475,8 +476,104 @@ const PostDetail = () => {
 
   if (loading) {
     return (
-      <Container maxWidth="sm" sx={{ py: 4 }}>
-        <Typography>로딩 중...</Typography>
+      <Container maxWidth="sm" sx={{ pb: "76px" }}>
+        {/* 헤더 스켈레톤 */}
+        <Paper
+          sx={{
+            position: "sticky",
+            top: 0,
+            zIndex: 100,
+            p: 2,
+            mb: 2,
+            borderRadius: 0,
+            borderBottom: "1px solid",
+            borderColor: "grey.200",
+          }}
+          elevation={0}
+        >
+          <Stack direction="row" alignItems="center" spacing={1}>
+            <Skeleton variant="circular" width={24} height={24} />
+            <Skeleton variant="text" width="60%" height={28} sx={{ flex: 1 }} />
+            <Skeleton variant="circular" width={24} height={24} />
+          </Stack>
+        </Paper>
+
+        {/* 사진 영역 스켈레톤 */}
+        <Box sx={{ p: 2 }}>
+          <Skeleton variant="rectangular" width="100%" height={300} sx={{ borderRadius: 2, mb: 2 }} />
+          <Box sx={{ display: "flex", gap: 1, overflowX: "auto" }}>
+            {[1, 2, 3, 4].map((index) => (
+              <Skeleton key={index} variant="rectangular" width={120} height={120} sx={{ borderRadius: 2, flexShrink: 0 }} />
+            ))}
+          </Box>
+        </Box>
+
+        {/* 글 내용 스켈레톤 */}
+        <Paper sx={{ p: 2, boxShadow: "none" }}>
+          <Stack spacing={2}>
+            {/* 상태 칩 스켈레톤 */}
+            <Skeleton variant="rounded" width={80} height={24} />
+
+            {/* 기본 정보 스켈레톤 */}
+            <Box>
+              <Skeleton variant="text" width={100} height={20} sx={{ mb: 1 }} />
+              <Stack spacing={1}>
+                <Skeleton variant="text" width="90%" height={20} />
+                <Skeleton variant="text" width="80%" height={20} />
+                <Skeleton variant="text" width="75%" height={20} />
+                <Skeleton variant="text" width="85%" height={20} />
+              </Stack>
+            </Box>
+
+            <Divider />
+
+            {/* 상세 설명 스켈레톤 */}
+            <Box>
+              <Skeleton variant="text" width={100} height={20} sx={{ mb: 1 }} />
+              <Skeleton variant="text" width="100%" height={20} />
+              <Skeleton variant="text" width="95%" height={20} />
+              <Skeleton variant="text" width="90%" height={20} />
+              <Skeleton variant="text" width="60%" height={20} />
+            </Box>
+
+            <Divider />
+
+            {/* 가격 차트 스켈레톤 */}
+            <Box>
+              <Skeleton variant="text" width={120} height={24} sx={{ mb: 1 }} />
+              <Skeleton variant="rectangular" width="100%" height={300} sx={{ borderRadius: 2 }} />
+            </Box>
+          </Stack>
+        </Paper>
+
+        <Divider sx={{ my: 2 }} />
+
+        {/* 댓글 섹션 스켈레톤 */}
+        <Paper sx={{ p: 2, mt: 2, boxShadow: "none" }}>
+          <Skeleton variant="text" width={80} height={28} sx={{ mb: 2 }} />
+          
+          {/* 댓글 작성 폼 스켈레톤 */}
+          <Box sx={{ mb: 2 }}>
+            <Skeleton variant="rectangular" width="100%" height={80} sx={{ borderRadius: 1, mb: 1 }} />
+            <Box sx={{ display: "flex", justifyContent: "flex-end" }}>
+              <Skeleton variant="rounded" width={100} height={36} />
+            </Box>
+          </Box>
+
+          {/* 댓글 목록 스켈레톤 */}
+          <Stack spacing={2}>
+            {[1, 2, 3].map((index) => (
+              <Box key={index} sx={{ p: 1, borderBottom: "1px solid #eee" }}>
+                <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 1 }}>
+                  <Skeleton variant="text" width={80} height={16} />
+                  <Skeleton variant="circular" width={16} height={16} />
+                </Stack>
+                <Skeleton variant="text" width="100%" height={20} />
+                <Skeleton variant="text" width="80%" height={20} />
+              </Box>
+            ))}
+          </Stack>
+        </Paper>
       </Container>
     );
   }
