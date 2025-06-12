@@ -19,8 +19,8 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="default" />
     
     <!-- PWA 앱 정보 -->
-    <meta name="application-name" content="Sallim" />
-    <meta name="apple-mobile-web-app-title" content="Sallim" />
+    <meta name="application-name" content="살림" />
+    <meta name="apple-mobile-web-app-title" content="살림" />
     <meta name="description" content="살림, AI 기반 중고가전 거래" />
     <meta name="keywords" content="살림, AI 기반 중고가전 거래" />
     
@@ -46,15 +46,15 @@
     
     <!-- 추가 PWA 메타 태그 -->
     <meta name="apple-touch-fullscreen" content="yes" />
-    <meta name="mobile-web-app-title" content="Sallim" />
+    <meta name="mobile-web-app-title" content="살림" />
     
     <!-- Microsoft Tiles -->
     <meta name="msapplication-TileColor" content="#F5F5DC" />
     <meta name="msapplication-TileImage" content="%PUBLIC_URL%/icons/Assets.xcassets/AppIcon.appiconset/144.png" />
     <meta name="msapplication-config" content="%PUBLIC_URL%/browserconfig.xml" />
     
-    <!-- Manifest 링크 -->
-    <link rel="manifest" href="%PUBLIC_URL%/manifest.json" />
+    <!-- Manifest 링크 with versioning to prevent caching issues -->
+    <link rel="manifest" href="%PUBLIC_URL%/manifest.json?v=%REACT_APP_VERSION%" />
     
     <!-- Open Graph meta tags -->
     <meta property="og:title" content="살림, AI 기반 중고가전 거래" />
@@ -62,6 +62,12 @@
     <meta property="og:image" content="%PUBLIC_URL%/images/favicon.png" />
     <meta property="og:url" content="https://sallim.me" />
     <meta property="og:type" content="website" />
+    <!-- PWA 캐시 버스팅을 위한 메타 태그 -->
+    <meta name="build-time" content="%REACT_APP_BUILD_TIME%" />
+    <meta name="version" content="%REACT_APP_VERSION%" />
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+    <meta http-equiv="Pragma" content="no-cache" />
+    <meta http-equiv="Expires" content="0" />
     
     <title>살림, AI 기반 중고가전 거래</title>
   </head>
