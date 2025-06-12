@@ -9,7 +9,7 @@ import {
   Stack,
   Paper,
   IconButton,
-  CircularProgress,
+  Skeleton,
 } from "@mui/material";
 import ArrowForwardIcon from "@mui/icons-material/ArrowForward";
 import { useAuthStore } from "@/store/useAuthStore";
@@ -172,8 +172,34 @@ const MyPage = () => {
           </IconButton>
         </Stack>
         {loading ? (
-          <Box sx={{ display: "flex", justifyContent: "center", py: 2 }}>
-            <CircularProgress size={24} />
+          <Box
+            sx={{
+              display: "flex",
+              gap: 1.5,
+              overflowX: "auto",
+              pb: 1,
+            }}
+          >
+            {Array.from({ length: 3 }).map((_, index) => (
+              <Paper
+                key={index}
+                sx={{
+                  flexShrink: 0,
+                  width: 140,
+                }}
+              >
+                <Skeleton 
+                  variant="rectangular" 
+                  width="100%" 
+                  height={70}
+                  sx={{ borderRadius: "8px 8px 0 0" }}
+                />
+                <Box sx={{ p: 1 }}>
+                  <Skeleton variant="text" width="90%" height={20} sx={{ mb: 0.5 }} />
+                  <Skeleton variant="text" width="60%" height={16} />
+                </Box>
+              </Paper>
+            ))}
           </Box>
         ) : (
           <Box
@@ -259,8 +285,34 @@ const MyPage = () => {
           </IconButton>
         </Stack>
         {scrapLoading ? (
-          <Box sx={{ display: "flex", justifyContent: "center", py: 2 }}>
-            <CircularProgress size={24} />
+          <Box
+            sx={{
+              display: "flex",
+              gap: 1.5,
+              overflowX: "auto",
+              pb: 1,
+            }}
+          >
+            {Array.from({ length: 3 }).map((_, index) => (
+              <Paper
+                key={index}
+                sx={{
+                  flexShrink: 0,
+                  width: 140,
+                }}
+              >
+                <Skeleton 
+                  variant="rectangular" 
+                  width="100%" 
+                  height={70}
+                  sx={{ borderRadius: "8px 8px 0 0" }}
+                />
+                <Box sx={{ p: 1 }}>
+                  <Skeleton variant="text" width="90%" height={20} sx={{ mb: 0.5 }} />
+                  <Skeleton variant="text" width="70%" height={16} />
+                </Box>
+              </Paper>
+            ))}
           </Box>
         ) : scraps.length === 0 ? (
           <Typography variant="body2" color="text.secondary" align="center">

@@ -11,6 +11,8 @@ import {
   Paper,
   Pagination,
   Typography,
+  CircularProgress,
+  Skeleton,
 } from "@mui/material";
 import AddIcon from "@mui/icons-material/Add";
 import PostCard from "../../../components/PostCard";
@@ -136,7 +138,62 @@ const PostList = () => {
     }
   };
 
-  if (loading) return <div>로딩 중...</div>;
+  if (loading) {
+    return (
+      <Box sx={{ pb: "76px" }}>
+        <Container maxWidth="sm" sx={{ px: 0, py: 1.5 }}>
+          <Stack spacing={1.5}>
+            {/* 카테고리 필터 스켈레톤 */}
+            <Box sx={{ display: "flex", flexWrap: "wrap", gap: 0.75, px: 2 }}>
+              {[1, 2, 3].map((index) => (
+                <Skeleton
+                  key={index}
+                  variant="rounded"
+                  width={60}
+                  height={32}
+                  sx={{ borderRadius: "16px" }}
+                />
+              ))}
+            </Box>
+
+            {/* 거래 상태 필터 스켈레톤 */}
+            <Box sx={{ display: "flex", flexWrap: "wrap", gap: 0.75, px: 2 }}>
+              {[1, 2, 3, 4].map((index) => (
+                <Skeleton
+                  key={index}
+                  variant="rounded"
+                  width={70}
+                  height={32}
+                  sx={{ borderRadius: "16px" }}
+                />
+              ))}
+            </Box>
+
+            <Divider />
+
+            {/* 게시물 목록 스켈레톤 */}
+            <Grid container spacing={0} justifyContent="center" sx={{ px: 0, width: "100%" }}>
+              {Array.from({ length: 6 }).map((_, index) => (
+                <Grid item xs={6} key={index} sx={{ p: 1 }}>
+                  <Box sx={{ border: "1px solid #e0e0e0", borderRadius: 2, p: 1 }}>
+                    <Skeleton variant="rectangular" width="100%" height={120} sx={{ borderRadius: 1, mb: 1 }} />
+                    <Skeleton variant="text" width="80%" height={20} sx={{ mb: 0.5 }} />
+                    <Skeleton variant="text" width="60%" height={16} sx={{ mb: 0.5 }} />
+                    <Skeleton variant="text" width="70%" height={18} />
+                  </Box>
+                </Grid>
+              ))}
+            </Grid>
+
+            {/* 중앙 로딩 스피너 */}
+            <Box sx={{ display: "flex", justifyContent: "center", alignItems: "center", py: 4 }}>
+              <CircularProgress size={40} />
+            </Box>
+          </Stack>
+        </Container>
+      </Box>
+    );
+  }
   if (error) return <div>{error}</div>;
 
   return (
