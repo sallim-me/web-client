@@ -12,7 +12,7 @@ import {
 import { PWAInstallPrompt } from "@/components/PWAInstallPrompt";
 import { PWAUpdatePrompt } from "@/components/PWAUpdatePrompt";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
-import { Alarm } from "../../types/alarm";
+import { Alarm } from "@/types/alarm";
 
 const StyledListItem = styled(ListItem)<{ isRead: boolean }>(
   ({ theme, isRead }) => ({

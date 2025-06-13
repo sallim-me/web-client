@@ -55,8 +55,8 @@ import {
   createSellingPost,
   getApplianceQuestions,
   analyzeImage,
-} from "../../../api/product";
-import { useAuthStore } from "../../../store/useAuthStore";
+} from "@/api/product";
+import { useAuthStore } from "@/store/useAuthStore";
 
 interface PostForm {
   title: string;

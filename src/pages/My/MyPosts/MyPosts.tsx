@@ -12,7 +12,7 @@ import {
   CircularProgress,
 } from "@mui/material";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
-import PostCard from "../../../components/PostCard";
+import PostCard from "@/components/PostCard";
 import { memberApi, MyPost } from "@/api/member";
 import { scrapApi, getScrapByProductId } from "@/api/scrap";
 

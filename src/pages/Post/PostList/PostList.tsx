@@ -13,9 +13,9 @@ import {
   Skeleton,
 } from "@mui/material";
 import AddIcon from "@mui/icons-material/Add";
-import PostCard from "../../../components/PostCard";
-import { getAllProducts, Product } from "../../../api/product";
-import { scrapApi } from "../../../api/scrap";
+import PostCard from "@/components/PostCard";
+import { getAllProducts, Product } from "@/api/product";
+import { scrapApi } from "@/api/scrap";
 
 const PostList = () => {
   const navigate = useNavigate();

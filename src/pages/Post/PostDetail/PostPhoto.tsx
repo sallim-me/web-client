@@ -21,7 +21,7 @@ import {
   ArrowBackIos as ArrowBackIcon,
   ArrowForwardIos as ArrowForwardIcon,
 } from '@mui/icons-material';
-import { getProductPhotos, Photo } from '../../../api/photo';
+import { getProductPhotos, Photo } from '@/api/photo';
 
 interface PostPhotoProps {
   productId: number;

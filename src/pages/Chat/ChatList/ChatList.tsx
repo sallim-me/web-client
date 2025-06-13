@@ -1,4 +1,3 @@
-import React from "react";
 import { useNavigate } from "react-router-dom";
 import {
   Box,
@@ -72,7 +71,7 @@ const ChatList = () => {
 
   return (
     <Container maxWidth="sm" sx={{ pb: "76px" }}>
-      <Paper
+      {/* <Paper
         sx={{
           position: "sticky",
           top: 0,
@@ -84,7 +83,7 @@ const ChatList = () => {
         <Typography variant="h6" align="center">
           채팅
         </Typography>
-      </Paper>
+      </Paper> */}
 
       <Stack spacing={0}>
         {chatRooms.map((chat) => (

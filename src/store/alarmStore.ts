@@ -1,7 +1,7 @@
 import { create } from "zustand";
 import { devtools } from "zustand/middleware";
-import { Alarm, AlarmState } from "../types/alarm";
-import { getAlarms, markAlarmAsRead, markAllAlarmsAsRead } from "../api/alarm";
+import { Alarm, AlarmState } from "@/types/alarm";
+import { getAlarms, markAlarmAsRead, markAllAlarmsAsRead } from "@/api/alarm";
 
 interface AlarmStore extends AlarmState {
   fetchAlarms: () => Promise<void>;
