@@ -773,7 +773,7 @@ const PostDetail = () => {
           )}
 
           {/* 거래 상태 칩 */}
-          {postDetail.isActive ? (
+          {/* {postDetail.isActive ? (
             <Chip
               label={postType === "selling" ? "판매 진행중" : "구매 진행중"}
               color="primary"
@@ -787,10 +787,10 @@ const PostDetail = () => {
               size="small"
               sx={{ width: "fit-content" }}
             />
-          )}
+          )} */}
 
           {/* 상세 설명 */}
-          <Typography variant="body1">{postDetail.content}</Typography>
+          {/* <Typography variant="body1">{postDetail.content}</Typography> */}
 
           {/* 판매글 추가 정보 (모델명, 브랜드, 가격 등) */}
           {postType === "selling" && postDetail && (
