@@ -142,7 +142,7 @@ export const PostPhoto: React.FC<PostPhotoProps> = ({ productId }) => {
   }
 
   return (
-    <Box sx={{ width: '100%', mb: 2 }}>
+    <Box sx={{ width: '100%' }}>
       <Typography variant="h6" gutterBottom>
         상품 사진 ({photos.length}장)
       </Typography>
