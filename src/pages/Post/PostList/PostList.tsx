@@ -8,9 +8,7 @@ import {
   Grid,
   IconButton,
   Stack,
-  Paper,
   Pagination,
-  Typography,
   CircularProgress,
   Skeleton,
 } from "@mui/material";
@@ -122,19 +120,29 @@ const PostList = () => {
       if (!product) return;
 
       if (product.isScraped) {
-        await scrapApi.deleteScrap(productId);
+        await scrapApi.deleteScrapByProductId(productId);
+        // Update the product's scrap status in the local state
+        setProducts((prevProducts) =>
+          prevProducts.map((p) =>
+            p.id === productId ? { ...p, isScraped: false, scrapId: undefined } : p
+          )
+        );
       } else {
-        await scrapApi.createScrap({ productId });
+        const response = await scrapApi.createScrap({ productId });
+        // Update the product's scrap status in the local state
+        setProducts((prevProducts) =>
+          prevProducts.map((p) =>
+            p.id === productId ? { ...p, isScraped: true, scrapId: response.id } : p
+          )
+        );
       }
-
-      // Update the product's scrap status in the local state
-      setProducts((prevProducts) =>
-        prevProducts.map((p) =>
-          p.id === productId ? { ...p, isScraped: !p.isScraped } : p
-        )
-      );
-    } catch (error) {
+    } catch (error: any) {
       console.error("Failed to toggle scrap:", error);
+      if (error.response?.status === 401) {
+        alert("로그인이 필요한 서비스입니다.");
+      } else {
+        alert("스크랩 처리 중 오류가 발생했습니다.");
+      }
     }
   };
 

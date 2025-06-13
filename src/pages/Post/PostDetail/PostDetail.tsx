@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import { useParams, useNavigate, useLocation } from "react-router-dom";
 import {
   Box,
@@ -28,18 +28,16 @@ import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import MoreVertIcon from "@mui/icons-material/MoreVert";
 import BookmarkIcon from "@mui/icons-material/Bookmark";
 import BookmarkBorderIcon from "@mui/icons-material/BookmarkBorder";
-import { productApi } from "../../../api/product";
+import { productApi } from "@/api/product";
 import type {
   SellingPostDetail,
   BuyingPostDetail,
   CreateCommentResponseData,
-} from "../../../api/product";
-import { checkScrap, scrapApi } from "../../../api/scrap";
-import { updateSellingPost, getApplianceQuestions } from "../../../api/product";
-import { useAuthStore } from "../../../store/useAuthStore";
-import axios, { AxiosError } from "axios";
+} from "@/api/product";
+import { scrapApi, getScrapByProductId } from "@/api/scrap";
+import { updateSellingPost, getApplianceQuestions } from "@/api/product";
+import { useAuthStore } from "@/store/useAuthStore";
 import CloseIcon from "@mui/icons-material/Close";
-import AddIcon from "@mui/icons-material/Add";
 
 import { PostPhoto } from "./PostPhoto";
 import { PostPriceCard } from "./PostPriceCard";
@@ -75,7 +73,6 @@ const PostDetail = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isScrapped, setIsScrapped] = useState(false);
-  const [scrapId, setScrapId] = useState<number | null>(null);
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const {
     userProfile,
@@ -96,15 +93,12 @@ const PostDetail = () => {
       try {
         console.log("Fetching user profile...");
         await fetchUserProfile();
-        console.log("User profile fetched:", userProfile);
-        console.log("User nickname:", userProfile?.nickname);
-        console.log("User memberId:", userProfile?.memberId);
       } catch (error) {
         console.error("Error fetching user profile:", error);
       }
     };
     loadUserProfile();
-  }, []);
+  }, [fetchUserProfile]);
 
   // userProfile이 변경될 때마다 nickname 로깅
   useEffect(() => {
@@ -140,8 +134,14 @@ const PostDetail = () => {
           console.log("Buying post detail fetched:", response);
         }
         // 스크랩 상태 확인
-        const scrapStatus = await checkScrap(Number(id));
-        setIsScrapped(scrapStatus);
+        try {
+          const scrapInfo = await getScrapByProductId(Number(id));
+          setIsScrapped(scrapInfo.isScraped);
+        } catch (error) {
+          console.error("Error checking scrap status:", error);
+          // 스크랩 상태 확인 실패 시 기본값으로 설정
+          setIsScrapped(false);
+        }
       } catch (error) {
         console.error("Error fetching post detail:", error);
         setError("게시글을 불러오는데 실패했습니다.");
@@ -345,46 +345,31 @@ const PostDetail = () => {
     if (!id) return;
 
     console.log("handleScrap called.");
-    console.log("userProfile in handleScrap:", userProfile);
-    console.log("userProfile?.memberId in handleScrap:", userProfile?.memberId);
-
-    // Check if user is logged in
-    if (!userProfile || !userProfile.memberId) {
-      console.error("User profile not available for scrap operation.");
-      alert("로그인이 필요한 서비스입니다.");
-      return;
-    }
 
     try {
       if (isScrapped) {
-        // 스크랩 취소 (스크랩 ID 사용)
-        if (scrapId) {
-          await scrapApi.deleteScrap(scrapId);
-          setIsScrapped(false);
-          setScrapId(null);
-        } else {
-          console.error("Scrap ID not available for deletion.");
-          alert(
-            "스크랩 취소에 실패했습니다. (스크랩 ID 없음 - 새로고침 후 다시 시도해주세요.)"
-          );
-        }
+        // 스크랩 취소 - productId를 기반으로 삭제
+        await scrapApi.deleteScrapByProductId(Number(id));
+        setIsScrapped(false);
       } else {
         // 스크랩 요청
         const response = await scrapApi.createScrap({ productId: Number(id) });
         if (response && response.id) {
-          setScrapId(response.id);
           setIsScrapped(true);
         } else {
-          console.error(
-            "Failed to get scrap ID from createScrap response.",
-            response
-          );
+          console.error("Failed to get scrap ID from createScrap response.", response);
           alert("스크랩 요청에 실패했습니다. (스크랩 ID 응답 오류)");
         }
       }
-    } catch (error: AxiosError | any) {
+    } catch (error: any) {
       console.error("Error toggling scrap:", error);
-      alert("스크랩 상태 변경에 실패했습니다.");
+      
+      // 401 Unauthorized 에러인 경우 로그인 필요 메시지 표시
+      if (error.response?.status === 401) {
+        alert("로그인이 필요한 서비스입니다.");
+      } else {
+        alert("스크랩 상태 변경에 실패했습니다.");
+      }
     }
   };
 
@@ -427,7 +412,7 @@ const PostDetail = () => {
   };
 
   // 댓글 불러오기
-  const fetchComments = async () => {
+  const fetchComments = useCallback(async () => {
     if (!id) return;
     try {
       const response = await productApi.getComments(Number(id));
@@ -436,7 +421,7 @@ const PostDetail = () => {
     } catch (error) {
       console.error("Error fetching comments:", error);
     }
-  };
+  }, [id]);
 
   // 댓글 작성
   const handleCommentSubmit = async () => {
@@ -472,7 +457,7 @@ const PostDetail = () => {
 
   useEffect(() => {
     fetchComments();
-  }, [id]);
+  }, [fetchComments]);
 
   if (loading) {
     return (
