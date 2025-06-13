@@ -100,6 +100,7 @@ const PostCreate = () => {
   const [questions, setQuestions] = useState<ApplianceQuestion[]>([]);
   const [autoFilled, setAutofilled] = useState(false);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [autoFilledFields, setAutoFilledFields] = useState<Set<string>>(new Set());
   const [imageViewerOpen, setImageViewerOpen] = useState(false);
   const [selectedImageIndex, setSelectedImageIndex] = useState<number | null>(null);
@@ -130,13 +131,14 @@ const PostCreate = () => {
   );
 
   const handleBack = () => {
-    navigate(-1);
+    navigate("/");
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!validateForm()) return;
 
+    setIsSubmitting(true);
     try {
       if (form.tradeType === "buy") {
         const userProfile = useAuthStore.getState().userProfile;
@@ -144,6 +146,7 @@ const PostCreate = () => {
 
         if (!userProfile?.isBuyer) {
           alert("바이어로 등록된 사용자만 구매글을 작성할 수 있습니다.");
+          setIsSubmitting(false);
           return;
         }
 
@@ -158,12 +161,20 @@ const PostCreate = () => {
         };
 
         console.log("Submitting buying post data:", data);
-        await createBuyingPost(data);
+        const response = await createBuyingPost(data);
+        
+        // 구매글 생성 성공 시 상세 페이지로 이동
+        if (response.data && response.data.id) {
+          navigate(`/post/detail/${response.data.id}?type=buying`);
+        } else {
+          navigate("/");
+        }
       } else {
         const userProfile = useAuthStore.getState().userProfile;
         if (!userProfile) {
           alert("로그인이 필요합니다.");
           navigate("/login");
+          setIsSubmitting(false);
           return;
         }
 
@@ -190,13 +201,19 @@ const PostCreate = () => {
 
         console.log("Submitting selling post data:", data);
         console.log("Image files:", form.imageFiles);
-        await createSellingPost(data, form.imageFiles);
+        const response = await createSellingPost(data, form.imageFiles);
+        
+        // 판매글 생성 성공 시 상세 페이지로 이동
+        if (response.data && response.data.id) {
+          navigate(`/post/detail/${response.data.id}?type=selling`);
+        } else {
+          navigate("/");
+        }
       }
-
-      navigate("/");
     } catch (error) {
       console.error("Error creating post:", error);
       alert("게시글 작성에 실패했습니다.");
+      setIsSubmitting(false);
     }
   };
 
@@ -650,7 +667,7 @@ const PostCreate = () => {
         elevation={0}
       >
         <Stack direction="row" alignItems="center" spacing={0} sx={{ mr: "32px" }}>
-          <IconButton onClick={handleBack} size="small">
+          <IconButton onClick={handleBack} size="small" disabled={isSubmitting}>
             <ArrowBackIcon />
           </IconButton>
           <Typography variant="h6" sx={{ flex: 1, textAlign: "center" }}>
@@ -1042,6 +1059,7 @@ const PostCreate = () => {
               sx={{ mt: 2 }}
               disabled={
                 isAnalyzing ||
+                isSubmitting ||
                 !form.title ||
                 !form.tradeType ||
                 !form.category ||
@@ -1049,7 +1067,14 @@ const PostCreate = () => {
                 !form.description
               }
             >
-              등록
+              {isSubmitting ? (
+                <>
+                  <CircularProgress size={20} sx={{ mr: 1, color: "white" }} />
+                  등록 중...
+                </>
+              ) : (
+                "등록"
+              )}
             </Button>
           </Stack>
         </form>

@@ -37,10 +37,29 @@ export interface CreateBuyingPostResponse {
   code: string;
   message: string;
   data: {
+    id: number;
     title: string;
     content: string;
     quantity: number;
     applianceType: "REFRIGERATOR" | "WASHING_MACHINE" | "AIR_CONDITIONER";
+    isActive: boolean;
+  };
+}
+
+export interface CreateSellingPostResponse {
+  status: number;
+  code: string;
+  message: string;
+  data: {
+    id: number;
+    title: string;
+    content: string;
+    applianceType: "REFRIGERATOR" | "WASHING_MACHINE" | "AIR_CONDITIONER";
+    modelName: string;
+    modelNumber: string;
+    brand: string;
+    price: number;
+    userPrice: number;
     isActive: boolean;
   };
 }
@@ -172,7 +191,7 @@ export const createBuyingPost = async (
   return response.data;
 };
 
-export const createSellingPost = async (data: CreateSellingPostRequest, photos?: File[]) => {
+export const createSellingPost = async (data: CreateSellingPostRequest, photos?: File[]): Promise<CreateSellingPostResponse> => {
   const formData = new FormData();
   
   // request 데이터를 JSON 문자열로 추가

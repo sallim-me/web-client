@@ -154,7 +154,7 @@ const PostDetail = () => {
   }, [id, postType]);
 
   const handleBack = () => {
-    navigate(-1);
+    navigate("/");
   };
 
   const handleMenuClick = (event: React.MouseEvent<HTMLElement>) => {
@@ -621,7 +621,7 @@ const PostDetail = () => {
       {/* 사진 영역 */}
       {
         postType === "selling" && postDetail && (
-          <Box sx={{ p: 2 }}>
+          <Box sx={{ px: 2 }}>
             <PostPhoto productId={postDetail.id} />
           </Box>
         )
