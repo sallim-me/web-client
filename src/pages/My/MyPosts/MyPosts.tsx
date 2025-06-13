@@ -14,11 +14,17 @@ import {
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import PostCard from "../../../components/PostCard";
 import { memberApi, MyPost } from "@/api/member";
+import { scrapApi, getScrapByProductId } from "@/api/scrap";
+
+// MyPost에 스크랩 상태를 추가한 확장 타입
+interface MyPostWithScrap extends MyPost {
+  isScraped?: boolean;
+}
 
 const MyPosts = () => {
   const navigate = useNavigate();
   const [currentPage, setCurrentPage] = useState(1);
-  const [posts, setPosts] = useState<MyPost[]>([]);
+  const [posts, setPosts] = useState<MyPostWithScrap[]>([]);
   const [loading, setLoading] = useState(true);
   const postsPerPage = 10;
 
@@ -26,7 +32,22 @@ const MyPosts = () => {
     const fetchPosts = async () => {
       try {
         const response = await memberApi.getMyPosts();
-        setPosts(response.data);
+        const postsData = response.data;
+        
+        // 각 포스트의 스크랩 상태를 확인
+        const postsWithScrapStatus = await Promise.all(
+          postsData.map(async (post) => {
+            try {
+              const scrapInfo = await getScrapByProductId(post.productId);
+              return { ...post, isScraped: scrapInfo.isScraped };
+            } catch (error) {
+              console.error(`Failed to get scrap status for post ${post.productId}:`, error);
+              return { ...post, isScraped: false };
+            }
+          })
+        );
+        
+        setPosts(postsWithScrapStatus);
       } catch (error) {
         console.error("Failed to fetch posts:", error);
       } finally {
@@ -48,6 +69,38 @@ const MyPosts = () => {
     value: number
   ) => {
     setCurrentPage(value);
+  };
+
+  const handleScrapClick = async (productId: number) => {
+    try {
+      const post = posts.find((p) => p.productId === productId);
+      if (!post) return;
+
+      if (post.isScraped) {
+        await scrapApi.deleteScrapByProductId(productId);
+        // Update the post's scrap status in the local state
+        setPosts((prevPosts) =>
+          prevPosts.map((p) =>
+            p.productId === productId ? { ...p, isScraped: false } : p
+          )
+        );
+      } else {
+        await scrapApi.createScrap({ productId });
+        // Update the post's scrap status in the local state
+        setPosts((prevPosts) =>
+          prevPosts.map((p) =>
+            p.productId === productId ? { ...p, isScraped: true } : p
+          )
+        );
+      }
+    } catch (error: any) {
+      console.error("Failed to toggle scrap:", error);
+      if (error.response?.status === 401) {
+        alert("로그인이 필요한 서비스입니다.");
+      } else {
+        alert("스크랩 상태 변경에 실패했습니다.");
+      }
+    }
   };
 
   const handleBack = () => {
@@ -98,8 +151,8 @@ const MyPosts = () => {
                   price={post.price}
                   quantity={null}
                   thumbnailUrl={""}
-                  isScraped={false}
-                  onScrapClick={() => {}}
+                  isScraped={post.isScraped || false}
+                  onScrapClick={() => handleScrapClick(post.productId)}
                   postType={post.postType.toLowerCase() as "buying" | "selling"}
                   isActive={post.isActive}
                   createdAt={post.createdAt}
