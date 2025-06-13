@@ -1,0 +1,66 @@
+flowchart TB
+    %% A[글 작성 페이지 진입] --> B[제목 입력]
+    %% B --> C[거래 유형 선택]
+    
+    %% C --> D{거래 유형?}
+    %% D -->|판매| E[이미지 업로드]
+    %% D -->|구매| F[카테고리 선택]
+    
+    A[글 작성 페이지 진입] --> E[이미지 업로드]
+    E --> G{이미지 업로드됨?}
+    G -->|Yes| H[AI 자동 채우기 옵션]
+    G -->|No| I[직접 정보 입력]
+    
+    H --> J{AI 분석 사용?}
+    J -->|Yes| K[분석할 이미지 선택]
+    %% K --> L[AI 이미지 분석 실행]
+    J -->|No| I[직접 정보 입력]
+    K --> M[자동으로 필드 채우기]
+    %% M --> N[카테고리에 따른 질문 로드]
+
+    I --> FF[판매글 작성 완료]
+    M --> FF[판매글 작성 완료]
+    
+    
+    %% J -->|No| I
+    %% I --> O[카테고리 선택]
+    %% O --> P[모델명, 브랜드, 가격 입력]
+    %% P --> Q[상세 설명 입력]
+    %% Q --> N
+    
+    %% N --> R[제품 상태 질문 답변]
+    %% R --> S[폼 검증]
+    
+    %% F --> T[수량 입력]
+    %% T --> U[상세 설명 입력]
+    %% U --> V{바이어 권한?}
+    %% V -->|Yes| S
+    %% V -->|No| W[권한 없음 알림]
+    %% W --> X[종료]
+    
+    %% Y -->|Yes| BB[게시글 생성 API 호출]
+    %% BB --> CC{생성 성공?}
+    %% CC -->|Yes| DD[상세 페이지로 이동]
+    %% CC -->|No| EE[오류 메시지 표시]
+    %% EE --> S
+    
+    %% DD --> FF[완료]
+    
+    %% 추가 기능들
+    %% E --> GG[이미지 순서 변경]
+    %% GG --> HH[드래그 앤 드롭으로 재배열]
+    
+    %% E --> II[이미지 뷰어]
+    %% II --> JJ[확대/축소/회전]
+    %% JJ --> KK[이미지 네비게이션]
+    
+    %% 스타일링
+    %% classDef decision fill:#ffe6cc
+    %% classDef process fill:#e6f3ff
+    %% classDef terminal fill:#e6ffe6
+    %% classDef error fill:#ffe6e6
+    
+    %% class D,G,J,V,Y,CC decision
+    %% class A,B,C,E,F,H,I,K,L,M,N,O,P,Q,R,S,T,U,BB,GG,HH,II,JJ,KK process
+    %% class DD,FF terminal
+    %% class W,X,Z,EE error

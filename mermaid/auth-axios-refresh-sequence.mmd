@@ -1,0 +1,30 @@
+sequenceDiagram
+    autonumber
+    participant React
+    participant Interceptor
+    participant SpringAPI
+
+    %% 1. 만료된 토큰으로 요청
+    React->>Interceptor: API 요청
+    Interceptor->>Interceptor: accessToken 확인
+    Interceptor->>SpringAPI: 요청 (Authorization 포함)
+    SpringAPI-->>Interceptor: 401 Unauthorized
+
+    %% 2. 토큰 재발급
+    Interceptor->>Interceptor: isRefreshing 여부 확인
+    alt 첫 요청
+        Interceptor->>SpringAPI: /auth/reissue 요청 (Refresh Token)
+        alt 성공
+            SpringAPI-->>Interceptor: 200 OK (새 accessToken)
+            Interceptor->>Interceptor: 실패한 요청 재시도
+            Interceptor->>SpringAPI: 원래 요청 재시도
+            SpringAPI-->>Interceptor: 200 OK
+            Interceptor-->>React: 응답 전달
+        else 실패
+            SpringAPI-->>Interceptor: 401/403
+            Interceptor-->>React: 로그인 만료 처리 (/login 이동)
+        end
+    else 대기 중 요청
+        Interceptor->>Interceptor: 큐에 요청 저장
+        Note right of Interceptor: 토큰 갱신 후 일괄 재요청
+    end
