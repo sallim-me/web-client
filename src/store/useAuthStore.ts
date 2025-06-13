@@ -114,21 +114,22 @@ export const useAuthStore = create<AuthState>()(
         reissueToken: async () => {
           const { refreshToken } = get();
           if (!refreshToken) {
+            console.error("No refresh token available");
             throw new Error("리프레시 토큰이 없습니다.");
           }
 
           set({ isLoading: true, error: null });
           try {
-            console.log("Attempting to reissue token...");
+            console.log("🔄 Starting token reissue process...");
             const response = await authApi.reissue();
-            console.log("Token reissue response:", response);
+            console.log("📦 Token reissue API response:", response);
 
             if (
               !response ||
               !response["access-token"] ||
               !response["refresh-token"]
             ) {
-              console.error("Invalid token reissue response:", response);
+              console.error("❌ Invalid token reissue response structure:", response);
               throw new Error("토큰 갱신에 실패했습니다.");
             }
 
@@ -136,7 +137,10 @@ export const useAuthStore = create<AuthState>()(
               accessToken: response["access-token"],
               refreshToken: response["refresh-token"],
             };
-            console.log("Storing new tokens:", tokens);
+            console.log("💾 Storing new tokens to localStorage and state:", {
+              accessToken: tokens.accessToken.substring(0, 20) + "...",
+              refreshToken: tokens.refreshToken.substring(0, 20) + "...",
+            });
 
             // localStorage에 새 토큰 저장
             localStorage.setItem("accessToken", tokens.accessToken);
@@ -147,11 +151,21 @@ export const useAuthStore = create<AuthState>()(
               isAuthenticated: true,
               isLoading: false,
             });
+            
+            console.log("✅ Token reissue completed successfully");
           } catch (error) {
-            console.error("Token reissue error:", error);
+            console.error("❌ Token reissue error:", error);
+            
+            // 토큰 재발급 실패 시 인증 정보 완전 초기화
+            localStorage.removeItem("accessToken");
+            localStorage.removeItem("refreshToken");
+            
             set({
+              accessToken: null,
+              refreshToken: null,
               isAuthenticated: false,
               isLoading: false,
+              userProfile: null,
               error:
                 error instanceof Error
                   ? error.message

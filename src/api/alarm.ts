@@ -1,5 +1,5 @@
-import { Alarm } from "../types/alarm";
-import { axiosInstance } from "../lib/axios";
+import { Alarm } from "@/types/alarm";
+import { axiosInstance } from "@/lib/axios";
 
 export const getAlarms = async (): Promise<Alarm[]> => {
   const { data } = await axiosInstance.get<Alarm[]>("/api/alarms");
