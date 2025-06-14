@@ -175,6 +175,12 @@ const MyPage = () => {
           <Box sx={{ display: "flex", justifyContent: "center", py: 2 }}>
             <CircularProgress size={24} />
           </Box>
+        ) : myPosts.length === 0 ? (
+          <Box sx={{ textAlign: "center", mt: 4 }}>
+            <Typography color="text.secondary">
+              아직 작성한 글이 없어요.
+            </Typography>
+          </Box>
         ) : (
           <Box
             sx={{
@@ -269,9 +275,9 @@ const MyPage = () => {
             <CircularProgress size={24} />
           </Box>
         ) : scraps.length === 0 ? (
-          <Typography variant="body2" color="text.secondary" align="center">
-            스크랩한 글이 없습니다.
-          </Typography>
+          <Box sx={{ textAlign: "center", mt: 4 }}>
+            <Typography color="text.secondary">내역이 없어요.</Typography>
+          </Box>
         ) : (
           <Box
             sx={{

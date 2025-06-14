@@ -39,6 +39,7 @@ import { useAuthStore } from "../../../store/useAuthStore";
 import axios, { AxiosError } from "axios";
 import CloseIcon from "@mui/icons-material/Close";
 import AddIcon from "@mui/icons-material/Add";
+import { chatApi } from "../../../api/chat";
 
 // 수정 폼의 타입 정의
 interface EditForm {
@@ -421,9 +422,46 @@ const PostDetail = () => {
     return color;
   };
 
-  const handleChat = (buyerId: number) => {
-    // Implement the chat logic here
-    console.log(`Chat with buyer ID: ${buyerId}`);
+  const handleChat = async () => {
+    console.log("handleChat called");
+    console.log("Current userProfile in handleChat:", userProfile);
+    console.log("Current postId (from URL) in handleChat:", id);
+
+    if (!userProfile?.memberId) {
+      alert("로그인이 필요합니다.");
+      return;
+    }
+    if (!id) {
+      alert("게시글 정보가 없습니다."); // productId (id)가 없을 경우
+      return;
+    }
+
+    try {
+      // 이미 존재하는 채팅방이 있는지 확인하는 로직이 필요할 수 있습니다.
+      // 하지만 현재는 바로 생성 API를 호출합니다.
+      console.log("Calling createChatRoom API with productId:", id);
+      const response = await chatApi.createChatRoom({
+        productId: Number(id), // id 변수 사용
+      });
+      console.log("Chat room created successfully:", response);
+      console.log(
+        "Attempting to navigate to chat room with ID:",
+        response.data.chatRoomId
+      );
+      // 채팅방 생성 성공 시 채팅방 페이지로 이동
+      navigate(`/chat/${response.data.chatRoomId}`);
+    } catch (error) {
+      console.error("Error creating chat room:", error);
+      // 에러 처리 로직 추가 (예: 이미 존재하는 채팅방이면 해당 채팅방으로 이동)
+      if (axios.isAxiosError(error) && error.response?.status === 409) {
+        // 409 Conflict 에러는 이미 채팅방이 존재하는 경우일 수 있습니다.
+        // API 응답에 기존 채팅방 ID가 포함되어 있다면 해당 채팅방으로 이동
+        // 현재 API 응답 구조에는 없는 것 같으므로, 일단 에러 메시지 표시
+        alert("이미 해당 게시글에 대한 채팅방이 존재합니다."); // 또는 navigate to existing chat room if ID is available
+      } else {
+        alert("채팅방 생성에 실패했습니다.");
+      }
+    }
   };
 
   // 댓글 불러오기
@@ -669,13 +707,7 @@ const PostDetail = () => {
                   {(postDetail as BuyingPostDetail).buyerNickname}
                 </Typography>
                 {/* 채팅하기 버튼 (본인 글이 아닐 때만 표시)*/}
-                <Button
-                  variant="outlined"
-                  size="small"
-                  onClick={() =>
-                    handleChat((postDetail as BuyingPostDetail).buyerId)
-                  }
-                >
+                <Button variant="outlined" size="small" onClick={handleChat}>
                   채팅
                 </Button>
               </Stack>
