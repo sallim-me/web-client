@@ -52,8 +52,10 @@ export const PostPhoto: React.FC<PostPhotoProps> = ({ productId }) => {
       }
     };
 
-    if (productId) {
+    if (productId && productId > 0) {
       fetchPhotos();
+    } else {
+      setLoading(false);
     }
   }, [productId]);
 
@@ -90,12 +92,17 @@ export const PostPhoto: React.FC<PostPhotoProps> = ({ productId }) => {
   };
 
   const handleNextPhoto = () => {
-    if (selectedPhotoIndex !== null && selectedPhotoIndex < photos.length - 1) {
+    if (selectedPhotoIndex !== null && photos && photos.length > 0 && selectedPhotoIndex < photos.length - 1) {
       setSelectedPhotoIndex(selectedPhotoIndex + 1);
       setZoom(1);
       setRotation(0);
     }
   };
+
+  // Return null if productId is invalid
+  if (!productId || productId <= 0) {
+    return null;
+  }
 
   if (loading) {
     return (
@@ -129,7 +136,7 @@ export const PostPhoto: React.FC<PostPhotoProps> = ({ productId }) => {
     );
   }
 
-  if (photos.length === 0) {
+  if (photos?.length === 0) {
     return (
       <></>
       // <Box sx={{ width: '100%', mb: 2 }}>
@@ -142,9 +149,10 @@ export const PostPhoto: React.FC<PostPhotoProps> = ({ productId }) => {
   }
 
   return (
+    !photos?.length ? <></> :
     <Box sx={{ width: '100%' }}>
       <Typography variant="h6" gutterBottom>
-        상품 사진 ({photos.length}장)
+        상품 사진 ({photos?.length || 0}장)
       </Typography>
       
       {/* Photo Thumbnails with Horizontal Scroll */}
@@ -167,7 +175,7 @@ export const PostPhoto: React.FC<PostPhotoProps> = ({ productId }) => {
           },
         }}
       >
-        {photos.map((photo, index) => (
+        {(photos || []).map((photo, index) => (
           <Card
             key={photo.id}
             sx={{
@@ -258,7 +266,7 @@ export const PostPhoto: React.FC<PostPhotoProps> = ({ productId }) => {
               borderRadius: 1,
             }}
           >
-            {selectedPhotoIndex !== null ? selectedPhotoIndex + 1 : 0} / {photos.length}
+            {selectedPhotoIndex !== null ? selectedPhotoIndex + 1 : 0} / {photos?.length || 0}
           </Typography>
 
           {/* Navigation Buttons */}
@@ -282,7 +290,7 @@ export const PostPhoto: React.FC<PostPhotoProps> = ({ productId }) => {
             </IconButton>
           )}
 
-          {selectedPhotoIndex !== null && selectedPhotoIndex < photos.length - 1 && (
+          {selectedPhotoIndex !== null && photos && photos.length > 0 && selectedPhotoIndex < photos.length - 1 && (
             <IconButton
               onClick={handleNextPhoto}
               sx={{
@@ -324,8 +332,8 @@ export const PostPhoto: React.FC<PostPhotoProps> = ({ productId }) => {
               }}
             >
               <img
-                src={photos[selectedPhotoIndex].fileUrl}
-                alt={`상품 사진 ${selectedPhotoIndex + 1}`}
+                src={photos && selectedPhotoIndex !== null && photos[selectedPhotoIndex] ? photos[selectedPhotoIndex].fileUrl : ''}
+                alt={`상품 사진 ${selectedPhotoIndex !== null ? selectedPhotoIndex + 1 : 0}`}
                 style={{
                   maxWidth: '100%',
                   maxHeight: '100%',
