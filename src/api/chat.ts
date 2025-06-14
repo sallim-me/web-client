@@ -200,9 +200,12 @@ export class ChatWebSocketClient {
       }
 
       // SockJS를 통한 WebSocket 연결
-      const wsUrl = process.env.NODE_ENV === 'production' 
-        ? "https://sallim.me/ws-chat" 
-        : "http://localhost:8080/ws-chat";
+      // const wsUrl = process.env.NODE_ENV === 'production' 
+      //   ? "https://sallim.me/ws-chat" 
+      //   : "http://localhost:8080/ws-chat";
+      // const wsUrl = process.env.REACT_APP_API_URL || "https://dev-back.sallim.me/ws-chat";
+      let wsUrl = process.env.REACT_APP_API_URL || "https://dev-back.sallim.me";
+      wsUrl += "/ws-chat";
       
       console.log(`🔌 Connecting to WebSocket: ${wsUrl}`);
       const socket = new SockJS(wsUrl);
