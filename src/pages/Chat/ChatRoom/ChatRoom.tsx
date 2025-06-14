@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useRef, useEffect, useCallback } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
@@ -13,13 +13,17 @@ import {
   Divider,
   Skeleton,
   Alert,
+  Chip,
 } from "@mui/material";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import SendIcon from "@mui/icons-material/Send";
 import ArrowForwardIcon from "@mui/icons-material/ArrowForward";
 import { 
   chatApi, 
-  ChatMessageDTO
+  ChatMessageDTO,
+  chatWebSocketClient,
+  WebSocketReceiveMessage,
+  WebSocketConnectionStatus
 } from "@/api/chat";
 import { useAuthStore } from "@/store/useAuthStore";
 
@@ -41,9 +45,134 @@ const ChatRoom = () => {
   const { chatId } = useParams();
   const [message, setMessage] = useState("");
   const [messages, setMessages] = useState<MessageGroup[]>([]);
+  const [connectionStatus, setConnectionStatus] = useState<WebSocketConnectionStatus>({ connected: false });
   const chatAreaRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
   const queryClient = useQueryClient();
   const userProfile = useAuthStore((state) => state.userProfile);
+
+  // 웹소켓 메시지 수신 처리
+  const handleWebSocketMessage = useCallback((wsMessage: WebSocketReceiveMessage) => {
+    console.log("🎯 Handling WebSocket message:", wsMessage);
+    if (!userProfile) {
+      console.warn("⚠️  No user profile, ignoring message");
+      return;
+    }
+
+    const newMessage: ExtendedMessage = {
+      id: wsMessage.id,
+      chatRoomId: wsMessage.chatRoomId,
+      senderId: wsMessage.senderId,
+      receiverId: wsMessage.receiverId,
+      content: wsMessage.content,
+      createdAt: wsMessage.createdAt,
+      isMine: wsMessage.senderId === userProfile.memberId,
+      time: new Date(wsMessage.createdAt).toLocaleTimeString("ko-KR", {
+        hour: "2-digit",
+        minute: "2-digit",
+      }),
+    };
+
+    console.log("📝 New message created:", newMessage);
+
+    setMessages(prevMessages => {
+      const messageDate = new Date(wsMessage.createdAt);
+      const today = messageDate.toLocaleDateString("ko-KR", {
+        year: "numeric",
+        month: "long",
+        day: "numeric",
+      });
+
+      const updatedMessages = [...prevMessages];
+      let todayGroup = updatedMessages.find(group => group.date === today);
+
+      if (!todayGroup) {
+        todayGroup = {
+          id: today,
+          date: today,
+          items: []
+        };
+        updatedMessages.push(todayGroup);
+        console.log("📅 Created new date group:", today);
+      }
+
+      // 중복 메시지 체크
+      const existingMessage = todayGroup.items.find(msg => msg.id === newMessage.id);
+      if (!existingMessage) {
+        todayGroup.items.push(newMessage);
+        todayGroup.items.sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
+        console.log("✅ Message added to group:", newMessage.content);
+      } else {
+        console.log("⚠️  Duplicate message ignored:", newMessage.id);
+      }
+
+      const sortedMessages = updatedMessages.sort((a, b) => 
+        new Date(a.items[0].createdAt).getTime() - new Date(b.items[0].createdAt).getTime()
+      );
+      
+      console.log("📊 Updated messages:", sortedMessages);
+      return sortedMessages;
+    });
+  }, [userProfile]);
+
+  // 웹소켓 연결 상태 변경 처리
+  const handleConnectionChange = useCallback((connected: boolean, error?: string) => {
+    setConnectionStatus({ connected, error });
+  }, []);
+
+  // 채팅방 입장 시 웹소켓 연결 및 설정
+  useEffect(() => {
+    if (!chatId || !userProfile) return;
+
+    let isCleanedUp = false;
+
+    const setupWebSocket = async () => {
+      try {
+        console.log("🚀 Setting up WebSocket for room:", chatId);
+        
+        // 채팅방 입장 API 호출
+        await chatApi.enterChatRoom(chatId);
+        console.log("✅ Entered chat room via API");
+
+        if (isCleanedUp) return;
+
+        // 먼저 콜백들을 등록
+        chatWebSocketClient.onConnectionChange(handleConnectionChange);
+        chatWebSocketClient.onMessage(chatId, handleWebSocketMessage);
+        console.log("✅ Callbacks registered");
+
+        // 웹소켓 연결
+        if (!chatWebSocketClient.isConnected()) {
+          console.log("🔌 Connecting to WebSocket...");
+          await chatWebSocketClient.connect();
+          console.log("✅ WebSocket connected");
+        }
+
+        if (isCleanedUp) return;
+
+        // 채팅방 구독
+        console.log("🔔 Subscribing to chat room...");
+        chatWebSocketClient.subscribeToChatRoom(chatId);
+        console.log("✅ Subscribed to chat room");
+
+      } catch (error) {
+        console.error("❌ Failed to setup WebSocket:", error);
+        setConnectionStatus({ connected: false, error: "연결에 실패했습니다." });
+      }
+    };
+
+    setupWebSocket();
+
+    // 정리 함수
+    return () => {
+      console.log("🧹 Cleaning up WebSocket for room:", chatId);
+      isCleanedUp = true;
+      if (chatId) {
+        chatWebSocketClient.unsubscribeFromChatRoom(chatId);
+        chatApi.exitChatRoom(chatId).catch(console.error);
+      }
+    };
+  }, [chatId, userProfile, handleConnectionChange, handleWebSocketMessage]);
 
   // 채팅방 상태 조회
   const { data: chatRoomStatus, isLoading: statusLoading, error: statusError } = useQuery({
@@ -103,17 +232,39 @@ const ChatRoom = () => {
     }
   }, [chatMessages, userProfile]);
 
-  // 메시지 전송 뮤테이션
+  // 메시지 전송 (웹소켓 사용)
   const sendMessageMutation = useMutation({
-    mutationFn: (content: string) => chatApi.sendMessage(chatId!, {
-      content: content
-    }),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['chatMessages', chatId] });
-      queryClient.invalidateQueries({ queryKey: ['chatRooms'] });
+    mutationFn: async (content: string) => {
+      if (!chatId) throw new Error("Chat ID not found");
+      
+      console.log("📤 Attempting to send message:", content);
+      
+      // 웹소켓이 연결되어 있으면 웹소켓으로 전송, 아니면 REST API 사용
+      if (chatWebSocketClient.isConnected()) {
+        console.log("📤 Sending via WebSocket");
+        chatWebSocketClient.sendMessage(chatId, content);
+        return { success: true, method: "websocket" };
+      } else {
+        console.log("📤 Sending via REST API (fallback)");
+        // 폴백: REST API 사용
+        const result = await chatApi.sendMessage(chatId, { content });
+        return { success: true, method: "rest", data: result };
+      }
+    },
+    onSuccess: (result) => {
+      console.log("✅ Message sent successfully:", result);
+      // 웹소켓으로 전송한 경우 메시지는 실시간으로 수신됨
+      // REST API로 전송한 경우에만 쿼리 무효화
+      if (result.method === "rest") {
+        console.log("🔄 Invalidating queries for REST API send");
+        queryClient.invalidateQueries({ queryKey: ['chatMessages', chatId] });
+        queryClient.invalidateQueries({ queryKey: ['chatRooms'] });
+      } else {
+        console.log("⏳ Waiting for WebSocket message to arrive");
+      }
     },
     onError: (error) => {
-      console.error('메시지 전송 실패:', error);
+      console.error('❌ 메시지 전송 실패:', error);
     }
   });
 
@@ -131,6 +282,21 @@ const ChatRoom = () => {
     if (message.trim() && !sendMessageMutation.isPending) {
       sendMessageMutation.mutate(message);
       setMessage("");
+      // 메시지 전송 후 입력창에 포커스 재설정
+      setTimeout(() => {
+        inputRef.current?.focus();
+      }, 100);
+    }
+  };
+
+  const handleSendButtonClick = () => {
+    if (message.trim() && !sendMessageMutation.isPending) {
+      sendMessageMutation.mutate(message);
+      setMessage("");
+      // 전송 버튼 클릭 후 입력창에 포커스 재설정
+      setTimeout(() => {
+        inputRef.current?.focus();
+      }, 100);
     }
   };
 
@@ -140,6 +306,17 @@ const ChatRoom = () => {
       chatAreaRef.current.scrollTop = chatAreaRef.current.scrollHeight;
     }
   }, [messages]);
+
+  // 채팅방 입장 시 입력창에 포커스
+  useEffect(() => {
+    if (userProfile && chatId) {
+      const timer = setTimeout(() => {
+        inputRef.current?.focus();
+      }, 500); // 웹소켓 연결 완료 후 포커스
+
+      return () => clearTimeout(timer);
+    }
+  }, [userProfile, chatId]);
 
   // 로딩 상태
   if (statusLoading || messagesLoading) {
@@ -229,7 +406,23 @@ const ChatRoom = () => {
             </Typography>
             <ArrowForwardIcon fontSize="small" />
           </Box>
+          {/* 연결 상태 표시 */}
+          <Chip
+            size="small"
+            label={connectionStatus.connected ? "연결됨" : "연결 안됨"}
+            color={connectionStatus.connected ? "success" : "error"}
+            sx={{ 
+              backgroundColor: connectionStatus.connected ? "success.light" : "error.light",
+              color: "white",
+              fontSize: "0.75rem"
+            }}
+          />
         </Stack>
+        {connectionStatus.error && (
+          <Typography variant="caption" sx={{ color: "error.light", mt: 0.5, display: "block" }}>
+            {connectionStatus.error}
+          </Typography>
+        )}
       </Paper>
 
       {/* 채팅 영역 */}
@@ -329,6 +522,7 @@ const ChatRoom = () => {
         <Stack direction="row" spacing={1}>
           <TextField
             fullWidth
+            inputRef={inputRef}
             value={message}
             onChange={(e) => setMessage(e.target.value)}
             placeholder="메시지를 입력하세요"
@@ -344,6 +538,7 @@ const ChatRoom = () => {
             type="submit"
             color="primary"
             disabled={!message.trim() || sendMessageMutation.isPending}
+            onClick={handleSendButtonClick}
             sx={{
               bgcolor: "primary.main",
               color: "white",
