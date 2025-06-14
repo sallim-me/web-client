@@ -180,7 +180,7 @@ const ChatList = () => {
   // 빈 상태
   if (displayChatRooms.length === 0 && !isLoading) {
     return (
-      <Container maxWidth="sm" sx={{ p: 2, textAlign: "center" }}>
+      <Container maxWidth="sm" sx={{ mt: 4, p: 2, textAlign: "center" }}>
         <Typography variant="h6" color="text.secondary">
           채팅 내역이 없습니다
         </Typography>
