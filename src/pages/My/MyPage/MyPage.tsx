@@ -239,9 +239,10 @@ const MyPage = () => {
                   }}
                 >
                   <img
-                    src={`${process.env.PUBLIC_URL}/images/${
-                      post.postType === "BUYING" ? "buy" : "sell"
-                    }.svg`}
+                    // src={`${process.env.PUBLIC_URL}/images/${
+                    //   post.postType === "BUYING" ? "buy" : "sell"
+                    // }.svg`}
+                    src={post.thumbnailUrl || "/public/images/refrigerator.svg"}
                     alt={post.title}
                     style={{
                       width: "100%",
@@ -365,9 +366,9 @@ const MyPage = () => {
                       overflow: "hidden",
                     }}
                   >
-                    {scrap.images && scrap.images.length > 0 ? (
+                    {scrap.thumbnailUrl ? (
                       <img
-                        src={scrap.images[0]}
+                        src={scrap.thumbnailUrl}
                         alt={scrap.title}
                         style={{
                           width: "100%",

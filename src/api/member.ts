@@ -21,6 +21,7 @@ export interface EditProfileResponse {
 export interface MyPost {
   productId: number;
   title: string;
+  thumbnailUrl: string;
   modelName: string;
   price: number;
   postType: string;

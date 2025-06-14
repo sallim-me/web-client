@@ -44,9 +44,7 @@ export function App() {
             <Route path="/chat/:chatId" element={<ChatRoom />} />
 
             {/* 알람 페이지 - 헤더와 바텀 네비게이션 모두 없음 (인증 필요 시 ProtectedRoute 내부로 이동) */}
-            <Route
-              element={<Layout showHeader={false} showBottomNav={false} />}
-            >
+            <Route element={<Layout showHeader={false} showBottomNav={false} />} >
               <Route path="/alarm" element={<Alarm />} />
             </Route>
           </Route>
