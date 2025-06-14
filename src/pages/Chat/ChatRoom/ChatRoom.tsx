@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   Box,
   Container,
@@ -10,11 +11,30 @@ import {
   Stack,
   Avatar,
   Divider,
+  Skeleton,
+  Alert,
 } from "@mui/material";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import SendIcon from "@mui/icons-material/Send";
 import ArrowForwardIcon from "@mui/icons-material/ArrowForward";
-import { chatRooms, MessageGroup } from "@/data/chatData";
+import { 
+  chatApi, 
+  ChatMessageDTO
+} from "@/api/chat";
+import { useAuthStore } from "@/store/useAuthStore";
+
+// 확장된 메시지 타입 (UI에서 사용)
+interface ExtendedMessage extends ChatMessageDTO {
+  isMine?: boolean;
+  time?: string;
+}
+
+// 날짜별 메시지 그룹
+interface MessageGroup {
+  id: string;
+  date: string;
+  items: ExtendedMessage[];
+}
 
 const ChatRoom = () => {
   const navigate = useNavigate();
@@ -22,82 +42,140 @@ const ChatRoom = () => {
   const [message, setMessage] = useState("");
   const [messages, setMessages] = useState<MessageGroup[]>([]);
   const chatAreaRef = useRef<HTMLDivElement>(null);
+  const queryClient = useQueryClient();
+  const userProfile = useAuthStore((state) => state.userProfile);
 
-  const chatRoom = chatRooms.find((room) => room.id === Number(chatId));
+  // 채팅방 상태 조회
+  const { data: chatRoomStatus, isLoading: statusLoading, error: statusError } = useQuery({
+    queryKey: ['chatRoomStatus', chatId, userProfile?.memberId],
+    queryFn: () => chatApi.getChatRoomStatus(chatId!),
+    enabled: !!chatId && !!userProfile?.memberId,
+    staleTime: 30000,
+    gcTime: 300000
+  });
 
+  // 채팅 메시지 조회
+  const { data: chatMessages, isLoading: messagesLoading, error: messagesError } = useQuery({
+    queryKey: ['chatMessages', chatId, userProfile?.memberId],
+    queryFn: () => chatApi.getMessages(chatId!),
+    enabled: !!chatId && !!userProfile?.memberId,
+    staleTime: 10000,
+    gcTime: 300000
+  });
+
+  // 메시지를 날짜별로 그룹화하고 확장된 형태로 변환
   useEffect(() => {
-    if (chatRoom) {
-      setMessages(chatRoom.messages);
+    if (chatMessages && userProfile) {
+      const messages = chatMessages.data || chatMessages; // API 응답 구조에 따라 조정
+      const messageArray = Array.isArray(messages) ? messages : [];
+      const groupedMessages: { [date: string]: ExtendedMessage[] } = {};
+      
+      messageArray.forEach((msg: ChatMessageDTO) => {
+        const messageDate = new Date(msg.createdAt);
+        const dateKey = messageDate.toLocaleDateString("ko-KR", {
+          year: "numeric",
+          month: "long",
+          day: "numeric",
+        });
+        
+        const extendedMsg: ExtendedMessage = {
+          ...msg,
+          isMine: msg.senderId === userProfile.memberId,
+          time: messageDate.toLocaleTimeString("ko-KR", {
+            hour: "2-digit",
+            minute: "2-digit",
+          }),
+        };
+
+        if (!groupedMessages[dateKey]) {
+          groupedMessages[dateKey] = [];
+        }
+        groupedMessages[dateKey].push(extendedMsg);
+      });
+
+      const messageGroups: MessageGroup[] = Object.entries(groupedMessages).map(([date, items]) => ({
+        id: date,
+        date,
+        items: items.sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime())
+      }));
+
+      setMessages(messageGroups.sort((a, b) => new Date(a.items[0].createdAt).getTime() - new Date(b.items[0].createdAt).getTime()));
     }
-  }, [chatId]);
+  }, [chatMessages, userProfile]);
+
+  // 메시지 전송 뮤테이션
+  const sendMessageMutation = useMutation({
+    mutationFn: (content: string) => chatApi.sendMessage(chatId!, {
+      content: content
+    }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['chatMessages', chatId] });
+      queryClient.invalidateQueries({ queryKey: ['chatRooms'] });
+    },
+    onError: (error) => {
+      console.error('메시지 전송 실패:', error);
+    }
+  });
 
   const handleBack = () => {
-    navigate(-1);
+    navigate("/chat");
   };
 
   const handlePostClick = () => {
-    if (chatRoom) {
-      navigate(`/post/detail/${chatRoom.postId}`);
-    }
+    // TODO: 실제 상품 ID로 연결
+    // navigate(`/post/detail/${productId}`);
   };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (message.trim() && chatRoom) {
-      const now = new Date();
-      const today = now.toLocaleDateString("ko-KR", {
-        year: "numeric",
-        month: "long",
-        day: "numeric",
-      });
-      const time = now.toLocaleTimeString("ko-KR", {
-        hour: "2-digit",
-        minute: "2-digit",
-      });
-
-      const newMessage = {
-        id: Date.now(),
-        content: message,
-        time,
-        isMine: true,
-      };
-
-      setMessages((prev) => {
-        const lastGroup = prev[prev.length - 1];
-        if (lastGroup && lastGroup.date === today) {
-          return [
-            ...prev.slice(0, -1),
-            {
-              ...lastGroup,
-              items: [...lastGroup.items, newMessage],
-            },
-          ];
-        } else {
-          return [
-            ...prev,
-            {
-              id: Date.now(),
-              date: today,
-              items: [newMessage],
-            },
-          ];
-        }
-      });
-
+    if (message.trim() && !sendMessageMutation.isPending) {
+      sendMessageMutation.mutate(message);
       setMessage("");
     }
   };
 
+  // 스크롤을 맨 아래로 이동
   useEffect(() => {
     if (chatAreaRef.current) {
       chatAreaRef.current.scrollTop = chatAreaRef.current.scrollHeight;
     }
   }, [messages]);
 
-  if (!chatRoom) {
+  // 로딩 상태
+  if (statusLoading || messagesLoading) {
     return (
       <Container maxWidth="sm" sx={{ p: 2 }}>
-        <Typography>채팅방을 찾을 수 없습니다.</Typography>
+        <Skeleton variant="rectangular" width="100%" height={60} sx={{ mb: 2 }} />
+        <Stack spacing={2}>
+          {[...Array(5)].map((_, index) => (
+            <Stack key={index} direction={index % 2 === 0 ? "row" : "row-reverse"} spacing={1}>
+              <Skeleton variant="circular" width={40} height={40} />
+              <Skeleton variant="rectangular" width={200} height={40} sx={{ borderRadius: 2 }} />
+            </Stack>
+          ))}
+        </Stack>
+      </Container>
+    );
+  }
+
+  // 에러 상태
+  if (statusError || messagesError) {
+    return (
+      <Container maxWidth="sm" sx={{ p: 2 }}>
+        <Alert severity="error">
+          채팅방 정보를 불러오는데 실패했습니다.
+        </Alert>
+      </Container>
+    );
+  }
+
+  // 채팅방이 없는 경우
+  if (!chatRoomStatus) {
+    return (
+      <Container maxWidth="sm" sx={{ p: 2 }}>
+        <Alert severity="info">
+          채팅방을 찾을 수 없습니다.
+        </Alert>
       </Container>
     );
   }
@@ -147,7 +225,7 @@ const ChatRoom = () => {
                 whiteSpace: "nowrap",
               }}
             >
-              {chatRoom.postTitle}
+              채팅방 #{chatId}
             </Typography>
             <ArrowForwardIcon fontSize="small" />
           </Box>
@@ -166,62 +244,76 @@ const ChatRoom = () => {
           gap: 2,
         }}
       >
-        {messages.map((group) => (
-          <Box key={group.id}>
-            <Divider sx={{ my: 2 }}>
-              <Typography variant="caption" color="text.secondary">
-                {group.date}
-              </Typography>
-            </Divider>
-            <Stack spacing={1}>
-              {group.items.map((msg) => (
-                <Stack
-                  key={msg.id}
-                  direction="row"
-                  spacing={1}
-                  alignItems="flex-end"
-                  sx={{
-                    flexDirection: msg.isMine ? "row-reverse" : "row",
-                  }}
-                >
-                  {!msg.isMine && (
-                    <Avatar
-                      sx={{
-                        width: 36,
-                        height: 36,
-                        bgcolor: "grey.300",
-                      }}
-                    >
-                      {chatRoom.nickname.charAt(0)}
-                    </Avatar>
-                  )}
+        {messages.length === 0 ? (
+          <Box
+            sx={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              height: "100%",
+              color: "text.secondary",
+            }}
+          >
+            <Typography>채팅을 시작해보세요!</Typography>
+          </Box>
+        ) : (
+          messages.map((group) => (
+            <Box key={group.id}>
+              <Divider sx={{ my: 2 }}>
+                <Typography variant="caption" color="text.secondary">
+                  {group.date}
+                </Typography>
+              </Divider>
+              <Stack spacing={1}>
+                {group.items.map((msg) => (
                   <Stack
-                    spacing={0.5}
+                    key={msg.id}
+                    direction="row"
+                    spacing={1}
+                    alignItems="flex-end"
                     sx={{
-                      maxWidth: "70%",
-                      alignItems: msg.isMine ? "flex-end" : "flex-start",
+                      flexDirection: msg.isMine ? "row-reverse" : "row",
                     }}
                   >
-                    <Paper
+                    {!msg.isMine && (
+                      <Avatar
+                        sx={{
+                          width: 36,
+                          height: 36,
+                          bgcolor: "grey.300",
+                        }}
+                      >
+                        U
+                      </Avatar>
+                    )}
+                    <Stack
+                      spacing={0.5}
                       sx={{
-                        p: 1.5,
-                        boxShadow: 0,
-                        bgcolor: msg.isMine ? "primary.main" : "grey.200",
-                        color: msg.isMine ? "white" : "text.primary",
-                        borderRadius: msg.isMine ? "16px 16px 0 16px" : "16px 16px 16px 0",
+                        maxWidth: "70%",
+                        alignItems: msg.isMine ? "flex-end" : "flex-start",
                       }}
                     >
-                      <Typography variant="body2">{msg.content}</Typography>
-                    </Paper>
-                    <Typography variant="caption" color="text.secondary">
-                      {msg.time}
-                    </Typography>
+                      <Paper
+                        sx={{
+                          p: 1.5,
+                          boxShadow: 0,
+                          bgcolor: msg.isMine ? "primary.main" : "grey.200",
+                          color: msg.isMine ? "white" : "text.primary",
+                          borderRadius: msg.isMine ? "16px 16px 0 16px" : "16px 16px 16px 0",
+                        }}
+                      >
+                        <Typography variant="body2">{msg.content}</Typography>
+                      </Paper>
+                      <Typography variant="caption" color="text.secondary">
+                        {msg.time}
+                      </Typography>
+                    </Stack>
                   </Stack>
-                </Stack>
-              ))}
-            </Stack>
-          </Box>
-        ))}
+                ))}
+              </Stack>
+            </Box>
+          ))
+        )}
       </Box>
 
       {/* 입력 영역 */}
@@ -241,6 +333,7 @@ const ChatRoom = () => {
             onChange={(e) => setMessage(e.target.value)}
             placeholder="메시지를 입력하세요"
             size="small"
+            disabled={sendMessageMutation.isPending}
             sx={{
               "& .MuiOutlinedInput-root": {
                 borderRadius: 20,
@@ -250,11 +343,15 @@ const ChatRoom = () => {
           <IconButton
             type="submit"
             color="primary"
+            disabled={!message.trim() || sendMessageMutation.isPending}
             sx={{
               bgcolor: "primary.main",
               color: "white",
               "&:hover": {
                 bgcolor: "primary.dark",
+              },
+              "&:disabled": {
+                bgcolor: "grey.400",
               },
             }}
           >
