@@ -23,11 +23,13 @@ import {
   CircularProgress,
   Avatar,
   Skeleton,
+  Backdrop,
 } from "@mui/material";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import MoreVertIcon from "@mui/icons-material/MoreVert";
 import BookmarkIcon from "@mui/icons-material/Bookmark";
 import BookmarkBorderIcon from "@mui/icons-material/BookmarkBorder";
+import ChatIcon from "@mui/icons-material/Chat";
 import { productApi } from "@/api/product";
 import type {
   SellingPostDetail,
@@ -36,6 +38,7 @@ import type {
 } from "@/api/product";
 import { scrapApi, getScrapByProductId } from "@/api/scrap";
 import { updateSellingPost, getApplianceQuestions } from "@/api/product";
+import { chatApi } from "@/api/chat";
 import { useAuthStore } from "@/store/useAuthStore";
 import CloseIcon from "@mui/icons-material/Close";
 
@@ -86,6 +89,8 @@ const PostDetail = () => {
   const [comments, setComments] = useState<CreateCommentResponseData[]>([]);
   const [newComment, setNewComment] = useState("");
   const [commentLoading, setCommentLoading] = useState(false);
+  const [chatLoading, setChatLoading] = useState(false);
+  const [isCreatingChat, setIsCreatingChat] = useState(false);
 
   // 컴포넌트 마운트 시 userProfile 가져오기
   useEffect(() => {
@@ -406,9 +411,105 @@ const PostDetail = () => {
     return color;
   };
 
-  const handleChat = (buyerId: number) => {
-    // Implement the chat logic here
-    console.log(`Chat with buyer ID: ${buyerId}`);
+  const handleChat = async (buyerId?: number) => {
+    if (!id || !userProfile) {
+      alert("로그인이 필요한 서비스입니다.");
+      return;
+    }
+
+    try {
+      setChatLoading(true);
+      
+      // 채팅방 생성 또는 기존 채팅방 찾기
+      const response = await chatApi.createChatRoom({
+        productId: Number(id)
+      });
+
+      if (response.data && response.data.id) {
+        // 채팅방 생성/조회 성공 시 해당 채팅방으로 이동
+        navigate(`/chat/${response.data.id}`);
+      } else {
+        alert("채팅방 생성에 실패했습니다.");
+      }
+    } catch (error: any) {
+      console.error("Error creating/finding chat room:", error);
+      
+      if (error.response?.status === 401) {
+        alert("로그인이 필요한 서비스입니다.");
+      } else if (error.response?.status === 400) {
+        alert("채팅방을 생성할 수 없습니다. (본인 글이거나 이미 채팅방이 존재할 수 있습니다)");
+      } else {
+        alert("채팅방 연결에 실패했습니다.");
+      }
+    } finally {
+      setChatLoading(false);
+    }
+  };
+
+  // 판매글에서 구매자와 채팅 시작
+  const handleStartChatForSeller = async () => {
+    if (!userProfile || !postDetail) {
+      alert("로그인이 필요합니다.");
+      return;
+    }
+
+    if (userProfile.memberId === postDetail.memberId) {
+      alert("자신의 게시글에는 채팅을 시작할 수 없습니다.");
+      return;
+    }
+
+    try {
+      setChatLoading(true);
+      
+      // 채팅방 생성
+      const chatResponse = await chatApi.createChatRoom({
+        productId: postDetail.id,
+      });
+
+      if (chatResponse.data?.id) {
+        navigate(`/chat/${chatResponse.data.id}`);
+      } else {
+        throw new Error("채팅방 생성에 실패했습니다.");
+      }
+    } catch (error) {
+      console.error("채팅방 생성 실패:", error);
+      alert("채팅방 생성에 실패했습니다. 다시 시도해주세요.");
+    } finally {
+      setChatLoading(false);
+    }
+  };
+
+  // 구매글에서 판매자와 채팅 시작 (기존과 유사하지만 명확하게 분리)
+  const handleStartChatForBuyer = async () => {
+    if (!userProfile || !postDetail) {
+      alert("로그인이 필요합니다.");
+      return;
+    }
+
+    if (userProfile.memberId === postDetail.memberId) {
+      alert("자신의 게시글에는 채팅을 시작할 수 없습니다.");
+      return;
+    }
+
+    try {
+      setChatLoading(true);
+      
+      // 채팅방 생성
+      const chatResponse = await chatApi.createChatRoom({
+        productId: postDetail.id,
+      });
+
+      if (chatResponse.data?.id) {
+        navigate(`/chat/${chatResponse.data.id}`);
+      } else {
+        throw new Error("채팅방 생성에 실패했습니다.");
+      }
+    } catch (error) {
+      console.error("채팅방 생성 실패:", error);
+      alert("채팅방 생성에 실패했습니다. 다시 시도해주세요.");
+    } finally {
+      setChatLoading(false);
+    }
   };
 
   // 댓글 불러오기
@@ -736,42 +837,6 @@ const PostDetail = () => {
               </>
             )}
 
-          {/* 작성자 정보 및 채팅하기 버튼 (구매글인 경우) */}
-          {postType === "buying" && postDetail && !postDetail.isAuthor && (
-            <Paper elevation={0} sx={{ p: 2, boxShadow: "none" }}>
-              <Stack direction="row" alignItems="center" spacing={2}>
-                {/* 작성자 프로필 */}
-                <Avatar
-                  sx={{
-                    bgcolor: stringToColor(
-                      (postDetail as BuyingPostDetail).buyerNickname || ""
-                    ),
-                    width: 40,
-                    height: 40,
-                    fontSize: 20,
-                  }}
-                >
-                  {(postDetail as BuyingPostDetail).buyerNickname?.charAt(0) ||
-                    ""}
-                </Avatar>
-                {/* 작성자 닉네임 */}
-                <Typography variant="subtitle1" sx={{ flexGrow: 1 }}>
-                  {(postDetail as BuyingPostDetail).buyerNickname}
-                </Typography>
-                {/* 채팅하기 버튼 (본인 글이 아닐 때만 표시)*/}
-                <Button
-                  variant="outlined"
-                  size="small"
-                  onClick={() =>
-                    handleChat((postDetail as BuyingPostDetail).buyerId)
-                  }
-                >
-                  채팅
-                </Button>
-              </Stack>
-            </Paper>
-          )}
-
           {/* 거래 상태 칩 */}
           {/* {postDetail.isActive ? (
             <Chip
@@ -862,6 +927,97 @@ const PostDetail = () => {
           />
         )}
       </Paper>
+
+
+
+          {/* 작성자 정보 및 채팅하기 버튼 (판매글인 경우) */}
+          {postType === "selling" && postDetail && !postDetail.isAuthor && (
+            <Paper elevation={0} sx={{ p: 2, boxShadow: "none" }}>
+              <Stack direction="row" alignItems="center" spacing={2}>
+                {/* 작성자 프로필 */}
+                <Avatar
+                  sx={{
+                    bgcolor: stringToColor(
+                      `User${(postDetail as SellingPostDetail).memberId}` || ""
+                    ),
+                    width: 40,
+                    height: 40,
+                    fontSize: 20,
+                  }}
+                >
+                  {`U${(postDetail as SellingPostDetail).memberId}`.charAt(0) ||
+                    "U"}
+                </Avatar>
+                {/* 작성자 닉네임 */}
+                <Typography variant="subtitle1" sx={{ flexGrow: 1 }}>
+                  사용자 {(postDetail as SellingPostDetail).memberId}
+                </Typography>
+                {/* 채팅하기 버튼 (본인 글이 아닐 때만 표시)*/}
+                <Button
+                  variant="contained"
+                  size="small"
+                  onClick={handleStartChatForSeller}
+                  disabled={isCreatingChat}
+                  startIcon={
+                    isCreatingChat ? (
+                      <CircularProgress size={16} color="inherit" />
+                    ) : (
+                      <ChatIcon />
+                    )
+                  }
+                  sx={{
+                    minWidth: 120,
+                    bgcolor: "primary.main",
+                    color: "white",
+                    "&:hover": {
+                      bgcolor: "primary.dark",
+                    },
+                    "&:disabled": {
+                      bgcolor: "grey.400",
+                    },
+                  }}
+                >
+                  {isCreatingChat ? "채팅방 생성중..." : "채팅하기"}
+                </Button>
+              </Stack>
+            </Paper>
+          )}
+
+          {/* 작성자 정보 및 채팅하기 버튼 (구매글인 경우) */}
+          {postType === "buying" && postDetail && !postDetail.isAuthor && (
+            <Paper elevation={0} sx={{ p: 2, boxShadow: "none" }}>
+              <Stack direction="row" alignItems="center" spacing={2}>
+                {/* 작성자 프로필 */}
+                <Avatar
+                  sx={{
+                    bgcolor: stringToColor(
+                      (postDetail as BuyingPostDetail).buyerNickname || ""
+                    ),
+                    width: 40,
+                    height: 40,
+                    fontSize: 20,
+                  }}
+                >
+                  {(postDetail as BuyingPostDetail).buyerNickname?.charAt(0) ||
+                    ""}
+                </Avatar>
+                {/* 작성자 닉네임 */}
+                <Typography variant="subtitle1" sx={{ flexGrow: 1 }}>
+                  {(postDetail as BuyingPostDetail).buyerNickname}
+                </Typography>
+                {/* 채팅하기 버튼 (본인 글이 아닐 때만 표시)*/}
+                <Button
+                  variant="outlined"
+                  size="small"
+                  onClick={() =>
+                    handleChat((postDetail as BuyingPostDetail).buyerId)
+                  }
+                >
+                  채팅
+                </Button>
+              </Stack>
+            </Paper>
+          )}
 
       <Divider sx={{ my: 2 }} />
 
