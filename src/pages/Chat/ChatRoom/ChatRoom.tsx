@@ -120,6 +120,7 @@ const ChatRoom = () => {
           zIndex: 100,
           bgcolor: "primary.main",
           color: "white",
+          borderRadius: "0 0 4px 4px",
           p: 2,
         }}
       >
@@ -204,11 +205,10 @@ const ChatRoom = () => {
                     <Paper
                       sx={{
                         p: 1.5,
-                        bgcolor: msg.isMine ? "primary.main" : "grey.100",
+                        boxShadow: 0,
+                        bgcolor: msg.isMine ? "primary.main" : "grey.200",
                         color: msg.isMine ? "white" : "text.primary",
-                        borderRadius: 2,
-                        borderBottomRightRadius: msg.isMine ? 0 : 2,
-                        borderBottomLeftRadius: msg.isMine ? 2 : 0,
+                        borderRadius: msg.isMine ? "16px 16px 0 16px" : "16px 16px 16px 0",
                       }}
                     >
                       <Typography variant="body2">{msg.content}</Typography>

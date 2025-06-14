@@ -2,7 +2,6 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import Provider from "./provider";
 import Layout from "./components/Layout/Layout";
 import ProtectedRoute from "./components/ProtectedRoute";
-// import { PWAInstallPrompt } from "./components/PWAInstallPrompt";
 
 import Login from "./pages/Account/Login/Login";
 import SignUp from "./pages/Account/SignUp/SignUp";
@@ -33,16 +32,16 @@ export function App() {
               <Route path="/post/list" element={<PostList />} />
               {/* 채팅 및 마이페이지 관련 경로는 인증 필요 */}
               <Route path="/chat" element={<ChatList />} />
-              <Route path="/chat/:chatId" element={<ChatRoom />} />
               <Route path="/my-page" element={<MyPage />} />
               <Route path="/my-page/my-posts" element={<MyPosts />} />
               <Route path="/my-page/scraps" element={<ScrapListPage />} />
               <Route path="/my-page/edit-profile" element={<EditProfile />} />
             </Route>
 
-              {/* 게시글 작성/수정 및 상세 페이지는 인증 필요 시 ProtectedRoute 내부로 이동 */}
-              <Route path="/post/create" element={<PostCreate />} />
-              <Route path="/post/detail/:id" element={<PostDetail />} />
+            {/* 게시글 작성/수정 및 상세 페이지는 인증 필요 시 ProtectedRoute 내부로 이동 */}
+            <Route path="/post/create" element={<PostCreate />} />
+            <Route path="/post/detail/:id" element={<PostDetail />} />
+            <Route path="/chat/:chatId" element={<ChatRoom />} />
 
             {/* 알람 페이지 - 헤더와 바텀 네비게이션 모두 없음 (인증 필요 시 ProtectedRoute 내부로 이동) */}
             <Route

@@ -37,6 +37,7 @@ export interface GetMyPostsResponse {
 
 // 회원 정보 조회 응답 타입
 export interface MemberInfo {
+  memberId: number;
   username: string;
   name: string;
   nickname: string;
