@@ -1,0 +1,134 @@
+sequenceDiagram
+    participant U1 as 사용자 A
+    participant F1 as 프론트엔드 A
+    participant BE as 백엔드 서버
+    participant WS as WebSocket 브로커
+    participant F2 as 프론트엔드 B
+    participant U2 as 사용자 B
+
+    Note over U1,U2: 실시간 채팅 시스템 플로우
+
+    %% 채팅방 입장
+    rect rgb(240, 248, 255)
+    Note over F1,BE: 채팅방 입장 과정
+    U1->>F1: 채팅방 입장
+    F1->>+BE: POST /chat/rooms/{roomId}/enter
+    BE-->>-F1: 200 OK
+    
+    F1->>+WS: WebSocket 연결 (ws://localhost:8080/ws-chat)
+    WS-->>-F1: 연결 성공
+    
+    F1->>WS: 구독 (/topic/room/{roomId})
+    WS-->>F1: 구독 성공
+    
+    F1->>+BE: GET /chat/rooms/{roomId}/messages
+    BE-->>-F1: 기존 메시지 목록
+    F1->>U1: 채팅방 UI 표시 + 입력창 포커스
+    end
+
+    %% 사용자 B도 동일하게 입장
+    rect rgb(245, 255, 250)
+    Note over F2,BE: 사용자 B 채팅방 입장
+    U2->>F2: 채팅방 입장
+    F2->>+BE: POST /chat/rooms/{roomId}/enter
+    BE-->>-F2: 200 OK
+    F2->>WS: WebSocket 연결 + 구독
+    WS-->>F2: 연결 및 구독 성공
+    F2->>+BE: GET /chat/rooms/{roomId}/messages
+    BE-->>-F2: 기존 메시지 목록
+    end
+
+    %% 실시간 메시지 송수신
+    rect rgb(255, 248, 248)
+    Note over U1,U2: 실시간 메시지 송수신
+    
+    U1->>F1: 메시지 입력 + 엔터
+    F1->>F1: 낙관적 UI 업데이트 (임시 메시지 표시)
+    
+    alt WebSocket 연결됨
+        F1->>WS: 메시지 전송 (/app/chat/room/{roomId})
+        WS->>+BE: 메시지 처리
+        BE->>BE: 메시지 DB 저장
+        BE->>-WS: 저장된 메시지 반환
+        
+        par 실시간 브로드캐스트
+            WS->>F1: 메시지 수신 (/topic/room/{roomId})
+            F1->>F1: 임시 메시지 → 실제 메시지 교체
+            F1->>U1: 메시지 UI 업데이트 + 입력창 포커스
+        and
+            WS->>F2: 메시지 수신 (/topic/room/{roomId})
+            F2->>F2: 새 메시지 UI 추가
+            F2->>U2: 실시간 메시지 표시
+        end
+        
+    else WebSocket 끊어짐 (폴백)
+        F1->>+BE: POST /chat/rooms/{roomId}/messages
+        BE->>BE: 메시지 DB 저장
+        BE-->>-F1: 저장 완료
+        F1->>F1: 쿼리 무효화 및 새로고침
+    end
+    end
+
+    %% 연속 메시지
+    rect rgb(248, 255, 248)
+    Note over U1,U2: 연속 메시지 (포커스 유지)
+    U1->>F1: 두 번째 메시지 입력 + 엔터
+    F1->>F1: 포커스 유지 (100ms 후 자동 포커스)
+    F1->>WS: 메시지 전송
+    WS->>BE: 메시지 처리
+    BE->>WS: 저장된 메시지
+    
+    par
+        WS->>F1: 메시지 수신
+        F1->>U1: UI 업데이트 + 포커스 유지
+    and
+        WS->>F2: 메시지 수신
+        F2->>U2: 실시간 표시
+    end
+    end
+
+    %% 모바일 버튼 사용
+    rect rgb(255, 255, 240)
+    Note over U2,F2: 모바일 전송 버튼 사용
+    U2->>F2: 메시지 입력 + 전송 버튼 터치
+    F2->>F2: handleSendButtonClick() 실행
+    F2->>WS: 메시지 전송
+    F2->>F2: 버튼 클릭 후 입력창 포커스 (100ms 후)
+    WS->>BE: 메시지 처리
+    BE->>WS: 저장된 메시지
+    
+    par
+        WS->>F2: 메시지 수신
+        F2->>U2: UI 업데이트 + 키보드 자동 표시
+    and
+        WS->>F1: 메시지 수신
+        F1->>U1: 실시간 표시
+    end
+    end
+
+    %% 채팅방 퇴장
+    rect rgb(248, 248, 248)
+    Note over F1,BE: 채팅방 퇴장
+    U1->>F1: 뒤로가기 또는 페이지 이동
+    F1->>WS: 구독 해제 (/topic/room/{roomId})
+    F1->>WS: WebSocket 연결 해제
+    F1->>+BE: POST /chat/rooms/{roomId}/exit
+    BE-->>-F1: 퇴장 완료
+    end
+
+    %% 에러 처리
+    rect rgb(255, 245, 245)
+    Note over F1,BE: 연결 실패 시 처리
+    alt WebSocket 연결 실패
+        F1->>WS: 연결 시도
+        WS--xF1: 연결 실패
+        F1->>F1: 자동 재연결 시도 (최대 5회)
+        F1->>U1: 연결 상태 표시 ("연결 안됨")
+    else 메시지 전송 실패
+        F1->>WS: 메시지 전송 시도
+        WS--xF1: 전송 실패
+        F1->>F1: 임시 메시지 제거
+        F1->>+BE: REST API 폴백 전송
+        BE-->>-F1: 전송 완료
+    end
+    end

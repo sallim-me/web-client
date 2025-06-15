@@ -11,40 +11,12 @@ import {
   IconButton,
   Skeleton,
   Backdrop,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
 } from "@mui/material";
 import ArrowForwardIcon from "@mui/icons-material/ArrowForward";
 import { useAuthStore } from "@/store/useAuthStore";
 import { memberApi, MyPost } from "@/api/member";
 import { scrapApi, Scrap } from "@/api/scrap";
 import { getProfileColor } from "@/utils/color";
-
-// 타입 정의
-interface Post {
-  id: number;
-  title: string;
-  tradeType: "sell" | "buy";
-  category: string;
-  modelNumber: string;
-  modelName: string;
-  brand: string;
-  minPrice: number;
-  description: string;
-  quantity: number;
-  images: string[];
-  isScraped: boolean;
-  author: {
-    id: number;
-    nickname: string;
-    profileImage: string;
-  };
-  isAuthor: boolean;
-  defectAnswers: Record<string, string>;
-  createdAt: string;
-}
 
 const MyPage = () => {
   const navigate = useNavigate();
@@ -88,7 +60,7 @@ const MyPage = () => {
       const randomColor = getProfileColor(userProfile?.username || "");
       setProfileDisplayColor(randomColor);
     }
-  }, [userProfile]);
+  }, [userProfile, profileDisplayColor]);
 
   const handleLogout = async () => {
     try {
@@ -97,11 +69,6 @@ const MyPage = () => {
     } catch (error) {
       console.error("Logout failed:", error);
     }
-  };
-
-  const handleScrapClick = (scrapId: number) => {
-    // Implement the logic to handle the scrap click
-    console.log("Scrap clicked:", scrapId);
   };
 
   return (
@@ -434,55 +401,43 @@ const MyPage = () => {
                     overflow: "hidden",
                   }}
                 >
-                  <img
-                    src={`${process.env.PUBLIC_URL}/images/${
-                      scrap.postType === "BUYING" ? "buy" : "sell"
-                    }.svg`}
-                    alt={scrap.productTitle}
-                    style={{
-                      width: "100%",
-                      height: "100%",
-                      objectFit: "cover",
-                    }}
-                  >
-                    {scrap.thumbnailUrl ? (
-                      <img
-                        src={scrap.thumbnailUrl}
-                        alt={scrap.title}
-                        style={{
-                          width: "100%",
-                          height: "100%",
-                          objectFit: "cover",
-                        }}
-                      />
-                    ) : (
-                      <Box
-                        sx={{
-                          width: "100%",
-                          height: "100%",
-                          display: "flex",
-                          justifyContent: "center",
-                          alignItems: "center",
-                          bgcolor: "grey.300",
-                        }}
-                      >
-                        <Typography variant="caption" color="text.secondary">
-                          이미지 없음
-                        </Typography>
-                      </Box>
-                    )}
-                  </Box>
-                  <Box sx={{ p: 1 }}>
-                    <Typography variant="body2" noWrap sx={{ mb: 0.5 }}>
-                      {scrap.productTitle}
-                    </Typography>
-                    <Typography variant="body2" fontWeight="bold">
-                      ₩{(scrap.price ?? 0).toLocaleString()}
-                    </Typography>
-                  </Box>
-                </Paper>
-              );
-            })}
+                  {scrap.thumbnailUrl ? (
+                    <img
+                      src={scrap.thumbnailUrl}
+                      alt={scrap.productTitle}
+                      style={{
+                        width: "100%",
+                        height: "100%",
+                        objectFit: "cover",
+                      }}
+                    />
+                  ) : (
+                    <Box
+                      sx={{
+                        width: "100%",
+                        height: "100%",
+                        display: "flex",
+                        justifyContent: "center",
+                        alignItems: "center",
+                        bgcolor: "grey.300",
+                      }}
+                    >
+                      <Typography variant="caption" color="text.secondary">
+                        이미지 없음
+                      </Typography>
+                    </Box>
+                  )}
+                </Box>
+                <Box sx={{ p: 1 }}>
+                  <Typography variant="body2" noWrap sx={{ mb: 0.5 }}>
+                    {scrap.productTitle}
+                  </Typography>
+                  <Typography variant="body2" fontWeight="bold">
+                    ₩{(scrap.productPrice ?? 0).toLocaleString()}
+                  </Typography>
+                </Box>
+              </Paper>
+            ))}
           </Box>
         )}
       </Box>
