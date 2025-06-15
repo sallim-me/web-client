@@ -43,7 +43,6 @@ import { chatApi } from "@/api/chat";
 import { useAuthStore } from "@/store/useAuthStore";
 import CloseIcon from "@mui/icons-material/Close";
 // import AddIcon from "@mui/icons-material/Add";
-import { chatApi } from "../../../api/chat";
 import { PostPhoto } from "./PostPhoto";
 import { PostPriceCard } from "./PostPriceCard";
 

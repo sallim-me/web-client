@@ -75,6 +75,14 @@ const ChatRoom = () => {
 
     console.log("📝 New message created:", newMessage);
 
+    // 상대방 메시지인 경우 읽음 처리
+    if (!newMessage.isMine && chatId) {
+      console.log("📖 Marking new message as read");
+      chatApi.markMessagesAsRead(chatId).catch((error) => {
+        console.error("❌ Failed to mark message as read:", error);
+      });
+    }
+
     setMessages(prevMessages => {
       const messageDate = new Date(wsMessage.createdAt);
       const today = messageDate.toLocaleDateString("ko-KR", {
@@ -113,7 +121,7 @@ const ChatRoom = () => {
       console.log("📊 Updated messages:", sortedMessages);
       return sortedMessages;
     });
-  }, [userProfile]);
+  }, [userProfile, chatId]);
 
   // 웹소켓 연결 상태 변경 처리
   const handleConnectionChange = useCallback((connected: boolean, error?: string) => {
@@ -133,6 +141,10 @@ const ChatRoom = () => {
         // 채팅방 입장 API 호출
         await chatApi.enterChatRoom(chatId);
         console.log("✅ Entered chat room via API");
+
+        // 채팅방 입장 시 읽음 처리 (전체 방 읽음 처리)
+        await chatApi.markRoomAsRead(chatId);
+        console.log("✅ Marked room as read on entry");
 
         if (isCleanedUp) return;
 

@@ -101,7 +101,7 @@ const ChatList = () => {
         const processedRooms: ChatRoomDisplayData[] = await Promise.all(
           chatRooms.map(async (room) => {
             // 추가 정보 조회 (임시로 간단한 데이터 사용)
-            const details = await chatApi.getChatRoomDetails(room, userProfile.memberId);
+            const details = await chatApi.getChatRoomDetails(room, userProfile?.memberId || 0);
 
             return {
               id: chatUtils.roomIdToString(room.id),
