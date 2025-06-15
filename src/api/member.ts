@@ -24,7 +24,8 @@ export interface MyPost {
   thumbnailUrl: string;
   modelName: string;
   price: number;
-  postType: string;
+  postType: "SELLING" | "BUYING";
+  priceOrQuantity: number;
   isActive: boolean;
   createdAt: string;
 }

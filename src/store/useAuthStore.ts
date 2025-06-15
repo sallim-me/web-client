@@ -129,7 +129,10 @@ export const useAuthStore = create<AuthState>()(
               !response["access-token"] ||
               !response["refresh-token"]
             ) {
-              console.error("❌ Invalid token reissue response structure:", response);
+              console.error(
+                "❌ Invalid token reissue response structure:",
+                response
+              );
               throw new Error("토큰 갱신에 실패했습니다.");
             }
 
@@ -151,15 +154,15 @@ export const useAuthStore = create<AuthState>()(
               isAuthenticated: true,
               isLoading: false,
             });
-            
+
             console.log("✅ Token reissue completed successfully");
           } catch (error) {
             console.error("❌ Token reissue error:", error);
-            
+
             // 토큰 재발급 실패 시 인증 정보 완전 초기화
             localStorage.removeItem("accessToken");
             localStorage.removeItem("refreshToken");
-            
+
             set({
               accessToken: null,
               refreshToken: null,
@@ -185,8 +188,30 @@ export const useAuthStore = create<AuthState>()(
             );
             const profile = await authApi.getProfile();
             console.log("Profile fetched:", profile);
+            console.log("Profile data:", profile.data);
+
+            // JWT 토큰에서 memberId 추출
+            const token = get().accessToken;
+            let memberId: number | undefined;
+            if (token) {
+              try {
+                const payload = JSON.parse(atob(token.split(".")[1]));
+                console.log("JWT payload:", payload);
+                memberId = payload.sub ? Number(payload.sub) : undefined;
+                console.log("Extracted memberId from token:", memberId);
+              } catch (e) {
+                console.error("Error parsing token:", e);
+              }
+            }
+
+            const userProfile = {
+              ...profile.data,
+              memberId: memberId,
+            };
+            console.log("Final user profile:", userProfile);
+
             set({
-              userProfile: profile.data,
+              userProfile,
               isLoading: false,
             });
           } catch (error) {
