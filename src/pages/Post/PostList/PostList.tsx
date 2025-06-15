@@ -405,7 +405,7 @@ const PostList = () => {
               },
               '@media (display-mode: standalone)': {
                 '@supports (-webkit-touch-callout: none)': {
-                  bottom: `calc(16px + env(safe-area-inset-bottom))`,
+                  bottom: `calc(80px + env(safe-area-inset-bottom))`,
                   transform: 'translate3d(0, 0, 0)',
                 }
               }
