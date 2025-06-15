@@ -425,6 +425,7 @@ const PostDetail = () => {
     return color;
   };
 
+
   const handleChat = async (buyerId?: number) => {
     if (!id || !userProfile) {
       alert("로그인이 필요한 서비스입니다.");

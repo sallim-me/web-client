@@ -52,9 +52,6 @@ export function App() {
           {/* 필요하다면 인증되지 않은 사용자에게 보여줄 404 페이지 등을 여기에 추가 */}
           {/* <Route path="*" element={<NotFoundPage />} /> */}
         </Routes>
-
-        {/* PWA 설치 프롬프트 */}
-        {/* <PWAInstallPrompt /> */}
       </BrowserRouter>
     </Provider>
   );
