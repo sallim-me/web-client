@@ -91,6 +91,7 @@ export interface SellingPostDetail {
     questionContent: string;
     answerContent: string;
   }[];
+  nickname: string;
 }
 
 export interface BuyingPostDetail {
@@ -191,25 +192,28 @@ export const createBuyingPost = async (
   return response.data;
 };
 
-export const createSellingPost = async (data: CreateSellingPostRequest, photos?: File[]): Promise<CreateSellingPostResponse> => {
+export const createSellingPost = async (
+  data: CreateSellingPostRequest,
+  photos?: File[]
+): Promise<CreateSellingPostResponse> => {
   const formData = new FormData();
-  
+
   // request 데이터를 JSON 문자열로 추가
-  formData.append('request', JSON.stringify(data));
-  
+  formData.append("request", JSON.stringify(data));
+
   // 사진 파일들 추가 (있는 경우)
   if (photos && photos.length > 0) {
     photos.forEach((photo) => {
-      formData.append('photos', photo);
+      formData.append("photos", photo);
     });
   } else {
     // 사진이 없는 경우 빈 photos 필드 추가
-    formData.append('photos', '');
+    formData.append("photos", "");
   }
 
   const response = await axiosInstance.post("/product/selling", formData, {
     headers: {
-      'Content-Type': 'multipart/form-data',
+      "Content-Type": "multipart/form-data",
     },
   });
   return response.data;
@@ -325,16 +329,18 @@ export interface GetCommentsResponse {
 }
 
 // AI 이미지 분석 API 함수
-export const analyzeImage = async (file: File): Promise<AnalyzeImageResponse> => {
+export const analyzeImage = async (
+  file: File
+): Promise<AnalyzeImageResponse> => {
   const formData = new FormData();
-  formData.append('file', file);
+  formData.append("file", file);
 
   const response = await axiosInstance.post(
-    '/ai/analyze-image?applyPreprocessing=true',
+    "/ai/analyze-image?applyPreprocessing=true",
     formData,
     {
       headers: {
-        'Content-Type': 'multipart/form-data',
+        "Content-Type": "multipart/form-data",
       },
     }
   );

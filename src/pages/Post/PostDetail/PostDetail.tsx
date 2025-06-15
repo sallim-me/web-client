@@ -133,11 +133,13 @@ const PostDetail = () => {
 
         if (postType === "selling") {
           const response = await productApi.getSellingPostDetail(Number(id));
+          console.log("판매글 상세 응답:", response);
+          console.log("모델 번호:", response.modelNumber);
           setPostDetail(response);
         } else if (postType === "buying") {
           const response = await productApi.getBuyingPostDetail(Number(id));
           setPostDetail(response);
-          console.log("Buying post detail fetched:", response);
+          console.log("구매글 상세 응답:", response);
         }
         // 스크랩 상태 확인
         try {
@@ -175,6 +177,9 @@ const PostDetail = () => {
     handleMenuClose();
     if (!postDetail) return;
 
+    // 1. postDetail 전체를 출력
+    console.log("postDetail in handleEdit:", postDetail);
+
     // 기존 데이터로 폼 초기화
     const initialForm: EditForm = {
       title: postDetail.title,
@@ -182,44 +187,28 @@ const PostDetail = () => {
       applianceType: postDetail.applianceType,
       isActive: postDetail.isActive,
       answers: [],
-      modelNumber: "",
-      modelName: "",
-      brand: "",
-      price: 0,
-      userPrice: 0,
+      modelNumber: (postDetail as SellingPostDetail).modelNumber ?? "",
+      modelName: (postDetail as SellingPostDetail).modelName || "",
+      brand: (postDetail as SellingPostDetail).brand || "",
+      price: (postDetail as SellingPostDetail).price || 0,
+      userPrice: (postDetail as SellingPostDetail).userPrice || 0,
       quantity: (postDetail as BuyingPostDetail).quantity || 0,
     };
 
+    console.log(
+      "Initial modelNumber:",
+      (postDetail as SellingPostDetail).modelNumber
+    );
+
     setEditForm(initialForm);
-
-    // 질문 불러오기 및 answers 초기화 (판매글인 경우에만 필요)
-    if (postType === "selling") {
-      setEditLoading(true);
-      try {
-        const res = await getApplianceQuestions(
-          (postDetail as SellingPostDetail).applianceType
-        );
-        setEditQuestions(res.data);
-        // 판매글일 경우에만 postDetail.answers를 editForm.answers로 복사
-        setEditForm((prev) => {
-          if (!prev) return null;
-          return {
-            ...prev,
-            answers:
-              (postDetail as SellingPostDetail).answers?.map((a: any) => ({
-                ...a,
-              })) || [],
-          };
-        });
-      } finally {
-        setEditLoading(false);
-      }
-    } else {
-      setEditQuestions([]); // 구매글일 경우 질문 목록 초기화
-    }
-
-    setEditOpen(true);
   };
+
+  // 2. setEditForm 이후 editForm 값 출력 (컴포넌트 최상단에 위치)
+  useEffect(() => {
+    if (editForm) {
+      console.log("editForm after setEditForm:", editForm);
+    }
+  }, [editForm]);
 
   const handleEditFormChange = (
     e: React.ChangeEvent<HTMLInputElement | { name?: string; value: unknown }>
@@ -424,7 +413,6 @@ const PostDetail = () => {
     return color;
   };
 
-
   const handleChat = async (buyerId?: number) => {
     if (!id || !userProfile) {
       alert("로그인이 필요한 서비스입니다.");
@@ -433,10 +421,10 @@ const PostDetail = () => {
 
     try {
       setChatLoading(true);
-      
+
       // 채팅방 생성 또는 기존 채팅방 찾기
       const response = await chatApi.createChatRoom({
-        productId: Number(id)
+        productId: Number(id),
       });
 
       if (response.data && response.data.id) {
@@ -447,11 +435,13 @@ const PostDetail = () => {
       }
     } catch (error: any) {
       console.error("Error creating/finding chat room:", error);
-      
+
       if (error.response?.status === 401) {
         alert("로그인이 필요한 서비스입니다.");
       } else if (error.response?.status === 400) {
-        alert("채팅방을 생성할 수 없습니다. (본인 글이거나 이미 채팅방이 존재할 수 있습니다)");
+        alert(
+          "채팅방을 생성할 수 없습니다. (본인 글이거나 이미 채팅방이 존재할 수 있습니다)"
+        );
       } else {
         alert("채팅방 연결에 실패했습니다.");
       }
@@ -474,7 +464,7 @@ const PostDetail = () => {
 
     try {
       setChatLoading(true);
-      
+
       // 채팅방 생성
       const chatResponse = await chatApi.createChatRoom({
         productId: postDetail.id,
@@ -507,7 +497,7 @@ const PostDetail = () => {
 
     try {
       setChatLoading(true);
-      
+
       // 채팅방 생성
       const chatResponse = await chatApi.createChatRoom({
         productId: postDetail.id,
@@ -805,13 +795,6 @@ const PostDetail = () => {
                     ).price?.toLocaleString() || 0}
                     원
                   </Typography>
-                  {/* <Typography>
-                    희망가:{" "}
-                    {(
-                      postDetail as SellingPostDetail
-                    ).userPrice?.toLocaleString() || 0}
-                    원
-                  </Typography> */}
                 </>
               )}
               {postType === "buying" && (
@@ -966,96 +949,93 @@ const PostDetail = () => {
         )}
       </Paper>
 
+      {/* 작성자 정보 및 채팅하기 버튼 (판매글인 경우) */}
+      {postType === "selling" && postDetail && !postDetail.isAuthor && (
+        <Paper elevation={0} sx={{ p: 2, boxShadow: "none" }}>
+          <Stack direction="row" alignItems="center" spacing={2}>
+            {/* 작성자 프로필 */}
+            <Avatar
+              sx={{
+                bgcolor: stringToColor(
+                  `User${(postDetail as SellingPostDetail).memberId}` || ""
+                ),
+                width: 40,
+                height: 40,
+                fontSize: 20,
+              }}
+            >
+              {`U${(postDetail as SellingPostDetail).memberId}`.charAt(0) ||
+                "U"}
+            </Avatar>
+            {/* 작성자 닉네임 */}
+            <Typography variant="subtitle1" sx={{ flexGrow: 1 }}>
+              {(postDetail as SellingPostDetail).nickname}
+            </Typography>
+            {/* 채팅하기 버튼 (본인 글이 아닐 때만 표시)*/}
+            <Button
+              variant="contained"
+              size="small"
+              onClick={handleStartChatForSeller}
+              disabled={isCreatingChat}
+              startIcon={
+                isCreatingChat ? (
+                  <CircularProgress size={16} color="inherit" />
+                ) : (
+                  <ChatIcon />
+                )
+              }
+              sx={{
+                minWidth: 120,
+                bgcolor: "primary.main",
+                color: "white",
+                "&:hover": {
+                  bgcolor: "primary.dark",
+                },
+                "&:disabled": {
+                  bgcolor: "grey.400",
+                },
+              }}
+            >
+              {isCreatingChat ? "채팅방 생성중..." : "채팅하기"}
+            </Button>
+          </Stack>
+        </Paper>
+      )}
 
-
-          {/* 작성자 정보 및 채팅하기 버튼 (판매글인 경우) */}
-          {postType === "selling" && postDetail && !postDetail.isAuthor && (
-            <Paper elevation={0} sx={{ p: 2, boxShadow: "none" }}>
-              <Stack direction="row" alignItems="center" spacing={2}>
-                {/* 작성자 프로필 */}
-                <Avatar
-                  sx={{
-                    bgcolor: stringToColor(
-                      `User${(postDetail as SellingPostDetail).memberId}` || ""
-                    ),
-                    width: 40,
-                    height: 40,
-                    fontSize: 20,
-                  }}
-                >
-                  {`U${(postDetail as SellingPostDetail).memberId}`.charAt(0) ||
-                    "U"}
-                </Avatar>
-                {/* 작성자 닉네임 */}
-                <Typography variant="subtitle1" sx={{ flexGrow: 1 }}>
-                  사용자 {(postDetail as SellingPostDetail).memberId}
-                </Typography>
-                {/* 채팅하기 버튼 (본인 글이 아닐 때만 표시)*/}
-                <Button
-                  variant="contained"
-                  size="small"
-                  onClick={handleStartChatForSeller}
-                  disabled={isCreatingChat}
-                  startIcon={
-                    isCreatingChat ? (
-                      <CircularProgress size={16} color="inherit" />
-                    ) : (
-                      <ChatIcon />
-                    )
-                  }
-                  sx={{
-                    minWidth: 120,
-                    bgcolor: "primary.main",
-                    color: "white",
-                    "&:hover": {
-                      bgcolor: "primary.dark",
-                    },
-                    "&:disabled": {
-                      bgcolor: "grey.400",
-                    },
-                  }}
-                >
-                  {isCreatingChat ? "채팅방 생성중..." : "채팅하기"}
-                </Button>
-              </Stack>
-            </Paper>
-          )}
-
-          {/* 작성자 정보 및 채팅하기 버튼 (구매글인 경우) */}
-          {postType === "buying" && postDetail && !postDetail.isAuthor && (
-            <Paper elevation={0} sx={{ p: 2, boxShadow: "none" }}>
-              <Stack direction="row" alignItems="center" spacing={2}>
-                {/* 작성자 프로필 */}
-                <Avatar
-                  sx={{
-                    bgcolor: stringToColor(
-                      (postDetail as BuyingPostDetail).buyerNickname || ""
-                    ),
-                    width: 40,
-                    height: 40,
-                    fontSize: 20,
-                  }}
-                >
-                  {(postDetail as BuyingPostDetail).buyerNickname?.charAt(0) ||
-                    ""}
-                </Avatar>
-                {/* 작성자 닉네임 */}
-                <Typography variant="subtitle1" sx={{ flexGrow: 1 }}>
-                  {(postDetail as BuyingPostDetail).buyerNickname}
-                </Typography>
-                {/* 채팅하기 버튼 (본인 글이 아닐 때만 표시)*/}
-                <Button
-                  variant="outlined"
-                  size="small"
-                  onClick={() =>
-                    handleChat((postDetail as BuyingPostDetail).buyerId)
-                  }
-                >
-                  채팅
-                </Button>
-              </Stack>
-            </Paper>
-          )}
+      {/* 작성자 정보 및 채팅하기 버튼 (구매글인 경우) */}
+      {postType === "buying" && postDetail && !postDetail.isAuthor && (
+        <Paper elevation={0} sx={{ p: 2, boxShadow: "none" }}>
+          <Stack direction="row" alignItems="center" spacing={2}>
+            {/* 작성자 프로필 */}
+            <Avatar
+              sx={{
+                bgcolor: stringToColor(
+                  (postDetail as BuyingPostDetail).buyerNickname || ""
+                ),
+                width: 40,
+                height: 40,
+                fontSize: 20,
+              }}
+            >
+              {(postDetail as BuyingPostDetail).buyerNickname?.charAt(0) || ""}
+            </Avatar>
+            {/* 작성자 닉네임 */}
+            <Typography variant="subtitle1" sx={{ flexGrow: 1 }}>
+              {(postDetail as BuyingPostDetail).buyerNickname}
+            </Typography>
+            {/* 채팅하기 버튼 (본인 글이 아닐 때만 표시)*/}
+            <Button
+              variant="outlined"
+              size="small"
+              onClick={() =>
+                handleChat((postDetail as BuyingPostDetail).buyerId)
+              }
+            >
+              채팅
+            </Button>
+          </Stack>
+        </Paper>
+      )}
 
       <Divider sx={{ my: 2 }} />
 
@@ -1064,8 +1044,57 @@ const PostDetail = () => {
           댓글
         </Typography>
 
+        {/* 댓글 목록 */}
+        {isProfileLoading ? (
+          <Box display="flex" justifyContent="center" p={2}>
+            <CircularProgress size={24} />
+          </Box>
+        ) : (
+          <Stack spacing={2}>
+            {comments
+              .slice()
+              .reverse()
+              .map((comment) => {
+                console.log("Comment comparison:", {
+                  commentNickname: comment.nickname,
+                  userProfileNickname: userProfile?.nickname,
+                  isEqual: comment.nickname === userProfile?.nickname,
+                });
+
+                const isMyComment = userProfile?.nickname === comment.nickname;
+                console.log("Is my comment:", isMyComment);
+
+                return (
+                  <Box
+                    key={comment.commentId}
+                    sx={{ p: 1, borderBottom: "1px solid #eee" }}
+                  >
+                    <Stack
+                      direction="row"
+                      justifyContent="space-between"
+                      alignItems="center"
+                    >
+                      <Typography variant="body2" color="text.secondary">
+                        {isMyComment ? "나" : comment.nickname}
+                      </Typography>
+                      {isMyComment && (
+                        <IconButton
+                          size="small"
+                          onClick={() => handleCommentDelete(comment.commentId)}
+                        >
+                          <CloseIcon fontSize="small" />
+                        </IconButton>
+                      )}
+                    </Stack>
+                    <Typography variant="body1">{comment.content}</Typography>
+                  </Box>
+                );
+              })}
+          </Stack>
+        )}
+
         {/* 댓글 작성 폼 */}
-        <Box sx={{ mb: 2 }}>
+        <Box sx={{ mt: 2 }}>
           <TextField
             fullWidth
             multiline
@@ -1094,52 +1123,6 @@ const PostDetail = () => {
             </Button>
           </Box>
         </Box>
-
-        {/* 댓글 목록 */}
-        {isProfileLoading ? (
-          <Box display="flex" justifyContent="center" p={2}>
-            <CircularProgress size={24} />
-          </Box>
-        ) : (
-          <Stack spacing={2}>
-            {comments.map((comment) => {
-              console.log("Comment comparison:", {
-                commentNickname: comment.nickname,
-                userProfileNickname: userProfile?.nickname,
-                isEqual: comment.nickname === userProfile?.nickname,
-              });
-
-              const isMyComment = userProfile?.nickname === comment.nickname;
-              console.log("Is my comment:", isMyComment);
-
-              return (
-                <Box
-                  key={comment.commentId}
-                  sx={{ p: 1, borderBottom: "1px solid #eee" }}
-                >
-                  <Stack
-                    direction="row"
-                    justifyContent="space-between"
-                    alignItems="center"
-                  >
-                    <Typography variant="body2" color="text.secondary">
-                      {isMyComment ? "나" : comment.nickname}
-                    </Typography>
-                    {isMyComment && (
-                      <IconButton
-                        size="small"
-                        onClick={() => handleCommentDelete(comment.commentId)}
-                      >
-                        <CloseIcon fontSize="small" />
-                      </IconButton>
-                    )}
-                  </Stack>
-                  <Typography variant="body1">{comment.content}</Typography>
-                </Box>
-              );
-            })}
-          </Stack>
-        )}
       </Paper>
       <Dialog
         open={editOpen}

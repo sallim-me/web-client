@@ -159,8 +159,14 @@ export class ChatWebSocketClient {
   private reconnectAttempts = 0;
   private maxReconnectAttempts = 5;
   private reconnectInterval = 3000;
-  private connectionCallbacks: ((connected: boolean, error?: string) => void)[] = [];
-  private messageCallbacks: Map<string, (message: WebSocketReceiveMessage) => void> = new Map();
+  private connectionCallbacks: ((
+    connected: boolean,
+    error?: string
+  ) => void)[] = [];
+  private messageCallbacks: Map<
+    string,
+    (message: WebSocketReceiveMessage) => void
+  > = new Map();
 
   // 연결 상태 콜백 등록
   onConnectionChange(callback: (connected: boolean, error?: string) => void) {
@@ -168,7 +174,10 @@ export class ChatWebSocketClient {
   }
 
   // 메시지 수신 콜백 등록
-  onMessage(roomId: string, callback: (message: WebSocketReceiveMessage) => void) {
+  onMessage(
+    roomId: string,
+    callback: (message: WebSocketReceiveMessage) => void
+  ) {
     this.messageCallbacks.set(roomId, callback);
     console.log(`Message callback registered for room: ${roomId}`);
   }
@@ -190,7 +199,7 @@ export class ChatWebSocketClient {
       console.log("Starting WebSocket connection...");
       this.isConnecting = true;
       const token = localStorage.getItem("accessToken");
-      
+
       if (!token) {
         this.isConnecting = false;
         const error = "No authentication token found";
@@ -200,13 +209,13 @@ export class ChatWebSocketClient {
       }
 
       // SockJS를 통한 WebSocket 연결
-      // const wsUrl = process.env.NODE_ENV === 'production' 
-      //   ? "https://sallim.me/ws-chat" 
+      // const wsUrl = process.env.NODE_ENV === 'production'
+      //   ? "https://sallim.me/ws-chat"
       //   : "http://localhost:8080/ws-chat";
       // const wsUrl = process.env.REACT_APP_API_URL || "https://dev-back.sallim.me/ws-chat";
       let wsUrl = process.env.REACT_APP_API_URL || "https://dev-back.sallim.me";
       wsUrl += "/ws-chat";
-      
+
       console.log(`🔌 Connecting to WebSocket: ${wsUrl}`);
       const socket = new SockJS(wsUrl);
       this.client = new Client({
@@ -214,7 +223,7 @@ export class ChatWebSocketClient {
         connectHeaders: {
           Authorization: `Bearer ${token}`,
         },
-        debug: (str) => {
+        debug: (str: any) => {
           console.log("STOMP Debug:", str);
         },
         reconnectDelay: this.reconnectInterval,
@@ -230,7 +239,7 @@ export class ChatWebSocketClient {
         resolve();
       };
 
-      this.client.onStompError = (frame) => {
+      this.client.onStompError = (frame: any) => {
         console.error("❌ STOMP error:", frame);
         this.isConnecting = false;
         const error = frame.headers?.message || "WebSocket connection failed";
@@ -242,11 +251,13 @@ export class ChatWebSocketClient {
         console.log("🔌 WebSocket disconnected");
         this.isConnecting = false;
         this.notifyConnectionChange(false);
-        
+
         // 자동 재연결
         if (this.reconnectAttempts < this.maxReconnectAttempts) {
           this.reconnectAttempts++;
-          console.log(`🔄 Attempting to reconnect... (${this.reconnectAttempts}/${this.maxReconnectAttempts})`);
+          console.log(
+            `🔄 Attempting to reconnect... (${this.reconnectAttempts}/${this.maxReconnectAttempts})`
+          );
           setTimeout(() => {
             this.connect().catch(console.error);
           }, this.reconnectInterval);
@@ -265,7 +276,7 @@ export class ChatWebSocketClient {
     }
 
     const destination = `/topic/room/${roomId}`;
-    
+
     // 이미 구독 중인 경우 종료
     if (this.subscriptions.has(roomId)) {
       console.log(`⚠️  Already subscribed to room: ${roomId}`);
@@ -274,24 +285,27 @@ export class ChatWebSocketClient {
 
     console.log(`🔔 Subscribing to: ${destination}`);
 
-    const subscription = this.client.subscribe(destination, (message: IMessage) => {
-      try {
-        console.log("📨 Raw message received:", message.body);
-        const messageData: WebSocketReceiveMessage = JSON.parse(message.body);
-        console.log("📨 Parsed message:", messageData);
-        
-        const callback = this.messageCallbacks.get(roomId);
-        if (callback) {
-          console.log("🎯 Calling message callback for room:", roomId);
-          callback(messageData);
-        } else {
-          console.warn("⚠️  No callback registered for room:", roomId);
+    const subscription = this.client.subscribe(
+      destination,
+      (message: IMessage) => {
+        try {
+          console.log("📨 Raw message received:", message.body);
+          const messageData: WebSocketReceiveMessage = JSON.parse(message.body);
+          console.log("📨 Parsed message:", messageData);
+
+          const callback = this.messageCallbacks.get(roomId);
+          if (callback) {
+            console.log("🎯 Calling message callback for room:", roomId);
+            callback(messageData);
+          } else {
+            console.warn("⚠️  No callback registered for room:", roomId);
+          }
+        } catch (error) {
+          console.error("❌ Failed to parse message:", error);
+          console.error("Raw message body:", message.body);
         }
-      } catch (error) {
-        console.error("❌ Failed to parse message:", error);
-        console.error("Raw message body:", message.body);
       }
-    });
+    );
 
     this.subscriptions.set(roomId, subscription);
     console.log(`✅ Successfully subscribed to chat room: ${roomId}`);
@@ -317,10 +331,10 @@ export class ChatWebSocketClient {
 
     const message = { content };
     const destination = `/app/chat/room/${roomId}`;
-    
+
     console.log(`📤 Sending message to: ${destination}`);
     console.log(`📤 Message content:`, message);
-    
+
     this.client.publish({
       destination,
       body: JSON.stringify(message),
@@ -352,7 +366,7 @@ export class ChatWebSocketClient {
 
   // 연결 상태 변경 알림
   private notifyConnectionChange(connected: boolean, error?: string): void {
-    this.connectionCallbacks.forEach(callback => {
+    this.connectionCallbacks.forEach((callback) => {
       callback(connected, error);
     });
   }
@@ -387,23 +401,27 @@ export const chatApi = {
   },
 
   // 채팅방 목록 조회 (최신 메시지 순 + 읽지 않은 메시지 수)
-  getChatRooms: async (): Promise<ApiResponseListChatRoomWithUnreadCountResponse> => {
-    try {
-      const response = await axiosInstance.get<ApiResponseListChatRoomWithUnreadCountResponse>(
-        `${CHAT_URL}/rooms`
-      );
-      return response.data;
-    } catch (error: any) {
-      console.error("Get chat rooms error:", {
-        status: error.response?.status,
-        data: error.response?.data,
-      });
-      throw error;
-    }
-  },
+  getChatRooms:
+    async (): Promise<ApiResponseListChatRoomWithUnreadCountResponse> => {
+      try {
+        const response =
+          await axiosInstance.get<ApiResponseListChatRoomWithUnreadCountResponse>(
+            `${CHAT_URL}/rooms`
+          );
+        return response.data;
+      } catch (error: any) {
+        console.error("Get chat rooms error:", {
+          status: error.response?.status,
+          data: error.response?.data,
+        });
+        throw error;
+      }
+    },
 
   // 채팅방 상세 조회
-  getChatRoom: async (chatRoomId: string): Promise<ApiResponseChatRoomResponse> => {
+  getChatRoom: async (
+    chatRoomId: string
+  ): Promise<ApiResponseChatRoomResponse> => {
     try {
       const response = await axiosInstance.get<ApiResponseChatRoomResponse>(
         `${CHAT_URL}/room/${chatRoomId}`
@@ -419,20 +437,22 @@ export const chatApi = {
   },
 
   // 내가 참여 중인 모든 채팅방 조회
-  getMyChatRooms: async (): Promise<ApiResponseListChatRoomWithUnreadCountResponse> => {
-    try {
-      const response = await axiosInstance.get<ApiResponseListChatRoomWithUnreadCountResponse>(
-        `${CHAT_URL}/my-rooms`
-      );
-      return response.data;
-    } catch (error: any) {
-      console.error("Get my chat rooms error:", {
-        status: error.response?.status,
-        data: error.response?.data,
-      });
-      throw error;
-    }
-  },
+  getMyChatRooms:
+    async (): Promise<ApiResponseListChatRoomWithUnreadCountResponse> => {
+      try {
+        const response =
+          await axiosInstance.get<ApiResponseListChatRoomWithUnreadCountResponse>(
+            `${CHAT_URL}/my-rooms`
+          );
+        return response.data;
+      } catch (error: any) {
+        console.error("Get my chat rooms error:", {
+          status: error.response?.status,
+          data: error.response?.data,
+        });
+        throw error;
+      }
+    },
 
   // 채팅방 입장
   enterChatRoom: async (roomId: string): Promise<ApiResponseVoid> => {
@@ -498,7 +518,7 @@ export const chatApi = {
       const response = await axiosInstance.get<GetMessagesResponse>(
         `${CHAT_URL}/rooms/${roomId}/messages`,
         {
-          params: { page, size }
+          params: { page, size },
         }
       );
       return response.data;
@@ -571,11 +591,14 @@ export const chatApi = {
   },
 
   // 채팅방 상태 조회
-  getChatRoomStatus: async (roomId: string): Promise<ApiResponseChatRoomStatusResponse> => {
+  getChatRoomStatus: async (
+    roomId: string
+  ): Promise<ApiResponseChatRoomStatusResponse> => {
     try {
-      const response = await axiosInstance.get<ApiResponseChatRoomStatusResponse>(
-        `${CHAT_URL}/rooms/${roomId}/status`
-      );
+      const response =
+        await axiosInstance.get<ApiResponseChatRoomStatusResponse>(
+          `${CHAT_URL}/rooms/${roomId}/status`
+        );
       return response.data;
     } catch (error: any) {
       console.error("Get chat room status error:", {
@@ -587,11 +610,17 @@ export const chatApi = {
   },
 
   // 채팅방에 필요한 추가 정보 조회 (상품 정보, 사용자 정보)
-  getChatRoomDetails: async (chatRoom: ChatRoomWithUnreadCountResponse, currentUserId: number) => {
+  getChatRoomDetails: async (
+    chatRoom: ChatRoomWithUnreadCountResponse,
+    currentUserId: number
+  ) => {
     try {
       // 상대방 ID 결정
-      const otherUserId = chatRoom.sellerId === currentUserId ? chatRoom.buyerId : chatRoom.sellerId;
-      
+      const otherUserId =
+        chatRoom.sellerId === currentUserId
+          ? chatRoom.buyerId
+          : chatRoom.sellerId;
+
       // TODO: 실제 API 호출로 대체 필요
       // const [productInfo, userInfo] = await Promise.all([
       //   productApi.getProduct(chatRoom.productId),
@@ -640,7 +669,7 @@ export const chatUtils = {
     try {
       return new Date(isoString);
     } catch (error) {
-      console.error('Invalid ISO date string:', isoString, error);
+      console.error("Invalid ISO date string:", isoString, error);
       return null;
     }
   },
@@ -648,7 +677,7 @@ export const chatUtils = {
   // 시간 포맷팅 (ISO 문자열 버전)
   formatTime: (isoString: string | null): string => {
     if (!isoString) return "";
-    
+
     const messageTime = chatUtils.isoStringToDate(isoString);
     if (!messageTime || isNaN(messageTime.getTime())) {
       return "";
@@ -657,7 +686,7 @@ export const chatUtils = {
     const now = new Date();
     const diff = now.getTime() - messageTime.getTime();
     const days = Math.floor(diff / (1000 * 60 * 60 * 24));
-    
+
     if (days === 0) {
       return messageTime.toLocaleTimeString("ko-KR", {
         hour: "2-digit",
@@ -678,12 +707,12 @@ export const chatUtils = {
   // 시간 포맷팅 (날짜 배열 버전 - 하위 호환용)
   formatTimeArray: (dateArray: number[] | null): string => {
     if (!dateArray) return "";
-    
+
     const messageTime = chatUtils.arrayToDate(dateArray);
     const now = new Date();
     const diff = now.getTime() - messageTime.getTime();
     const days = Math.floor(diff / (1000 * 60 * 60 * 24));
-    
+
     if (days === 0) {
       return messageTime.toLocaleTimeString("ko-KR", {
         hour: "2-digit",

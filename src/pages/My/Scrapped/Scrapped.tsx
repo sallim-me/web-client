@@ -109,7 +109,12 @@ const Scrapped = () => {
       ) : (
         <>
           {/* 게시글 그리드 */}
-          <Grid container spacing={2} sx={{ px: 2 }}>
+          <Grid
+            container
+            spacing={2}
+            justifyContent="flex-start"
+            sx={{ px: 2 }}
+          >
             {scraps.map((scrap) => {
               console.log("Scrap item data:", {
                 id: scrap.productId,
@@ -121,7 +126,7 @@ const Scrapped = () => {
                 createdAt: scrap.createdAt,
               });
               return (
-                <Grid item xs={6} key={scrap.productId}>
+                <Grid item xs={12} sm={6} key={scrap.productId}>
                   <PostCard
                     key={scrap.productId}
                     id={scrap.productId}

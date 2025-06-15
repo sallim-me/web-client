@@ -33,7 +33,7 @@ const MyPosts = () => {
       try {
         const response = await memberApi.getMyPosts();
         const postsData = response.data;
-        
+
         // 각 포스트의 스크랩 상태를 확인
         const postsWithScrapStatus = await Promise.all(
           postsData.map(async (post) => {
@@ -41,12 +41,15 @@ const MyPosts = () => {
               const scrapInfo = await getScrapByProductId(post.productId);
               return { ...post, isScraped: scrapInfo.isScraped };
             } catch (error) {
-              console.error(`Failed to get scrap status for post ${post.productId}:`, error);
+              console.error(
+                `Failed to get scrap status for post ${post.productId}:`,
+                error
+              );
               return { ...post, isScraped: false };
             }
           })
         );
-        
+
         setPosts(postsWithScrapStatus);
       } catch (error) {
         console.error("Failed to fetch posts:", error);
@@ -140,9 +143,14 @@ const MyPosts = () => {
       ) : (
         <>
           {/* 게시글 그리드 */}
-          <Grid container spacing={2} sx={{ px: 2 }}>
+          <Grid
+            container
+            spacing={2}
+            justifyContent="flex-start"
+            sx={{ px: 2 }}
+          >
             {currentPosts.map((post) => (
-              <Grid item xs={6} key={post.productId}>
+              <Grid item xs={12} sm={6} key={post.productId}>
                 <PostCard
                   key={post.productId}
                   id={post.productId}
