@@ -20,7 +20,9 @@ export interface ChatRoomResponse {
 export interface ChatRoomWithUnreadCountResponse {
   id: number;
   productId: number;
+  productTitle: string;
   sellerId: number;
+  otherUserNickname: string;
   buyerId: number;
   latestChatMessageId: number | null;
   createdAt: string; // ISO date string
@@ -71,8 +73,14 @@ export interface GetMessagesResponse {
 
 // 채팅방 상태 응답 타입
 export interface ChatRoomStatusResponse {
-  isOnline: boolean;
-  lastSeenAt: string;
+  chatRoomId: number;
+  productId: number;
+  productType: string;
+  productTitle: string;
+  otherParticipantId: number;
+  unreadMessageCount: number;
+  otherParticipantOnline: boolean;
+  otherParticipantInRoom: boolean;
 }
 
 // API 응답 래퍼 타입들
@@ -600,9 +608,9 @@ export const chatApi = {
 
       // 임시 데이터 (실제 API 연동 전까지)
       return {
-        productTitle: `상품 ${chatRoom.productId}`,
+        productTitle: `${chatRoom.productTitle}`,
         productImageUrl: "",
-        otherUserNickname: `사용자${otherUserId}`,
+        otherUserNickname: `${chatRoom.otherUserNickname}`,
       };
     } catch (error) {
       console.error("Failed to get chat room details:", error);

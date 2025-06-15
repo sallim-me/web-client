@@ -284,11 +284,6 @@ const ChatRoom = () => {
     navigate("/chat");
   };
 
-  const handlePostClick = () => {
-    // TODO: 실제 상품 ID로 연결
-    // navigate(`/post/detail/${productId}`);
-  };
-
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (message.trim() && !sendMessageMutation.isPending) {
@@ -396,27 +391,39 @@ const ChatRoom = () => {
             <ArrowBackIcon />
           </IconButton>
           <Box
-            onClick={handlePostClick}
             sx={{
               flex: 1,
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
               gap: 0.5,
-              cursor: "pointer",
             }}
           >
-            <Typography
-              variant="h6"
-              sx={{
-                overflow: "hidden",
-                textOverflow: "ellipsis",
-                whiteSpace: "nowrap",
+            <Chip
+              label={chatRoomStatus.data?.productTitle || "채팅방"}
+              variant="outlined"
+              clickable
+              onClick={() => {
+                if (chatRoomStatus.data?.productId) {
+                  navigate(`/post/detail/${chatRoomStatus.data.productId}${chatRoomStatus.data.productType ? `?type=${chatRoomStatus.data.productType.toLowerCase()}` : ''}`);
+                }
               }}
-            >
-              채팅방 #{chatId}
-            </Typography>
-            <ArrowForwardIcon fontSize="small" />
+              sx={{
+                maxWidth: "200px",
+                color: "white",
+                borderColor: "white",
+                fontSize: "0.875rem",
+                "& .MuiChip-label": {
+                  overflow: "hidden",
+                  textOverflow: "ellipsis",
+                  whiteSpace: "nowrap",
+                  maxWidth: "150px",
+                },
+                "&:hover": {
+                  backgroundColor: "rgba(255, 255, 255, 0.1)",
+                },
+              }}
+            />
           </Box>
           {/* 연결 상태 표시 */}
           <Chip
