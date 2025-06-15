@@ -8,6 +8,7 @@ export interface ScrapApiResponse {
   productId: number;
   productTitle: string;
   productPrice: number;
+  thumbnailUrl: string | null; // 썸네일 URL이 없을 수도 있으므로 nullable 처리
   memo: string | null;
   createdAt: string;
   postType: "BUYING" | "SELLING";
@@ -22,7 +23,8 @@ export interface Scrap {
   title: string;
   productTitle: string;
   productPrice: number;
-  memo: string;
+  thumbnailUrl: string | null; // 썸네일 URL이 없을 수도 있으므로 nullable 처리
+  memo: string | null;
   createdAt: string;
   postType: "BUYING" | "SELLING";
   isActive: boolean;

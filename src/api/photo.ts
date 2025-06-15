@@ -18,16 +18,50 @@ export interface PhotoListResponse {
   data: Photo[];
 }
 
-export const getProductPhotos = async (productId: number): Promise<Photo[]> => {
-  try {
-    const response = await axiosInstance.get<Photo[]>(`/api/v1/products/${productId}/photos`);
-    return response.data;
-  } catch (error) {
-    console.error("Failed to fetch product photos:", error);
-    throw error;
-  }
-};
+const PHOTO_URL = "/api/v1/products";
 
 export const photoApi = {
-  getProductPhotos,
+  // 상품 사진 목록 조회
+  getProductPhotos: async (productId: number): Promise<PhotoListResponse> => {
+    try {
+      console.log("Fetching product photos for productId:", productId);
+      const response = await axiosInstance.get<PhotoListResponse>(
+        `${PHOTO_URL}/${productId}/photos`
+      );
+      console.log("Product photos response:", response.data);
+      return response.data;
+    } catch (error: any) {
+      console.error("Get product photos error:", {
+        status: error.response?.status,
+        data: error.response?.data,
+        headers: error.response?.headers,
+      });
+      throw error;
+    }
+  },
+
+  // 특정 사진 조회 (단일 사진)
+  getProductPhoto: async (productId: number, photoId: number): Promise<Photo> => {
+    try {
+      console.log("Fetching product photo:", { productId, photoId });
+      const response = await axiosInstance.get<Photo>(
+        `${PHOTO_URL}/${productId}/photos/${photoId}`
+      );
+      console.log("Product photo response:", response.data);
+      return response.data;
+    } catch (error: any) {
+      console.error("Get product photo error:", {
+        status: error.response?.status,
+        data: error.response?.data,
+      });
+      throw error;
+    }
+  },
+};
+
+// 하위 호환성을 위한 legacy 함수 (deprecated)
+export const getProductPhotos = async (productId: number): Promise<Photo[]> => {
+  console.warn("getProductPhotos is deprecated. Use photoApi.getProductPhotos instead.");
+  const response = await photoApi.getProductPhotos(productId);
+  return response.data;
 };

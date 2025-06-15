@@ -304,9 +304,10 @@ const MyPage = () => {
                   }}
                 >
                   <img
-                    src={`${process.env.PUBLIC_URL}/images/${
-                      post.postType === "BUYING" ? "buy" : "sell"
-                    }.svg`}
+                    // src={`${process.env.PUBLIC_URL}/images/${
+                    //   post.postType === "BUYING" ? "buy" : "sell"
+                    // }.svg`}
+                    src={post.thumbnailUrl || "/public/images/refrigerator.svg"}
                     alt={post.title}
                     style={{
                       width: "100%",
@@ -443,22 +444,45 @@ const MyPage = () => {
                       height: "100%",
                       objectFit: "cover",
                     }}
-                  />
-                </Box>
-                <Box sx={{ p: 1 }}>
-                  <Typography variant="body2" noWrap sx={{ mb: 0.5 }}>
-                    {scrap.productTitle}
-                  </Typography>
-                  <Typography variant="body2" color="primary" fontWeight="bold">
-                    {scrap.postType === "SELLING" ? "판매" : "구매"}
-                  </Typography>
-                  <Typography variant="body2" fontWeight="bold">
-                    ₩{(scrap.productPrice ?? 0).toLocaleString()}
-                    {scrap.postType === "SELLING" ? "원" : ""}
-                  </Typography>
-                </Box>
-              </Paper>
-            ))}
+                  >
+                    {scrap.thumbnailUrl ? (
+                      <img
+                        src={scrap.thumbnailUrl}
+                        alt={scrap.title}
+                        style={{
+                          width: "100%",
+                          height: "100%",
+                          objectFit: "cover",
+                        }}
+                      />
+                    ) : (
+                      <Box
+                        sx={{
+                          width: "100%",
+                          height: "100%",
+                          display: "flex",
+                          justifyContent: "center",
+                          alignItems: "center",
+                          bgcolor: "grey.300",
+                        }}
+                      >
+                        <Typography variant="caption" color="text.secondary">
+                          이미지 없음
+                        </Typography>
+                      </Box>
+                    )}
+                  </Box>
+                  <Box sx={{ p: 1 }}>
+                    <Typography variant="body2" noWrap sx={{ mb: 0.5 }}>
+                      {scrap.productTitle}
+                    </Typography>
+                    <Typography variant="body2" fontWeight="bold">
+                      ₩{(scrap.price ?? 0).toLocaleString()}
+                    </Typography>
+                  </Box>
+                </Paper>
+              );
+            })}
           </Box>
         )}
       </Box>
