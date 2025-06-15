@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation, useSearchParams } from "react-router-dom";
 import {
   Box,
   Container,
@@ -19,13 +19,24 @@ import { scrapApi } from "@/api/scrap";
 
 const PostList = () => {
   const navigate = useNavigate();
-  const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
-  const [selectedStatuses, setSelectedStatuses] = useState<string[]>([]);
+  const location = useLocation();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [currentPage, setCurrentPage] = useState(1);
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const postsPerPage = 10;
+
+  // 이전 페이지 경로 저장
+  const [previousPath, setPreviousPath] = useState<string | null>(null);
+
+  // location이 변경될 때마다 이전 페이지 경로 업데이트
+  useEffect(() => {
+    const currentPath = location.pathname;
+    if (currentPath !== "/post/list") {
+      setPreviousPath(currentPath);
+    }
+  }, [location]);
 
   const categories = ["냉장고", "에어컨", "세탁기"];
   const categoryMapping: Record<string, string> = {
@@ -45,6 +56,25 @@ const PostList = () => {
     구매완료: { type: "BUYING", isActive: false },
   };
 
+  // URL 쿼리 파라미터에서 초기 상태 가져오기
+  const [selectedCategories, setSelectedCategories] = useState<string[]>(() => {
+    // 이전 페이지가 post detail인 경우에만 필터링 상태 유지
+    if (previousPath?.includes("/post/detail")) {
+      const categories = searchParams.get("categories");
+      return categories ? categories.split(",") : [];
+    }
+    return [];
+  });
+
+  const [selectedStatuses, setSelectedStatuses] = useState<string[]>(() => {
+    // 이전 페이지가 post detail인 경우에만 필터링 상태 유지
+    if (previousPath?.includes("/post/detail")) {
+      const statuses = searchParams.get("statuses");
+      return statuses ? statuses.split(",") : [];
+    }
+    return [];
+  });
+
   useEffect(() => {
     const fetchProducts = async () => {
       try {
@@ -61,20 +91,36 @@ const PostList = () => {
     fetchProducts();
   }, []);
 
+  // URL 쿼리 파라미터 업데이트 함수
+  const updateSearchParams = (categories: string[], statuses: string[]) => {
+    const params = new URLSearchParams();
+    if (categories.length > 0) {
+      params.set("categories", categories.join(","));
+    }
+    if (statuses.length > 0) {
+      params.set("statuses", statuses.join(","));
+    }
+    setSearchParams(params);
+  };
+
   const toggleCategory = (category: string) => {
-    setSelectedCategories((prev) =>
-      prev.includes(category)
+    setSelectedCategories((prev) => {
+      const newCategories = prev.includes(category)
         ? prev.filter((c) => c !== category)
-        : [...prev, category]
-    );
+        : [...prev, category];
+      updateSearchParams(newCategories, selectedStatuses);
+      return newCategories;
+    });
   };
 
   const toggleStatus = (status: string) => {
-    setSelectedStatuses((prev) =>
-      prev.includes(status)
+    setSelectedStatuses((prev) => {
+      const newStatuses = prev.includes(status)
         ? prev.filter((s) => s !== status)
-        : [...prev, status]
-    );
+        : [...prev, status];
+      updateSearchParams(selectedCategories, newStatuses);
+      return newStatuses;
+    });
   };
 
   const filteredProducts = products.filter((product) => {

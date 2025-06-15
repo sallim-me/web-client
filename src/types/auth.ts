@@ -55,10 +55,10 @@ export interface SignUpResponse {
 }
 
 export interface UserProfile {
-  memberId: number;
+  memberId?: number;
   username: string;
   name: string;
   nickname: string;
   isBuyer: boolean;
-  profileColor: string;
+  profileColor?: string;
 }

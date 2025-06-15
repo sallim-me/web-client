@@ -1,5 +1,6 @@
 import React, { useEffect, useState, useCallback } from "react";
 import { useParams, useNavigate, useLocation } from "react-router-dom";
+import axios from "axios";
 import {
   Box,
   Container,
@@ -41,7 +42,8 @@ import { updateSellingPost, getApplianceQuestions } from "@/api/product";
 import { chatApi } from "@/api/chat";
 import { useAuthStore } from "@/store/useAuthStore";
 import CloseIcon from "@mui/icons-material/Close";
-
+// import AddIcon from "@mui/icons-material/Add";
+import { chatApi } from "../../../api/chat";
 import { PostPhoto } from "./PostPhoto";
 import { PostPriceCard } from "./PostPriceCard";
 
@@ -350,6 +352,15 @@ const PostDetail = () => {
     if (!id) return;
 
     console.log("handleScrap called.");
+    console.log("userProfile in handleScrap:", userProfile);
+    console.log("userProfile?.memberId in handleScrap:", userProfile?.memberId);
+
+    // Check if user is logged in
+    if (!userProfile?.memberId) {
+      console.error("User profile not available for scrap operation.");
+      alert("로그인이 필요한 서비스입니다.");
+      return;
+    }
 
     try {
       if (isScrapped) {
@@ -362,13 +373,16 @@ const PostDetail = () => {
         if (response && response.id) {
           setIsScrapped(true);
         } else {
-          console.error("Failed to get scrap ID from createScrap response.", response);
+          console.error(
+            "Failed to get scrap ID from createScrap response.",
+            response
+          );
           alert("스크랩 요청에 실패했습니다. (스크랩 ID 응답 오류)");
         }
       }
     } catch (error: any) {
       console.error("Error toggling scrap:", error);
-      
+
       // 401 Unauthorized 에러인 경우 로그인 필요 메시지 표시
       if (error.response?.status === 401) {
         alert("로그인이 필요한 서비스입니다.");
@@ -586,10 +600,21 @@ const PostDetail = () => {
 
         {/* 사진 영역 스켈레톤 */}
         <Box sx={{ p: 2 }}>
-          <Skeleton variant="rectangular" width="100%" height={300} sx={{ borderRadius: 2, mb: 2 }} />
+          <Skeleton
+            variant="rectangular"
+            width="100%"
+            height={300}
+            sx={{ borderRadius: 2, mb: 2 }}
+          />
           <Box sx={{ display: "flex", gap: 1, overflowX: "auto" }}>
             {[1, 2, 3, 4].map((index) => (
-              <Skeleton key={index} variant="rectangular" width={120} height={120} sx={{ borderRadius: 2, flexShrink: 0 }} />
+              <Skeleton
+                key={index}
+                variant="rectangular"
+                width={120}
+                height={120}
+                sx={{ borderRadius: 2, flexShrink: 0 }}
+              />
             ))}
           </Box>
         </Box>
@@ -627,7 +652,12 @@ const PostDetail = () => {
             {/* 가격 차트 스켈레톤 */}
             <Box>
               <Skeleton variant="text" width={120} height={24} sx={{ mb: 1 }} />
-              <Skeleton variant="rectangular" width="100%" height={300} sx={{ borderRadius: 2 }} />
+              <Skeleton
+                variant="rectangular"
+                width="100%"
+                height={300}
+                sx={{ borderRadius: 2 }}
+              />
             </Box>
           </Stack>
         </Paper>
@@ -637,10 +667,15 @@ const PostDetail = () => {
         {/* 댓글 섹션 스켈레톤 */}
         <Paper sx={{ p: 2, mt: 2, boxShadow: "none" }}>
           <Skeleton variant="text" width={80} height={28} sx={{ mb: 2 }} />
-          
+
           {/* 댓글 작성 폼 스켈레톤 */}
           <Box sx={{ mb: 2 }}>
-            <Skeleton variant="rectangular" width="100%" height={80} sx={{ borderRadius: 1, mb: 1 }} />
+            <Skeleton
+              variant="rectangular"
+              width="100%"
+              height={80}
+              sx={{ borderRadius: 1, mb: 1 }}
+            />
             <Box sx={{ display: "flex", justifyContent: "flex-end" }}>
               <Skeleton variant="rounded" width={100} height={36} />
             </Box>
@@ -650,7 +685,12 @@ const PostDetail = () => {
           <Stack spacing={2}>
             {[1, 2, 3].map((index) => (
               <Box key={index} sx={{ p: 1, borderBottom: "1px solid #eee" }}>
-                <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 1 }}>
+                <Stack
+                  direction="row"
+                  justifyContent="space-between"
+                  alignItems="center"
+                  sx={{ mb: 1 }}
+                >
                   <Skeleton variant="text" width={80} height={16} />
                   <Skeleton variant="circular" width={16} height={16} />
                 </Stack>
@@ -720,13 +760,11 @@ const PostDetail = () => {
       </Paper>
 
       {/* 사진 영역 */}
-      {
-        postType === "selling" && postDetail && (
-          <Box sx={{ px: 2 }}>
-            <PostPhoto productId={postDetail.id} />
-          </Box>
-        )
-      }
+      {postType === "selling" && postDetail && (
+        <Box sx={{ px: 2 }}>
+          <PostPhoto productId={postDetail.id} />
+        </Box>
+      )}
 
       {/* 글 내용 */}
       <Paper sx={{ p: 2, boxShadow: "none" }}>
@@ -919,7 +957,7 @@ const PostDetail = () => {
 
         {/* 가격 차트는 판매글인 경우에만 표시 */}
         {postType === "selling" && (
-          <PostPriceCard 
+          <PostPriceCard
             modelName={(postDetail as SellingPostDetail).modelName}
             brand={(postDetail as SellingPostDetail).brand}
             currentPrice={(postDetail as SellingPostDetail).price}
@@ -1071,8 +1109,7 @@ const PostDetail = () => {
                 isEqual: comment.nickname === userProfile?.nickname,
               });
 
-              const isMyComment =
-                userProfile && comment.nickname === userProfile.nickname;
+              const isMyComment = userProfile?.nickname === comment.nickname;
               console.log("Is my comment:", isMyComment);
 
               return (

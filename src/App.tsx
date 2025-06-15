@@ -12,7 +12,7 @@ import ChatList from "./pages/Chat/ChatList/ChatList";
 import ChatRoom from "./pages/Chat/ChatRoom/ChatRoom";
 import MyPage from "./pages/My/MyPage/MyPage";
 import MyPosts from "./pages/My/MyPosts/MyPosts";
-import ScrapListPage from "./pages/My/ScrapListPage/ScrapListPage";
+import Scrapped from "./pages/My/Scrapped/Scrapped";
 import EditProfile from "./pages/My/EditProfile/EditProfile";
 import Alarm from "./pages/Alarm/Alarm";
 
@@ -34,7 +34,7 @@ export function App() {
               <Route path="/chat" element={<ChatList />} />
               <Route path="/my-page" element={<MyPage />} />
               <Route path="/my-page/my-posts" element={<MyPosts />} />
-              <Route path="/my-page/scraps" element={<ScrapListPage />} />
+              <Route path="/my-page/scraps" element={<Scrapped />} />
               <Route path="/my-page/edit-profile" element={<EditProfile />} />
             </Route>
 
@@ -52,6 +52,9 @@ export function App() {
           {/* 필요하다면 인증되지 않은 사용자에게 보여줄 404 페이지 등을 여기에 추가 */}
           {/* <Route path="*" element={<NotFoundPage />} /> */}
         </Routes>
+
+        {/* PWA 설치 프롬프트 */}
+        {/* <PWAInstallPrompt /> */}
       </BrowserRouter>
     </Provider>
   );

@@ -1,12 +1,17 @@
 import { axiosInstance } from "@/lib/axios";
+<<<<<<< HEAD
 import { Client, IMessage } from "@stomp/stompjs";
 import SockJS from "sockjs-client";
 
 // 채팅방 생성 요청 타입
+=======
+
+>>>>>>> origin/pr
 export interface CreateChatRoomRequest {
   productId: number;
 }
 
+<<<<<<< HEAD
 // 채팅방 응답 타입
 export interface ChatRoomResponse {
   id: string;
@@ -58,10 +63,14 @@ export interface ChatMessageDTO {
 
 // 메시지 목록 응답 타입 (페이징)
 export interface GetMessagesResponse {
+=======
+export interface CreateChatRoomResponse {
+>>>>>>> origin/pr
   status: number;
   code: string;
   message: string;
   data: {
+<<<<<<< HEAD
     content: ChatMessageResponse[];
     totalElements: number;
     totalPages: number;
@@ -375,16 +384,40 @@ export const chatApi = {
         data
       );
       console.log("Chat room creation response:", response.data);
+=======
+    chatRoomId: number;
+    productId: number;
+    sellerId: number;
+    buyerId: number;
+  };
+}
+
+const CHAT_URL = "/chat";
+
+export const chatApi = {
+  createChatRoom: async (
+    data: CreateChatRoomRequest
+  ): Promise<CreateChatRoomResponse> => {
+    try {
+      const response = await axiosInstance.post<CreateChatRoomResponse>(
+        `${CHAT_URL}/rooms`,
+        data
+      );
+>>>>>>> origin/pr
       return response.data;
     } catch (error: any) {
       console.error("Create chat room error:", {
         status: error.response?.status,
         data: error.response?.data,
+<<<<<<< HEAD
         headers: error.response?.headers,
+=======
+>>>>>>> origin/pr
       });
       throw error;
     }
   },
+<<<<<<< HEAD
 
   // 채팅방 목록 조회 (최신 메시지 순 + 읽지 않은 메시지 수)
   getChatRooms: async (): Promise<ApiResponseListChatRoomWithUnreadCountResponse> => {
@@ -705,4 +738,7 @@ export const chatUtils = {
   roomIdToString: (id: number): string => {
     return id.toString();
   },
+=======
+  // 여기에 다른 채팅 관련 API 함수들을 추가할 수 있습니다.
+>>>>>>> origin/pr
 };
