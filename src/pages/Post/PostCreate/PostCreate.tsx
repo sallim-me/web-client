@@ -39,17 +39,15 @@ import {
   useSensor,
   useSensors,
   DragEndEvent,
-} from '@dnd-kit/core';
+} from "@dnd-kit/core";
 import {
   arrayMove,
   SortableContext,
   sortableKeyboardCoordinates,
   horizontalListSortingStrategy,
-} from '@dnd-kit/sortable';
-import {
-  useSortable,
-} from '@dnd-kit/sortable';
-import { CSS } from '@dnd-kit/utilities';
+} from "@dnd-kit/sortable";
+import { useSortable } from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
 import {
   createBuyingPost,
   createSellingPost,
@@ -101,15 +99,21 @@ const PostCreate = () => {
   const [autoFilled, setAutofilled] = useState(false);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [autoFilledFields, setAutoFilledFields] = useState<Set<string>>(new Set());
+  const [autoFilledFields, setAutoFilledFields] = useState<Set<string>>(
+    new Set()
+  );
   const [imageViewerOpen, setImageViewerOpen] = useState(false);
-  const [selectedImageIndex, setSelectedImageIndex] = useState<number | null>(null);
+  const [selectedImageIndex, setSelectedImageIndex] = useState<number | null>(
+    null
+  );
   const [zoom, setZoom] = useState(1);
   const [rotation, setRotation] = useState(0);
   // 드래그 모드 상태 추가
   const [isDragMode, setIsDragMode] = useState(false);
   // AI 분석용 이미지 선택 상태 추가
-  const [selectedAnalysisImage, setSelectedAnalysisImage] = useState<number | null>(null);
+  const [selectedAnalysisImage, setSelectedAnalysisImage] = useState<
+    number | null
+  >(null);
   const [isSelectingImage, setIsSelectingImage] = useState(false);
 
   // 드래그 앤 드롭과 이미지 뷰어를 위한 센서 설정
@@ -162,7 +166,7 @@ const PostCreate = () => {
 
         console.log("Submitting buying post data:", data);
         const response = await createBuyingPost(data);
-        
+
         // 구매글 생성 성공 시 상세 페이지로 이동
         if (response.data && response.data.id) {
           navigate(`/post/detail/${response.data.id}?type=buying`);
@@ -202,7 +206,7 @@ const PostCreate = () => {
         console.log("Submitting selling post data:", data);
         console.log("Image files:", form.imageFiles);
         const response = await createSellingPost(data, form.imageFiles);
-        
+
         // 판매글 생성 성공 시 상세 페이지로 이동
         if (response.data && response.data.id) {
           navigate(`/post/detail/${response.data.id}?type=selling`);
@@ -221,12 +225,12 @@ const PostCreate = () => {
     e: React.ChangeEvent<HTMLInputElement | { name?: string; value: unknown }>
   ) => {
     const { name, value } = e.target;
-    
+
     // 자동완성된 필드가 수정되면 autoFilled를 false로 변경
     if (autoFilled && autoFilledFields.has(name as string)) {
       setAutofilled(false);
     }
-    
+
     setForm((prev) => ({
       ...prev,
       [name as string]: value,
@@ -242,7 +246,7 @@ const PostCreate = () => {
       setAutoFilledFields(new Set());
       setIsSelectingImage(false);
       setSelectedAnalysisImage(null);
-      
+
       // 거래 유형이 변경되면 이미지 관련 필드들도 초기화
       setForm((prev) => ({
         ...prev,
@@ -258,7 +262,7 @@ const PostCreate = () => {
         quantity: "",
         defectAnswers: {},
       }));
-      
+
       if (value === "buy") {
         const userProfile = useAuthStore.getState().userProfile;
         console.log("User profile:", userProfile);
@@ -356,59 +360,62 @@ const PostCreate = () => {
     }
 
     // 선택된 이미지 인덱스 사용, 없으면 0번째 이미지 사용
-    const imageIndex = selectedImageIndex !== undefined ? selectedImageIndex : 0;
-    
+    const imageIndex =
+      selectedImageIndex !== undefined ? selectedImageIndex : 0;
+
     setIsAnalyzing(true);
     setIsSelectingImage(false);
     setSelectedAnalysisImage(null);
-    
+
     try {
       // 선택된 이미지 파일 사용
       const file = form.imageFiles[imageIndex];
 
       const result = await analyzeImage(file);
-      
+
       if (result.success) {
         // 자동완성된 필드들을 추적
         const filledFields = new Set<string>();
-        
+
         setForm((prev) => {
           const newForm = { ...prev };
-          
+
           if (result.title) {
             newForm.title = result.title;
-            filledFields.add('title');
+            filledFields.add("title");
           }
           if (result.category) {
             newForm.category = result.category;
-            filledFields.add('category');
+            filledFields.add("category");
           }
           if (result.model_code) {
             newForm.modelName = result.model_code;
-            filledFields.add('modelName');
+            filledFields.add("modelName");
           }
           if (result.brand) {
             newForm.brand = result.brand;
-            filledFields.add('brand');
+            filledFields.add("brand");
           }
           if (result.price) {
             newForm.price = result.price.toString();
-            filledFields.add('price');
+            filledFields.add("price");
           }
           if (result.description) {
             newForm.description = result.description;
-            filledFields.add('description');
+            filledFields.add("description");
           }
-          
+
           return newForm;
         });
-        
+
         setAutoFilledFields(filledFields);
         setAutofilled(true);
 
         // 카테고리가 변경되었으므로 질문들도 다시 불러오기
         try {
-          const questionsResponse = await getApplianceQuestions(result.category);
+          const questionsResponse = await getApplianceQuestions(
+            result.category
+          );
           setQuestions(questionsResponse.data);
         } catch (error) {
           console.error("Error fetching questions:", error);
@@ -472,7 +479,7 @@ const PostCreate = () => {
       transform,
       transition,
       isDragging,
-    } = useSortable({ 
+    } = useSortable({
       id,
       disabled: !isDragMode, // 드래그 모드가 아닐 때는 드래그 비활성화
     });
@@ -491,7 +498,7 @@ const PostCreate = () => {
           position: "relative",
           width: 100,
           height: 100,
-          cursor: isDragMode ? (isDragging ? 'grabbing' : 'grab') : 'pointer',
+          cursor: isDragMode ? (isDragging ? "grabbing" : "grab") : "pointer",
         }}
       >
         <Box
@@ -501,15 +508,15 @@ const PostCreate = () => {
             position: "relative",
             borderRadius: 1,
             overflow: "hidden",
-            border: isDragging 
-              ? "2px dashed #ccc" 
-              : isDragMode 
-                ? "2px solid #1976d2" 
-                : isSelectingImage 
-                  ? isSelectedForAnalysis 
-                    ? "3px solid #4caf50" 
-                    : "2px solid #ff9800"
-                  : "none",
+            border: isDragging
+              ? "2px dashed #ccc"
+              : isDragMode
+              ? "2px solid #1976d2"
+              : isSelectingImage
+              ? isSelectedForAnalysis
+                ? "3px solid #4caf50"
+                : "2px solid #ff9800"
+              : "none",
             touchAction: isDragMode ? "none" : "auto", // 터치 이벤트 제어
             transition: "border 0.2s ease",
           }}
@@ -526,7 +533,8 @@ const PostCreate = () => {
             }}
             onClick={(e) => {
               e.stopPropagation();
-              if (!isDragMode) { // 드래그 모드가 아닐 때만 이미지 클릭 가능
+              if (!isDragMode) {
+                // 드래그 모드가 아닐 때만 이미지 클릭 가능
                 onImageClick(index);
               }
             }}
@@ -546,12 +554,12 @@ const PostCreate = () => {
                 justifyContent: "center",
               }}
             >
-              <DragIndicatorIcon 
-                sx={{ 
-                  color: "white", 
+              <DragIndicatorIcon
+                sx={{
+                  color: "white",
                   fontSize: 14,
                   pointerEvents: "none",
-                }} 
+                }}
               />
             </Box>
           )}
@@ -577,15 +585,19 @@ const PostCreate = () => {
         </IconButton>
       </Box>
     );
-  }
+  };
 
   // 드래그 종료 핸들러
   const handleDragEnd = (event: DragEndEvent) => {
     const { active, over } = event;
 
     if (active.id !== over?.id) {
-      const oldIndex = form.images.findIndex((_, index) => `image-${index}` === active.id);
-      const newIndex = form.images.findIndex((_, index) => `image-${index}` === over?.id);
+      const oldIndex = form.images.findIndex(
+        (_, index) => `image-${index}` === active.id
+      );
+      const newIndex = form.images.findIndex(
+        (_, index) => `image-${index}` === over?.id
+      );
 
       setForm((prev) => ({
         ...prev,
@@ -603,7 +615,7 @@ const PostCreate = () => {
       handleAutoFill(index); // 선택된 이미지로 자동 채우기 실행
       return;
     }
-    
+
     // 일반 모드일 때는 뷰어 열기
     setSelectedImageIndex(index);
     setImageViewerOpen(true);
@@ -629,7 +641,10 @@ const PostCreate = () => {
   };
 
   const handleNextImage = () => {
-    if (selectedImageIndex !== null && selectedImageIndex < form.images.length - 1) {
+    if (
+      selectedImageIndex !== null &&
+      selectedImageIndex < form.images.length - 1
+    ) {
       setSelectedImageIndex(selectedImageIndex + 1);
       setZoom(1);
       setRotation(0);
@@ -666,7 +681,12 @@ const PostCreate = () => {
         }}
         elevation={0}
       >
-        <Stack direction="row" alignItems="center" spacing={0} sx={{ mr: "32px" }}>
+        <Stack
+          direction="row"
+          alignItems="center"
+          spacing={0}
+          sx={{ mr: "32px" }}
+        >
           <IconButton onClick={handleBack} size="small" disabled={isSubmitting}>
             <ArrowBackIcon />
           </IconButton>
@@ -677,10 +697,12 @@ const PostCreate = () => {
       </Paper>
 
       {/* 글 작성 폼 */}
-      <Paper sx={{ 
-        p: 3,
-        boxShadow: "none",
-      }}>
+      <Paper
+        sx={{
+          p: 3,
+          boxShadow: "none",
+        }}
+      >
         <form onSubmit={handleSubmit}>
           <Stack spacing={3}>
             {/* 제목 */}
@@ -696,8 +718,14 @@ const PostCreate = () => {
                 fullWidth
                 required
                 sx={{
-                  textDecoration: autoFilled && autoFilledFields.has('title') ? "underline" : "none",
-                  color: autoFilled && autoFilledFields.has('title') ? "primary.main" : "text.primary",
+                  textDecoration:
+                    autoFilled && autoFilledFields.has("title")
+                      ? "underline"
+                      : "none",
+                  color:
+                    autoFilled && autoFilledFields.has("title")
+                      ? "primary.main"
+                      : "text.primary",
                 }}
               />
             )}
@@ -720,11 +748,23 @@ const PostCreate = () => {
             {/* 판매일 때만 이미지 업로드 표시 */}
             {form.tradeType === "sell" && (
               <Box>
-                <Box sx={{ display: "flex", alignItems: "center", gap: "8px", mb: 1 }}>
-                  <Box sx={{ display: "flex", alignItems: "center", gap: 1, flexGrow: 1 }}>
-                    <Typography variant="h6">
-                      제품 사진
-                    </Typography>
+                <Box
+                  sx={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "8px",
+                    mb: 1,
+                  }}
+                >
+                  <Box
+                    sx={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 1,
+                      flexGrow: 1,
+                    }}
+                  >
+                    <Typography variant="h6">제품 사진</Typography>
                     <Button
                       size="small"
                       onClick={() => handleAutoFill()}
@@ -740,12 +780,16 @@ const PostCreate = () => {
                         "&:disabled": {
                           backgroundColor: "grey.400",
                         },
-                        display: form.images.length > 0 ? "inline-flex" : "none",
+                        display:
+                          form.images.length > 0 ? "inline-flex" : "none",
                       }}
                     >
                       {isAnalyzing ? (
                         <>
-                          <CircularProgress size={14} sx={{ mr: 1, color: "white" }} />
+                          <CircularProgress
+                            size={14}
+                            sx={{ mr: 1, color: "white" }}
+                          />
                           분석 중...
                         </>
                       ) : isSelectingImage ? (
@@ -824,7 +868,9 @@ const PostCreate = () => {
                           onImageClick={handleImageClick}
                           isDragMode={isDragMode}
                           isSelectingImage={isSelectingImage}
-                          isSelectedForAnalysis={selectedAnalysisImage === index}
+                          isSelectedForAnalysis={
+                            selectedAnalysisImage === index
+                          }
                         />
                       ))}
                       {form.images.length < 5 && (
@@ -884,8 +930,14 @@ const PostCreate = () => {
                     fullWidth
                     required
                     sx={{
-                      textDecoration: autoFilled && autoFilledFields.has('modelName') ? "underline" : "none",
-                      color: autoFilled && autoFilledFields.has('modelName') ? "primary.main" : "text.primary",
+                      textDecoration:
+                        autoFilled && autoFilledFields.has("modelName")
+                          ? "underline"
+                          : "none",
+                      color:
+                        autoFilled && autoFilledFields.has("modelName")
+                          ? "primary.main"
+                          : "text.primary",
                     }}
                   />
                 )}
@@ -902,8 +954,14 @@ const PostCreate = () => {
                     fullWidth
                     required
                     sx={{
-                      textDecoration: autoFilled && autoFilledFields.has('brand') ? "underline" : "none",
-                      color: autoFilled && autoFilledFields.has('brand') ? "primary.main" : "text.primary",
+                      textDecoration:
+                        autoFilled && autoFilledFields.has("brand")
+                          ? "underline"
+                          : "none",
+                      color:
+                        autoFilled && autoFilledFields.has("brand")
+                          ? "primary.main"
+                          : "text.primary",
                     }}
                   />
                 )}
@@ -924,8 +982,14 @@ const PostCreate = () => {
                       inputProps: { min: 0 },
                     }}
                     sx={{
-                      textDecoration: autoFilled && autoFilledFields.has('price') ? "underline" : "none",
-                      color: autoFilled && autoFilledFields.has('price') ? "primary.main" : "text.primary",
+                      textDecoration:
+                        autoFilled && autoFilledFields.has("price")
+                          ? "underline"
+                          : "none",
+                      color:
+                        autoFilled && autoFilledFields.has("price")
+                          ? "primary.main"
+                          : "text.primary",
                     }}
                   />
                 )}
@@ -958,38 +1022,51 @@ const PostCreate = () => {
                     rows={5}
                     required
                     sx={{
-                      textDecoration: autoFilled && autoFilledFields.has('description') ? "underline" : "none",
-                      color: autoFilled && autoFilledFields.has('description') ? "primary.main" : "text.primary",
+                      textDecoration:
+                        autoFilled && autoFilledFields.has("description")
+                          ? "underline"
+                          : "none",
+                      color:
+                        autoFilled && autoFilledFields.has("description")
+                          ? "primary.main"
+                          : "text.primary",
                     }}
                   />
                 )}
               </>
             )}
 
-                {/* 카테고리가 선택되었을 때만 제품 상태 확인 표시 */}
-                {form.category && questions.length > 0 && (
-                  <Box>
-                    <Typography variant="subtitle1" sx={{ mb: 2 }}>
-                      제품 상태 확인
-                    </Typography>
-                    <Stack spacing={2}>
-                      {isAnalyzing ? (
-                        // 로딩 중일 때 스켈레톤 표시
+            {/* 카테고리가 선택되었을 때만 제품 상태 확인 표시 */}
+            {form.tradeType === "sell" &&
+              form.category &&
+              questions.length > 0 && (
+                <Box>
+                  <Typography variant="subtitle1" sx={{ mb: 2 }}>
+                    제품 상태 확인
+                  </Typography>
+                  <Stack spacing={2}>
+                    {isAnalyzing
+                      ? // 로딩 중일 때 스켈레톤 표시
                         Array.from({ length: 3 }).map((_, index) => (
                           <Box key={index}>
-                            <Skeleton variant="text" width="60%" height={24} sx={{ mb: 1 }} />
+                            <Skeleton
+                              variant="text"
+                              width="60%"
+                              height={24}
+                              sx={{ mb: 1 }}
+                            />
                             <Skeleton variant="rectangular" height={56} />
                           </Box>
                         ))
-                      ) : (
-                        questions.map((question) => (
+                      : questions.map((question) => (
                           <Box key={question.id}>
                             <Typography variant="body1" sx={{ mb: 1 }}>
                               {question.questionContent}
                             </Typography>
                             <TextField
                               value={
-                                form.defectAnswers[question.questionContent] || ""
+                                form.defectAnswers[question.questionContent] ||
+                                ""
                               }
                               onChange={(e) =>
                                 handleDefectQuestionChange(
@@ -1002,11 +1079,10 @@ const PostCreate = () => {
                               placeholder="답변을 입력해주세요"
                             />
                           </Box>
-                        ))
-                      )}
-                    </Stack>
-                  </Box>
-                )}
+                        ))}
+                  </Stack>
+                </Box>
+              )}
 
             {/* 구매일 때만 수량 표시 */}
             {form.tradeType === "buy" && (
@@ -1169,25 +1245,26 @@ const PostCreate = () => {
           )}
 
           {/* 다음 이미지 버튼 */}
-          {selectedImageIndex !== null && selectedImageIndex < form.images.length - 1 && (
-            <IconButton
-              onClick={handleNextImage}
-              sx={{
-                position: "absolute",
-                right: 16,
-                top: "50%",
-                transform: "translateY(-50%)",
-                zIndex: 10,
-                color: "white",
-                backgroundColor: "rgba(0,0,0,0.5)",
-                "&:hover": {
-                  backgroundColor: "rgba(0,0,0,0.7)",
-                },
-              }}
-            >
-              <ArrowForwardIcon />
-            </IconButton>
-          )}
+          {selectedImageIndex !== null &&
+            selectedImageIndex < form.images.length - 1 && (
+              <IconButton
+                onClick={handleNextImage}
+                sx={{
+                  position: "absolute",
+                  right: 16,
+                  top: "50%",
+                  transform: "translateY(-50%)",
+                  zIndex: 10,
+                  color: "white",
+                  backgroundColor: "rgba(0,0,0,0.5)",
+                  "&:hover": {
+                    backgroundColor: "rgba(0,0,0,0.7)",
+                  },
+                }}
+              >
+                <ArrowForwardIcon />
+              </IconButton>
+            )}
 
           {/* 메인 이미지 */}
           {selectedImageIndex !== null && (
@@ -1199,13 +1276,14 @@ const PostCreate = () => {
                 alignItems: "center",
                 justifyContent: "center",
                 overflow: "hidden",
-                cursor: zoom > 1 ? 'grab' : 'zoom-in',
-                '&:active': {
-                  cursor: zoom > 1 ? 'grabbing' : 'zoom-in',
+                cursor: zoom > 1 ? "grab" : "zoom-in",
+                "&:active": {
+                  cursor: zoom > 1 ? "grabbing" : "zoom-in",
                 },
               }}
               onClick={(e) => {
-                if (e.detail === 2) { // Double click
+                if (e.detail === 2) {
+                  // Double click
                   setZoom(zoom === 1 ? 2 : 1);
                 }
               }}
@@ -1214,11 +1292,11 @@ const PostCreate = () => {
                 src={form.images[selectedImageIndex]}
                 alt={`상품 사진 ${selectedImageIndex + 1}`}
                 style={{
-                  maxWidth: '100%',
-                  maxHeight: '100%',
+                  maxWidth: "100%",
+                  maxHeight: "100%",
                   transform: `scale(${zoom}) rotate(${rotation}deg)`,
-                  transition: 'transform 0.3s ease',
-                  objectFit: 'contain',
+                  transition: "transform 0.3s ease",
+                  objectFit: "contain",
                 }}
                 draggable={false}
               />
@@ -1228,11 +1306,11 @@ const PostCreate = () => {
           {/* 컨트롤 버튼들 */}
           <Box
             sx={{
-              position: 'absolute',
+              position: "absolute",
               bottom: 16,
-              left: '50%',
-              transform: 'translateX(-50%)',
-              display: 'flex',
+              left: "50%",
+              transform: "translateX(-50%)",
+              display: "flex",
               gap: 1,
               zIndex: 10,
             }}
@@ -1242,47 +1320,47 @@ const PostCreate = () => {
               onClick={handleZoomOut}
               disabled={zoom <= 0.5}
               sx={{
-                backgroundColor: 'rgba(255,255,255,0.2)',
-                color: 'white',
-                '&:hover': {
-                  backgroundColor: 'rgba(255,255,255,0.3)',
+                backgroundColor: "rgba(255,255,255,0.2)",
+                color: "white",
+                "&:hover": {
+                  backgroundColor: "rgba(255,255,255,0.3)",
                 },
-                '&:disabled': {
-                  backgroundColor: 'rgba(255,255,255,0.1)',
-                  color: 'rgba(255,255,255,0.5)',
+                "&:disabled": {
+                  backgroundColor: "rgba(255,255,255,0.1)",
+                  color: "rgba(255,255,255,0.5)",
                 },
               }}
             >
               <ZoomOutIcon />
             </Fab>
-            
+
             <Fab
               size="small"
               onClick={handleZoomIn}
               disabled={zoom >= 3}
               sx={{
-                backgroundColor: 'rgba(255,255,255,0.2)',
-                color: 'white',
-                '&:hover': {
-                  backgroundColor: 'rgba(255,255,255,0.3)',
+                backgroundColor: "rgba(255,255,255,0.2)",
+                color: "white",
+                "&:hover": {
+                  backgroundColor: "rgba(255,255,255,0.3)",
                 },
-                '&:disabled': {
-                  backgroundColor: 'rgba(255,255,255,0.1)',
-                  color: 'rgba(255,255,255,0.5)',
+                "&:disabled": {
+                  backgroundColor: "rgba(255,255,255,0.1)",
+                  color: "rgba(255,255,255,0.5)",
                 },
               }}
             >
               <ZoomInIcon />
             </Fab>
-            
+
             <Fab
               size="small"
               onClick={handleRotate}
               sx={{
-                backgroundColor: 'rgba(255,255,255,0.2)',
-                color: 'white',
-                '&:hover': {
-                  backgroundColor: 'rgba(255,255,255,0.3)',
+                backgroundColor: "rgba(255,255,255,0.2)",
+                color: "white",
+                "&:hover": {
+                  backgroundColor: "rgba(255,255,255,0.3)",
                 },
               }}
             >

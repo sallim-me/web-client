@@ -41,7 +41,10 @@ export const photoApi = {
   },
 
   // 특정 사진 조회 (단일 사진)
-  getProductPhoto: async (productId: number, photoId: number): Promise<Photo> => {
+  getProductPhoto: async (
+    productId: number,
+    photoId: number
+  ): Promise<Photo> => {
     try {
       console.log("Fetching product photo:", { productId, photoId });
       const response = await axiosInstance.get<Photo>(
@@ -61,7 +64,9 @@ export const photoApi = {
 
 // 하위 호환성을 위한 legacy 함수 (deprecated)
 export const getProductPhotos = async (productId: number): Promise<Photo[]> => {
-  console.warn("getProductPhotos is deprecated. Use photoApi.getProductPhotos instead.");
+  console.warn(
+    "getProductPhotos is deprecated. Use photoApi.getProductPhotos instead."
+  );
   const response = await photoApi.getProductPhotos(productId);
   return response.data;
 };

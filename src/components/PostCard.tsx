@@ -55,6 +55,7 @@ const PostCard: React.FC<PostCardProps> = ({
         p: 2,
         cursor: "pointer",
         height: "100%",
+        width: "100%",
         display: "flex",
         flexDirection: "column",
         gap: 1,
@@ -140,11 +141,9 @@ const PostCard: React.FC<PostCardProps> = ({
           }}
         >
           {/* ₩{(minPrice ?? 0).toLocaleString()} */}
-          {postType === "buying" ? (
-            `수량: ${(quantity ?? 0).toLocaleString()}`
-          ) : (
-            `₩${price?.toLocaleString() ?? ""}`
-          )}
+          {postType === "buying"
+            ? `수량: ${(quantity ?? 0).toLocaleString()}`
+            : `₩${price?.toLocaleString() ?? ""}`}
         </Typography>
 
         <IconButton
