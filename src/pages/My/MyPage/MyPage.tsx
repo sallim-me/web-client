@@ -9,12 +9,18 @@ import {
   Stack,
   Paper,
   IconButton,
-  CircularProgress,
+  Skeleton,
+  Backdrop,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
 } from "@mui/material";
 import ArrowForwardIcon from "@mui/icons-material/ArrowForward";
 import { useAuthStore } from "@/store/useAuthStore";
 import { memberApi, MyPost } from "@/api/member";
 import { scrapApi, Scrap } from "@/api/scrap";
+import { getProfileColor } from "@/utils/color";
 
 // 타입 정의
 interface Post {
@@ -48,6 +54,7 @@ const MyPage = () => {
   const [scraps, setScraps] = useState<Scrap[]>([]);
   const [loading, setLoading] = useState(true);
   const [scrapLoading, setScrapLoading] = useState(true);
+  const [openLogoutDialog, setOpenLogoutDialog] = useState(false);
 
   const nickname = userProfile?.nickname || "N/A";
   const userName = userProfile?.name || "N/A";
@@ -78,24 +85,18 @@ const MyPage = () => {
     if (userProfile?.profileColor) {
       setProfileDisplayColor(userProfile.profileColor);
     } else if (profileDisplayColor === undefined) {
-      setProfileDisplayColor(getRandomColor());
+      const randomColor = getProfileColor(userProfile?.username || "");
+      setProfileDisplayColor(randomColor);
     }
-  }, [userProfile, profileDisplayColor]);
+  }, [userProfile]);
 
-  const getRandomColor = () => {
-    const colors = [
-      "#FF9AA2",
-      "#FFB7B2",
-      "#FFDAC1",
-      "#E2F0CB",
-      "#B5EAD7",
-      "#C7CEEA",
-      "#9FB3DF",
-      "#B8B3E9",
-      "#D4A5A5",
-      "#9CADCE",
-    ];
-    return colors[Math.floor(Math.random() * colors.length)];
+  const handleLogout = async () => {
+    try {
+      await logout();
+      navigate("/login");
+    } catch (error) {
+      console.error("Logout failed:", error);
+    }
   };
 
   const handleScrapClick = (scrapId: number) => {
@@ -131,7 +132,9 @@ const MyPage = () => {
             sx={{
               width: 60,
               height: 60,
-              bgcolor: profileDisplayColor,
+              bgcolor:
+                userProfile?.profileColor ||
+                getProfileColor(userProfile?.username || ""),
               fontSize: 24,
             }}
           >
@@ -144,14 +147,59 @@ const MyPage = () => {
             </Typography>
           </Stack>
         </Stack>
-        <Button
-          variant="outlined"
-          sx={{ width: "60%", mx: "auto" }}
-          onClick={() => navigate("/my-page/edit-profile")}
-        >
-          회원 정보 수정
-        </Button>
+        <Stack direction="row" spacing={2} sx={{ mt: 2 }}>
+          <Button
+            variant="outlined"
+            fullWidth
+            onClick={() => navigate("/my-page/edit-profile")}
+          >
+            회원 정보 수정
+          </Button>
+          <Button
+            variant="outlined"
+            fullWidth
+            onClick={() => setOpenLogoutDialog(true)}
+          >
+            로그아웃
+          </Button>
+        </Stack>
       </Paper>
+
+      {/* 로그아웃 확인 다이얼로그 */}
+      <Backdrop
+        sx={{
+          color: "#fff",
+          zIndex: (theme) => theme.zIndex.drawer + 1,
+          backgroundColor: "rgba(0, 0, 0, 0.5)",
+        }}
+        open={openLogoutDialog}
+      >
+        <Paper
+          sx={{
+            p: 3,
+            maxWidth: 400,
+            width: "100%",
+            mx: 2,
+            borderRadius: 2,
+          }}
+        >
+          <Typography variant="h6" gutterBottom>
+            로그아웃
+          </Typography>
+          <Typography sx={{ mb: 3 }}>정말 로그아웃 하시겠습니까?</Typography>
+          <Stack direction="row" spacing={2} justifyContent="flex-end">
+            <Button
+              variant="outlined"
+              onClick={() => setOpenLogoutDialog(false)}
+            >
+              취소
+            </Button>
+            <Button variant="contained" onClick={handleLogout} color="primary">
+              확인
+            </Button>
+          </Stack>
+        </Paper>
+      </Backdrop>
 
       {/* 내가 쓴 글 */}
       <Box sx={{ px: 2, mb: 2 }}>
@@ -172,8 +220,39 @@ const MyPage = () => {
           </IconButton>
         </Stack>
         {loading ? (
-          <Box sx={{ display: "flex", justifyContent: "center", py: 2 }}>
-            <CircularProgress size={24} />
+          <Box
+            sx={{
+              display: "flex",
+              gap: 1.5,
+              overflowX: "auto",
+              pb: 1,
+            }}
+          >
+            {Array.from({ length: 3 }).map((_, index) => (
+              <Paper
+                key={index}
+                sx={{
+                  flexShrink: 0,
+                  width: 140,
+                }}
+              >
+                <Skeleton
+                  variant="rectangular"
+                  width="100%"
+                  height={70}
+                  sx={{ borderRadius: "8px 8px 0 0" }}
+                />
+                <Box sx={{ p: 1 }}>
+                  <Skeleton
+                    variant="text"
+                    width="90%"
+                    height={20}
+                    sx={{ mb: 0.5 }}
+                  />
+                  <Skeleton variant="text" width="60%" height={16} />
+                </Box>
+              </Paper>
+            ))}
           </Box>
         ) : myPosts.length === 0 ? (
           <Box sx={{ textAlign: "center", mt: 4 }}>
@@ -271,12 +350,45 @@ const MyPage = () => {
           </IconButton>
         </Stack>
         {scrapLoading ? (
-          <Box sx={{ display: "flex", justifyContent: "center", py: 2 }}>
-            <CircularProgress size={24} />
+          <Box
+            sx={{
+              display: "flex",
+              gap: 1.5,
+              overflowX: "auto",
+              pb: 1,
+            }}
+          >
+            {Array.from({ length: 3 }).map((_, index) => (
+              <Paper
+                key={index}
+                sx={{
+                  flexShrink: 0,
+                  width: 140,
+                }}
+              >
+                <Skeleton
+                  variant="rectangular"
+                  width="100%"
+                  height={70}
+                  sx={{ borderRadius: "8px 8px 0 0" }}
+                />
+                <Box sx={{ p: 1 }}>
+                  <Skeleton
+                    variant="text"
+                    width="90%"
+                    height={20}
+                    sx={{ mb: 0.5 }}
+                  />
+                  <Skeleton variant="text" width="70%" height={16} />
+                </Box>
+              </Paper>
+            ))}
           </Box>
         ) : scraps.length === 0 ? (
           <Box sx={{ textAlign: "center", mt: 4 }}>
-            <Typography color="text.secondary">내역이 없어요.</Typography>
+            <Typography color="text.secondary">
+              스크랩한 글이 없어요.
+            </Typography>
           </Box>
         ) : (
           <Box

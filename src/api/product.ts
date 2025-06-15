@@ -6,7 +6,8 @@ export interface Product {
   tradeType: "SELLING" | "BUYING";
   category: "REFRIGERATOR" | "WASHING_MACHINE" | "AIR_CONDITIONER";
   modelName: string;
-  priceOrQuantity: number;
+  price: number | null;
+  quantity: number | null;
   description: string;
   isScraped: boolean;
   isAuthor: boolean;
@@ -36,10 +37,29 @@ export interface CreateBuyingPostResponse {
   code: string;
   message: string;
   data: {
+    id: number;
     title: string;
     content: string;
     quantity: number;
     applianceType: "REFRIGERATOR" | "WASHING_MACHINE" | "AIR_CONDITIONER";
+    isActive: boolean;
+  };
+}
+
+export interface CreateSellingPostResponse {
+  status: number;
+  code: string;
+  message: string;
+  data: {
+    id: number;
+    title: string;
+    content: string;
+    applianceType: "REFRIGERATOR" | "WASHING_MACHINE" | "AIR_CONDITIONER";
+    modelName: string;
+    modelNumber: string;
+    brand: string;
+    price: number;
+    userPrice: number;
     isActive: boolean;
   };
 }
@@ -52,6 +72,7 @@ export interface ApiResponse<T> {
 }
 
 export interface SellingPostDetail {
+  id: number;
   title: string;
   content: string;
   isActive: boolean;
@@ -73,6 +94,7 @@ export interface SellingPostDetail {
 }
 
 export interface BuyingPostDetail {
+  id: number;
   title: string;
   content: string;
   quantity: number;
@@ -117,6 +139,18 @@ interface ApplianceQuestionsResponse {
   data: ApplianceQuestion[];
 }
 
+// AI 이미지 분석 API 인터페이스 추가
+export interface AnalyzeImageResponse {
+  title: string;
+  category: "REFRIGERATOR" | "WASHING_MACHINE" | "AIR_CONDITIONER";
+  brand: string;
+  price: number;
+  description: string;
+  success: boolean;
+  model_code: string;
+  processing_time: number;
+}
+
 export interface UpdateSellingPostRequest {
   title: string;
   content: string;
@@ -157,8 +191,27 @@ export const createBuyingPost = async (
   return response.data;
 };
 
-export const createSellingPost = async (data: CreateSellingPostRequest) => {
-  const response = await axiosInstance.post("/product/selling", data);
+export const createSellingPost = async (data: CreateSellingPostRequest, photos?: File[]): Promise<CreateSellingPostResponse> => {
+  const formData = new FormData();
+  
+  // request 데이터를 JSON 문자열로 추가
+  formData.append('request', JSON.stringify(data));
+  
+  // 사진 파일들 추가 (있는 경우)
+  if (photos && photos.length > 0) {
+    photos.forEach((photo) => {
+      formData.append('photos', photo);
+    });
+  } else {
+    // 사진이 없는 경우 빈 photos 필드 추가
+    formData.append('photos', '');
+  }
+
+  const response = await axiosInstance.post("/product/selling", formData, {
+    headers: {
+      'Content-Type': 'multipart/form-data',
+    },
+  });
   return response.data;
 };
 
@@ -270,3 +323,21 @@ export interface GetCommentsResponse {
   message: string;
   data: CreateCommentResponseData[];
 }
+
+// AI 이미지 분석 API 함수
+export const analyzeImage = async (file: File): Promise<AnalyzeImageResponse> => {
+  const formData = new FormData();
+  formData.append('file', file);
+
+  const response = await axiosInstance.post(
+    '/ai/analyze-image?applyPreprocessing=true',
+    formData,
+    {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    }
+  );
+
+  return response.data;
+};

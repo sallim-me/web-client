@@ -1,6 +1,6 @@
 import { Components, Theme } from '@mui/material';
 
-export const button: Components<Theme>['MuiCard'] = {
+export const MuiCard: Components<Theme>['MuiCard'] = {
   styleOverrides: {
     root: {
       borderRadius: '12px',
@@ -9,4 +9,4 @@ export const button: Components<Theme>['MuiCard'] = {
   },
 };
 
-export default button;
+export default MuiCard;

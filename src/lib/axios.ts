@@ -36,21 +36,26 @@ const processQueue = (error: any, token: string | null = null) => {
 // Request interceptor
 axiosInstance.interceptors.request.use(
   (config) => {
-    // 인증이 필요없는 엔드포인트 목록
-    const publicEndpoints = ["/auth/login", "/auth/signup", "/auth/reissue"];
+    // 인증이 필요없는 엔드포인트 목록 (reissue 제외)
+    const publicEndpoints = ["/auth/login", "/auth/signup"];
 
     const isPublicEndpoint = publicEndpoints.some((endpoint) =>
       config.url?.includes(endpoint)
     );
 
-    // 로그인 요청인 경우 Authorization 헤더 제거
     if (isPublicEndpoint) {
+      // 로그인/회원가입 요청인 경우 Authorization 헤더 제거
       delete config.headers.Authorization;
+    } else if (config.url?.includes("/auth/reissue")) {
+      // 토큰 재발급 요청인 경우 refresh token 사용
+      const refreshToken = localStorage.getItem("refreshToken");
+      if (refreshToken) {
+        config.headers["Authorization"] = `Bearer ${refreshToken}`;
+      }
     } else {
-      // 그 외의 요청에는 토큰 추가
+      // 그 외의 요청에는 access token 추가
       const token = localStorage.getItem("accessToken");
       if (token) {
-        // Bearer 토큰 형식으로 설정
         config.headers["Authorization"] = `Bearer ${token}`;
       }
     }
@@ -135,15 +140,39 @@ axiosInstance.interceptors.response.use(
       isRefreshing = true;
 
       try {
+        console.log("🔄 Attempting token refresh...");
         await useAuthStore.getState().reissueToken();
         const newAccessToken = useAuthStore.getState().accessToken;
+        
+        console.log("🔍 Checking new access token:", {
+          hasToken: !!newAccessToken,
+          tokenPreview: newAccessToken ? newAccessToken.substring(0, 20) + "..." : "null"
+        });
+        
+        if (!newAccessToken) {
+          throw new Error("Token refresh returned null token");
+        }
+        
+        console.log("✅ Token refresh successful, retrying original request");
         processQueue(null, newAccessToken);
 
         originalRequest.headers.Authorization = `Bearer ${newAccessToken}`;
         return axiosInstance(originalRequest);
       } catch (refreshError) {
+        console.error("❌ Token refresh failed:", refreshError);
         processQueue(refreshError, null);
+        
+        // 로그아웃 처리 및 로그인 페이지로 리다이렉트
+        console.log("🚪 Logging out and redirecting to login...");
         await useAuthStore.getState().logout();
+        
+        // 현재 페이지가 로그인 페이지가 아닌 경우에만 리다이렉트
+        if (!window.location.pathname.includes('/login')) {
+          alert("세션이 만료되었습니다. 다시 로그인해주세요.");
+          console.log("🔄 Redirecting to login page...");
+          window.location.href = '/login';
+        }
+        
         return Promise.reject(
           new Error("세션이 만료되었습니다. 다시 로그인해주세요.")
         );

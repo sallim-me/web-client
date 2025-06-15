@@ -1,5 +1,6 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import { useParams, useNavigate, useLocation } from "react-router-dom";
+import axios from "axios";
 import {
   Box,
   Container,
@@ -22,24 +23,26 @@ import {
   Select,
   CircularProgress,
   Avatar,
+  Skeleton,
 } from "@mui/material";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import MoreVertIcon from "@mui/icons-material/MoreVert";
 import BookmarkIcon from "@mui/icons-material/Bookmark";
 import BookmarkBorderIcon from "@mui/icons-material/BookmarkBorder";
-import { productApi } from "../../../api/product";
+import { productApi } from "@/api/product";
 import type {
   SellingPostDetail,
   BuyingPostDetail,
   CreateCommentResponseData,
-} from "../../../api/product";
-import { checkScrap, scrapApi } from "../../../api/scrap";
-import { updateSellingPost, getApplianceQuestions } from "../../../api/product";
-import { useAuthStore } from "../../../store/useAuthStore";
-import axios, { AxiosError } from "axios";
+} from "@/api/product";
+import { scrapApi, getScrapByProductId } from "@/api/scrap";
+import { updateSellingPost, getApplianceQuestions } from "@/api/product";
+import { useAuthStore } from "@/store/useAuthStore";
 import CloseIcon from "@mui/icons-material/Close";
-import AddIcon from "@mui/icons-material/Add";
+// import AddIcon from "@mui/icons-material/Add";
 import { chatApi } from "../../../api/chat";
+import { PostPhoto } from "./PostPhoto";
+import { PostPriceCard } from "./PostPriceCard";
 
 // 수정 폼의 타입 정의
 interface EditForm {
@@ -72,7 +75,6 @@ const PostDetail = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isScrapped, setIsScrapped] = useState(false);
-  const [scrapId, setScrapId] = useState<number | null>(null);
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const {
     userProfile,
@@ -93,15 +95,12 @@ const PostDetail = () => {
       try {
         console.log("Fetching user profile...");
         await fetchUserProfile();
-        console.log("User profile fetched:", userProfile);
-        console.log("User nickname:", userProfile?.nickname);
-        console.log("User memberId:", userProfile?.memberId);
       } catch (error) {
         console.error("Error fetching user profile:", error);
       }
     };
     loadUserProfile();
-  }, []);
+  }, [fetchUserProfile]);
 
   // userProfile이 변경될 때마다 nickname 로깅
   useEffect(() => {
@@ -137,8 +136,14 @@ const PostDetail = () => {
           console.log("Buying post detail fetched:", response);
         }
         // 스크랩 상태 확인
-        const scrapStatus = await checkScrap(Number(id));
-        setIsScrapped(scrapStatus);
+        try {
+          const scrapInfo = await getScrapByProductId(Number(id));
+          setIsScrapped(scrapInfo.isScraped);
+        } catch (error) {
+          console.error("Error checking scrap status:", error);
+          // 스크랩 상태 확인 실패 시 기본값으로 설정
+          setIsScrapped(false);
+        }
       } catch (error) {
         console.error("Error fetching post detail:", error);
         setError("게시글을 불러오는데 실패했습니다.");
@@ -151,7 +156,7 @@ const PostDetail = () => {
   }, [id, postType]);
 
   const handleBack = () => {
-    navigate(-1);
+    navigate("/");
   };
 
   const handleMenuClick = (event: React.MouseEvent<HTMLElement>) => {
@@ -354,22 +359,13 @@ const PostDetail = () => {
 
     try {
       if (isScrapped) {
-        // 스크랩 취소 (스크랩 ID 사용)
-        if (scrapId) {
-          await scrapApi.deleteScrap(scrapId);
-          setIsScrapped(false);
-          setScrapId(null);
-        } else {
-          console.error("Scrap ID not available for deletion.");
-          alert(
-            "스크랩 취소에 실패했습니다. (스크랩 ID 없음 - 새로고침 후 다시 시도해주세요.)"
-          );
-        }
+        // 스크랩 취소 - productId를 기반으로 삭제
+        await scrapApi.deleteScrapByProductId(Number(id));
+        setIsScrapped(false);
       } else {
         // 스크랩 요청
         const response = await scrapApi.createScrap({ productId: Number(id) });
         if (response && response.id) {
-          setScrapId(response.id);
           setIsScrapped(true);
         } else {
           console.error(
@@ -379,8 +375,10 @@ const PostDetail = () => {
           alert("스크랩 요청에 실패했습니다. (스크랩 ID 응답 오류)");
         }
       }
-    } catch (error: AxiosError | any) {
+    } catch (error: any) {
       console.error("Error toggling scrap:", error);
+
+      // 401 Unauthorized 에러인 경우 로그인 필요 메시지 표시
       if (error.response?.status === 401) {
         alert("로그인이 필요한 서비스입니다.");
       } else {
@@ -465,7 +463,7 @@ const PostDetail = () => {
   };
 
   // 댓글 불러오기
-  const fetchComments = async () => {
+  const fetchComments = useCallback(async () => {
     if (!id) return;
     try {
       const response = await productApi.getComments(Number(id));
@@ -474,7 +472,7 @@ const PostDetail = () => {
     } catch (error) {
       console.error("Error fetching comments:", error);
     }
-  };
+  }, [id]);
 
   // 댓글 작성
   const handleCommentSubmit = async () => {
@@ -510,12 +508,134 @@ const PostDetail = () => {
 
   useEffect(() => {
     fetchComments();
-  }, [id]);
+  }, [fetchComments]);
 
   if (loading) {
     return (
-      <Container maxWidth="sm" sx={{ py: 4 }}>
-        <Typography>로딩 중...</Typography>
+      <Container maxWidth="sm" sx={{ pb: "76px" }}>
+        {/* 헤더 스켈레톤 */}
+        <Paper
+          sx={{
+            position: "sticky",
+            top: 0,
+            zIndex: 100,
+            p: 2,
+            mb: 2,
+            borderRadius: 0,
+            borderBottom: "1px solid",
+            borderColor: "grey.200",
+          }}
+          elevation={0}
+        >
+          <Stack direction="row" alignItems="center" spacing={1}>
+            <Skeleton variant="circular" width={24} height={24} />
+            <Skeleton variant="text" width="60%" height={28} sx={{ flex: 1 }} />
+            <Skeleton variant="circular" width={24} height={24} />
+          </Stack>
+        </Paper>
+
+        {/* 사진 영역 스켈레톤 */}
+        <Box sx={{ p: 2 }}>
+          <Skeleton
+            variant="rectangular"
+            width="100%"
+            height={300}
+            sx={{ borderRadius: 2, mb: 2 }}
+          />
+          <Box sx={{ display: "flex", gap: 1, overflowX: "auto" }}>
+            {[1, 2, 3, 4].map((index) => (
+              <Skeleton
+                key={index}
+                variant="rectangular"
+                width={120}
+                height={120}
+                sx={{ borderRadius: 2, flexShrink: 0 }}
+              />
+            ))}
+          </Box>
+        </Box>
+
+        {/* 글 내용 스켈레톤 */}
+        <Paper sx={{ p: 2, boxShadow: "none" }}>
+          <Stack spacing={2}>
+            {/* 상태 칩 스켈레톤 */}
+            <Skeleton variant="rounded" width={80} height={24} />
+
+            {/* 기본 정보 스켈레톤 */}
+            <Box>
+              <Skeleton variant="text" width={100} height={20} sx={{ mb: 1 }} />
+              <Stack spacing={1}>
+                <Skeleton variant="text" width="90%" height={20} />
+                <Skeleton variant="text" width="80%" height={20} />
+                <Skeleton variant="text" width="75%" height={20} />
+                <Skeleton variant="text" width="85%" height={20} />
+              </Stack>
+            </Box>
+
+            <Divider />
+
+            {/* 상세 설명 스켈레톤 */}
+            <Box>
+              <Skeleton variant="text" width={100} height={20} sx={{ mb: 1 }} />
+              <Skeleton variant="text" width="100%" height={20} />
+              <Skeleton variant="text" width="95%" height={20} />
+              <Skeleton variant="text" width="90%" height={20} />
+              <Skeleton variant="text" width="60%" height={20} />
+            </Box>
+
+            <Divider />
+
+            {/* 가격 차트 스켈레톤 */}
+            <Box>
+              <Skeleton variant="text" width={120} height={24} sx={{ mb: 1 }} />
+              <Skeleton
+                variant="rectangular"
+                width="100%"
+                height={300}
+                sx={{ borderRadius: 2 }}
+              />
+            </Box>
+          </Stack>
+        </Paper>
+
+        <Divider sx={{ my: 2 }} />
+
+        {/* 댓글 섹션 스켈레톤 */}
+        <Paper sx={{ p: 2, mt: 2, boxShadow: "none" }}>
+          <Skeleton variant="text" width={80} height={28} sx={{ mb: 2 }} />
+
+          {/* 댓글 작성 폼 스켈레톤 */}
+          <Box sx={{ mb: 2 }}>
+            <Skeleton
+              variant="rectangular"
+              width="100%"
+              height={80}
+              sx={{ borderRadius: 1, mb: 1 }}
+            />
+            <Box sx={{ display: "flex", justifyContent: "flex-end" }}>
+              <Skeleton variant="rounded" width={100} height={36} />
+            </Box>
+          </Box>
+
+          {/* 댓글 목록 스켈레톤 */}
+          <Stack spacing={2}>
+            {[1, 2, 3].map((index) => (
+              <Box key={index} sx={{ p: 1, borderBottom: "1px solid #eee" }}>
+                <Stack
+                  direction="row"
+                  justifyContent="space-between"
+                  alignItems="center"
+                  sx={{ mb: 1 }}
+                >
+                  <Skeleton variant="text" width={80} height={16} />
+                  <Skeleton variant="circular" width={16} height={16} />
+                </Stack>
+                <Skeleton variant="text" width="100%" height={20} />
+                <Skeleton variant="text" width="80%" height={20} />
+              </Box>
+            ))}
+          </Stack>
+        </Paper>
       </Container>
     );
   }
@@ -575,8 +695,15 @@ const PostDetail = () => {
         </Stack>
       </Paper>
 
+      {/* 사진 영역 */}
+      {postType === "selling" && postDetail && (
+        <Box sx={{ px: 2 }}>
+          <PostPhoto productId={postDetail.id} />
+        </Box>
+      )}
+
       {/* 글 내용 */}
-      <Paper sx={{ p: 2 }}>
+      <Paper sx={{ p: 2, boxShadow: "none" }}>
         <Stack spacing={2}>
           {/* 상태 */}
           <Box>
@@ -614,13 +741,13 @@ const PostDetail = () => {
                     ).price?.toLocaleString() || 0}
                     원
                   </Typography>
-                  <Typography>
+                  {/* <Typography>
                     희망가:{" "}
                     {(
                       postDetail as SellingPostDetail
                     ).userPrice?.toLocaleString() || 0}
                     원
-                  </Typography>
+                  </Typography> */}
                 </>
               )}
               {postType === "buying" && (
@@ -686,7 +813,7 @@ const PostDetail = () => {
 
           {/* 작성자 정보 및 채팅하기 버튼 (구매글인 경우) */}
           {postType === "buying" && postDetail && !postDetail.isAuthor && (
-            <Paper elevation={0} sx={{ p: 2 }}>
+            <Paper elevation={0} sx={{ p: 2, boxShadow: "none" }}>
               <Stack direction="row" alignItems="center" spacing={2}>
                 {/* 작성자 프로필 */}
                 <Avatar
@@ -715,7 +842,7 @@ const PostDetail = () => {
           )}
 
           {/* 거래 상태 칩 */}
-          {postDetail.isActive ? (
+          {/* {postDetail.isActive ? (
             <Chip
               label={postType === "selling" ? "판매 진행중" : "구매 진행중"}
               color="primary"
@@ -729,10 +856,10 @@ const PostDetail = () => {
               size="small"
               sx={{ width: "fit-content" }}
             />
-          )}
+          )} */}
 
           {/* 상세 설명 */}
-          <Typography variant="body1">{postDetail.content}</Typography>
+          {/* <Typography variant="body1">{postDetail.content}</Typography> */}
 
           {/* 판매글 추가 정보 (모델명, 브랜드, 가격 등) */}
           {postType === "selling" && postDetail && (
@@ -748,13 +875,15 @@ const PostDetail = () => {
                 가격: ₩
                 {(postDetail as SellingPostDetail).price?.toLocaleString() || 0}
               </Typography>
-              <Typography variant="subtitle2" fontWeight="bold">
+              {/* <Typography variant="subtitle2" fontWeight="bold">
                 희망가: ₩
                 {(
                   postDetail as SellingPostDetail
                 ).userPrice?.toLocaleString() || 0}
-              </Typography>
+              </Typography> */}
+
               <Divider />
+
               {/* 제품 상태 확인 (판매글만 해당) */}
               {(postDetail as SellingPostDetail).answers &&
                 (postDetail as SellingPostDetail).answers.length > 0 && (
@@ -789,8 +918,23 @@ const PostDetail = () => {
             </>
           )}
         </Stack>
+
+        <Divider sx={{ py: 2 }} />
+
+        {/* 가격 차트는 판매글인 경우에만 표시 */}
+        {postType === "selling" && (
+          <PostPriceCard
+            modelName={(postDetail as SellingPostDetail).modelName}
+            brand={(postDetail as SellingPostDetail).brand}
+            currentPrice={(postDetail as SellingPostDetail).price}
+            userPrice={(postDetail as SellingPostDetail).userPrice}
+          />
+        )}
       </Paper>
-      <Paper sx={{ p: 2, mt: 2 }}>
+
+      <Divider sx={{ my: 2 }} />
+
+      <Paper sx={{ p: 2, mt: 2, boxShadow: "none" }}>
         <Typography variant="h6" gutterBottom>
           댓글
         </Typography>
@@ -1001,7 +1145,7 @@ const PostDetail = () => {
                       required
                       type="number"
                     />
-                    <TextField
+                    {/* <TextField
                       label="희망가"
                       name="userPrice"
                       value={editForm.userPrice}
@@ -1009,7 +1153,7 @@ const PostDetail = () => {
                       fullWidth
                       required
                       type="number"
-                    />
+                    /> */}
                     <Box>
                       <Typography variant="subtitle2" sx={{ mb: 1 }}>
                         제품 상태 확인

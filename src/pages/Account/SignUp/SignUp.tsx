@@ -137,7 +137,7 @@ const SignUp = () => {
           py: 4,
         }}
       >
-        <Paper sx={{ p: 4 }}>
+        <Paper sx={{ p: 4, border: "none", boxShadow: "none" }}>
           <Stack spacing={3}>
             <Typography variant="h5" align="center" gutterBottom>
               회원가입

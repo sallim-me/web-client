@@ -17,7 +17,7 @@ import {
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import { useAuthStore } from "@/store/useAuthStore";
 import { memberApi, EditProfileRequest } from "@/api/member";
-import { UserProfile } from "@/types/auth";
+import { getProfileColor } from "@/utils/color";
 
 // EditProfile 컴포넌트 내에서 사용할 폼 상태의 타입을 정의합니다.
 // member/me 응답과 다를 수 있습니다 (예: password 포함).
@@ -114,23 +114,6 @@ const EditProfile = () => {
       ...prev,
       [name]: type === "checkbox" ? checked : value,
     }));
-    // console.log(`EditProfile: Field ${name} changed to ${value}`); // 변경 시마다 로깅 (too noisy)
-  };
-
-  const getRandomColor = () => {
-    const colors = [
-      "#FF9AA2",
-      "#FFB7B2",
-      "#FFDAC1",
-      "#E2F0CB",
-      "#B5EAD7",
-      "#C7CEEA",
-      "#9FB3DF",
-      "#B8B3E9",
-      "#D4A5A5",
-      "#9CADCE",
-    ];
-    return colors[Math.floor(Math.random() * colors.length)];
   };
 
   // 로딩 중이거나 userProfile이 없을 때 로딩 상태 또는 메시지 표시
@@ -194,7 +177,9 @@ const EditProfile = () => {
                 sx={{
                   width: 100,
                   height: 100,
-                  bgcolor: getRandomColor(),
+                  bgcolor:
+                    userProfile?.profileColor ||
+                    getProfileColor(userProfile?.username || ""),
                   fontSize: 40,
                 }}
               >

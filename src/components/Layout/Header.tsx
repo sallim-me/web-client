@@ -1,7 +1,6 @@
 import React from "react";
 import { useNavigate } from "react-router-dom";
 import { AppBar, Toolbar, IconButton, Box, styled, Badge } from "@mui/material";
-import LogoutIcon from "@mui/icons-material/Logout";
 import NotificationsIcon from "@mui/icons-material/Notifications";
 import { useAlarmStore } from "../../store/alarmStore";
 
@@ -16,24 +15,10 @@ const Header: React.FC = () => {
   const { alarms } = useAlarmStore();
   const unreadAlarms = alarms.filter((alarm) => !alarm.isRead).length;
 
-  const handleLogout = () => {
-    localStorage.removeItem("token");
-    navigate("/login");
-  };
-
   return (
     <StyledAppBar position="sticky">
       <Toolbar sx={{ justifyContent: "flex-end", minHeight: 60 }}>
         <Box sx={{ display: "flex", gap: 1 }}>
-          <IconButton
-            onClick={handleLogout}
-            size="large"
-            edge="end"
-            color="inherit"
-            aria-label="logout"
-          >
-            <LogoutIcon />
-          </IconButton>
           <IconButton
             onClick={() => navigate("/alarm")}
             size="large"

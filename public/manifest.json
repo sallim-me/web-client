@@ -2,6 +2,7 @@
   "short_name": "살림",
   "name": "살림 - 중고가전 거래 플랫폼",
   "description": "살림 - AI 기반 중고가전 거래 플랫폼",
+  "version": "1.0.0",
   "icons": [
     {
       "src": "favicon.png",
@@ -60,5 +61,11 @@
   "display_override": ["window-controls-overlay", "standalone"],
   "edge_side_panel": {
     "preferred_width": 400
-  }
+  },
+  "protocol_handlers": [
+    {
+      "protocol": "web+sallim",
+      "url": "/?url=%s"
+    }
+  ]
 }

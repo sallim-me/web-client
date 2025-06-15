@@ -21,7 +21,7 @@ import {
   ArrowBackIos as ArrowBackIcon,
   ArrowForwardIos as ArrowForwardIcon,
 } from '@mui/icons-material';
-import { getProductPhotos, Photo } from '../../../api/photo';
+import { getProductPhotos, Photo } from '@/api/photo';
 
 interface PostPhotoProps {
   productId: number;
@@ -131,17 +131,18 @@ export const PostPhoto: React.FC<PostPhotoProps> = ({ productId }) => {
 
   if (photos.length === 0) {
     return (
-      <Box sx={{ width: '100%', mb: 2 }}>
-        <Typography variant="h6" gutterBottom>
-          상품 사진
-        </Typography>
-        <Alert severity="info">등록된 사진이 없습니다.</Alert>
-      </Box>
+      <></>
+      // <Box sx={{ width: '100%', mb: 2 }}>
+      //   <Typography variant="h6" gutterBottom>
+      //     상품 사진
+      //   </Typography>
+      //   <Alert severity="info">등록된 사진이 없습니다.</Alert>
+      // </Box>
     );
   }
 
   return (
-    <Box sx={{ width: '100%', mb: 2 }}>
+    <Box sx={{ width: '100%' }}>
       <Typography variant="h6" gutterBottom>
         상품 사진 ({photos.length}장)
       </Typography>

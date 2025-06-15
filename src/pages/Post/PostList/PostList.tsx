@@ -8,14 +8,14 @@ import {
   Grid,
   IconButton,
   Stack,
-  Paper,
   Pagination,
-  Typography,
+  CircularProgress,
+  Skeleton,
 } from "@mui/material";
 import AddIcon from "@mui/icons-material/Add";
-import PostCard from "../../../components/PostCard";
-import { getAllProducts, Product } from "../../../api/product";
-import { scrapApi } from "../../../api/scrap";
+import PostCard from "@/components/PostCard";
+import { getAllProducts, Product } from "@/api/product";
+import { scrapApi } from "@/api/scrap";
 
 const PostList = () => {
   const navigate = useNavigate();
@@ -166,30 +166,95 @@ const PostList = () => {
       if (!product) return;
 
       if (product.isScraped) {
-        await scrapApi.deleteScrap(productId);
+        await scrapApi.deleteScrapByProductId(productId);
+        // Update the product's scrap status in the local state
+        setProducts((prevProducts) =>
+          prevProducts.map((p) =>
+            p.id === productId ? { ...p, isScraped: false, scrapId: undefined } : p
+          )
+        );
       } else {
-        await scrapApi.createScrap({ productId });
+        const response = await scrapApi.createScrap({ productId });
+        // Update the product's scrap status in the local state
+        setProducts((prevProducts) =>
+          prevProducts.map((p) =>
+            p.id === productId ? { ...p, isScraped: true, scrapId: response.id } : p
+          )
+        );
       }
-
-      // Update the product's scrap status in the local state
-      setProducts((prevProducts) =>
-        prevProducts.map((p) =>
-          p.id === productId ? { ...p, isScraped: !p.isScraped } : p
-        )
-      );
-    } catch (error) {
+    } catch (error: any) {
       console.error("Failed to toggle scrap:", error);
+      if (error.response?.status === 401) {
+        alert("로그인이 필요한 서비스입니다.");
+      } else {
+        alert("스크랩 처리 중 오류가 발생했습니다.");
+      }
     }
   };
 
-  if (loading) return <div>로딩 중...</div>;
+  if (loading) {
+    return (
+      <Box sx={{ pb: "76px" }}>
+        <Container maxWidth="sm" sx={{ px: 0, py: 1.5 }}>
+          <Stack spacing={1.5}>
+            {/* 카테고리 필터 스켈레톤 */}
+            <Box sx={{ display: "flex", flexWrap: "wrap", gap: 0.75, px: 2 }}>
+              {[1, 2, 3].map((index) => (
+                <Skeleton
+                  key={index}
+                  variant="rounded"
+                  width={60}
+                  height={32}
+                  sx={{ borderRadius: "16px" }}
+                />
+              ))}
+            </Box>
+
+            {/* 거래 상태 필터 스켈레톤 */}
+            <Box sx={{ display: "flex", flexWrap: "wrap", gap: 0.75, px: 2 }}>
+              {[1, 2, 3, 4].map((index) => (
+                <Skeleton
+                  key={index}
+                  variant="rounded"
+                  width={70}
+                  height={32}
+                  sx={{ borderRadius: "16px" }}
+                />
+              ))}
+            </Box>
+
+            <Divider />
+
+            {/* 게시물 목록 스켈레톤 */}
+            <Grid container spacing={0} justifyContent="center" sx={{ px: 0, width: "100%" }}>
+              {Array.from({ length: 6 }).map((_, index) => (
+                <Grid item xs={6} key={index} sx={{ p: 1 }}>
+                  <Box sx={{ border: "1px solid #e0e0e0", borderRadius: 2, p: 1 }}>
+                    <Skeleton variant="rectangular" width="100%" height={120} sx={{ borderRadius: 1, mb: 1 }} />
+                    <Skeleton variant="text" width="80%" height={20} sx={{ mb: 0.5 }} />
+                    <Skeleton variant="text" width="60%" height={16} sx={{ mb: 0.5 }} />
+                    <Skeleton variant="text" width="70%" height={18} />
+                  </Box>
+                </Grid>
+              ))}
+            </Grid>
+
+            {/* 중앙 로딩 스피너 */}
+            <Box sx={{ display: "flex", justifyContent: "center", alignItems: "center", py: 4 }}>
+              <CircularProgress size={40} />
+            </Box>
+          </Stack>
+        </Container>
+      </Box>
+    );
+  }
   if (error) return <div>{error}</div>;
 
   return (
     <Box sx={{ pb: "76px" }}>
       <Container maxWidth="sm" sx={{ px: 0, py: 1.5 }}>
         <Stack spacing={1.5}>
-          <Paper
+          {/* <Paper
             sx={{
               position: "sticky",
               top: 0,
@@ -197,7 +262,7 @@ const PostList = () => {
               p: 2,
               mb: 2,
               borderRadius: 0,
-              borderBottom: "1px solid",
+              // borderBottom: "1px solid",
               borderColor: "grey.200",
             }}
             elevation={0}
@@ -205,10 +270,10 @@ const PostList = () => {
             <Typography variant="h6" align="center">
               게시글 목록
             </Typography>
-          </Paper>
+          </Paper> */}
 
           {/* 카테고리 필터 */}
-          <Box sx={{ display: "flex", flexWrap: "wrap", gap: 0.75 }}>
+          <Box sx={{ display: "flex", flexWrap: "wrap", gap: 0.75, px: 2 }}>
             {categories.map((category) => (
               <Button
                 key={category}
@@ -244,7 +309,7 @@ const PostList = () => {
           </Box>
 
           {/* 거래 상태 필터 */}
-          <Box sx={{ display: "flex", flexWrap: "wrap", gap: 0.75 }}>
+          <Box sx={{ display: "flex", flexWrap: "wrap", gap: 0.75, px: 2 }}>
             {statuses.map((status) => (
               <Button
                 key={status}
@@ -280,15 +345,16 @@ const PostList = () => {
           <Divider />
 
           {/* 게시물 목록 */}
-          <Grid container spacing={2} justifyContent="center" sx={{ px: 1 }}>
+          <Grid container spacing={0} justifyContent="center" sx={{ px: 0, width: "100%" }}>
             {currentProducts.map((product) => (
-              <Grid item xs={6} key={product.id}>
+              <Grid item xs={6} key={product.id} sx={{ p: 1 }}>
                 <PostCard
                   key={product.id}
                   id={product.id}
                   title={product.title}
                   modelName={product.modelName}
-                  minPrice={product.priceOrQuantity}
+                  price={product.price}
+                  quantity={product.quantity}
                   thumbnailUrl={product?.thumbnailUrl}
                   isScraped={product.isScraped}
                   onScrapClick={() => handleScrapClick(product.id)}

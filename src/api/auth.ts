@@ -3,6 +3,7 @@ import {
   LoginRequest,
   LoginResponse,
   TokenResponse,
+  TokenReissueResponse,
   LogoutResponse,
   SignUpRequest,
   SignUpResponse,
@@ -65,10 +66,35 @@ export const authApi = {
   },
 
   reissue: async (): Promise<TokenResponse> => {
-    const response = await axiosInstance.post<TokenResponse>(
-      `${AUTH_URL}/reissue`
-    );
-    return response.data;
+    try {
+      console.log("🔄 Requesting token reissue...");
+      const response = await axiosInstance.post<TokenReissueResponse>(
+        `${AUTH_URL}/reissue`
+      );
+      
+      console.log("📥 Reissue API response:", response.data);
+      
+      // 새로운 응답 구조에 맞게 파싱
+      if (response.data && response.data.data) {
+        const tokenData = {
+          "access-token": response.data.data["access-token"],
+          "refresh-token": response.data.data["refresh-token"],
+        };
+        
+        console.log("✅ Parsed token data:", tokenData);
+        return tokenData;
+      } else {
+        console.error("❌ Invalid reissue response structure:", response.data);
+        throw new Error("Invalid token reissue response structure");
+      }
+    } catch (error: any) {
+      console.error("❌ Token reissue error:", {
+        status: error.response?.status,
+        data: error.response?.data,
+        headers: error.response?.headers,
+      });
+      throw error;
+    }
   },
 
   logout: async (): Promise<LogoutResponse> => {

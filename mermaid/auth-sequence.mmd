@@ -1,0 +1,133 @@
+sequenceDiagram
+    participant User as 사용자
+    participant UI as React UI
+    participant AuthStore as useAuthStore
+    participant Axios as Axios Interceptor
+    participant API as Backend API
+    participant LS as localStorage
+
+    Note over User,LS: 인증 플로우 전체 시퀀스
+
+    rect rgb(230, 255, 230)
+        Note over User,LS: 1. 로그인 플로우
+        User->>UI: 로그인 시도
+        UI->>AuthStore: login(username, password)
+        AuthStore->>Axios: POST /auth/login (no auth header)
+        Axios->>API: 로그인 요청
+        API-->>Axios: {data: {access-token, refresh-token}}
+        Axios-->>AuthStore: 로그인 응답
+        AuthStore->>LS: 토큰 저장 (accessToken, refreshToken)
+        AuthStore->>AuthStore: isAuthenticated = true
+        AuthStore->>AuthStore: fetchUserProfile()
+        AuthStore-->>UI: 로그인 성공
+        UI->>UI: /post/list로 리다이렉트
+    end
+
+    rect rgb(255, 230, 230)
+        Note over User,LS: 2. 인증된 API 요청 플로우
+        User->>UI: 페이지 접근/API 호출
+        UI->>Axios: API 요청
+        Axios->>LS: accessToken 조회
+        LS-->>Axios: Bearer {accessToken}
+        Axios->>Axios: Authorization 헤더 추가
+        Axios->>API: 인증된 요청
+        
+        alt 토큰이 유효한 경우
+            API-->>Axios: 200 OK + 데이터
+            Axios-->>UI: 성공 응답
+        else 토큰이 만료된 경우 (401)
+            API-->>Axios: 401 Unauthorized
+            Axios->>Axios: 401 에러 감지
+            Note right of Axios: isRefreshing 플래그 체크
+        end
+    end
+
+    rect rgb(255, 255, 230)
+        Note over User,LS: 3. 토큰 재발급 플로우
+        Axios->>Axios: isRefreshing = true
+        Axios->>AuthStore: reissueToken() 호출
+        
+        AuthStore->>LS: refreshToken 조회
+        LS-->>AuthStore: refreshToken 반환
+        
+        AuthStore->>Axios: POST /auth/reissue
+        Note right of Axios: Authorization: Bearer {refreshToken}
+        Axios->>API: 토큰 재발급 요청
+        
+        alt 재발급 성공
+            API-->>Axios: {status:200, data:{access-token, refresh-token}}
+            Axios-->>AuthStore: 재발급 응답
+            AuthStore->>AuthStore: response.data.data 파싱
+            AuthStore->>LS: 새 토큰 저장
+            AuthStore->>AuthStore: 상태 업데이트
+            AuthStore-->>Axios: 재발급 완료
+            
+            Axios->>Axios: processQueue(null, newToken)
+            Axios->>Axios: 원래 요청에 새 토큰 적용
+            Axios->>API: 원래 요청 재시도
+            API-->>Axios: 성공 응답
+            Axios-->>UI: 최종 응답
+            
+        else 재발급 실패 (refresh token 만료)
+            API-->>Axios: 401/403 에러
+            Axios-->>AuthStore: 재발급 실패
+            AuthStore->>LS: 모든 토큰 삭제
+            AuthStore->>AuthStore: 상태 초기화 (isAuthenticated=false)
+            AuthStore->>AuthStore: logout() 호출
+            AuthStore-->>Axios: 재발급 실패
+            
+            Axios->>Axios: processQueue(error, null)
+            Axios->>UI: alert("세션이 만료되었습니다")
+            Axios->>UI: window.location.href = '/login'
+            UI->>UI: 로그인 페이지로 리다이렉트
+        end
+        
+        Axios->>Axios: isRefreshing = false
+    end
+
+    rect rgb(230, 230, 255)
+        Note over User,LS: 4. 로그아웃 플로우
+        User->>UI: 로그아웃 클릭
+        UI->>AuthStore: logout() 호출
+        AuthStore->>Axios: POST /auth/logout
+        Axios->>API: 로그아웃 요청
+        API-->>Axios: 로그아웃 성공
+        Axios-->>AuthStore: 응답
+        AuthStore->>LS: 토큰 삭제
+        AuthStore->>AuthStore: 상태 초기화
+        AuthStore-->>UI: 로그아웃 완료
+        UI->>UI: /login으로 리다이렉트
+    end
+
+    rect rgb(255, 230, 255)
+        Note over User,LS: 5. 동시 요청 처리 (Race Condition 방지)
+        par 동시 API 요청들
+            UI->>Axios: 요청 A (401 에러)
+        and
+            UI->>Axios: 요청 B (401 에러)  
+        and
+            UI->>Axios: 요청 C (401 에러)
+        end
+        
+        Note right of Axios: 첫 번째 요청만 토큰 재발급 수행
+        Axios->>Axios: 첫 요청: isRefreshing = true
+        Axios->>Axios: 나머지 요청들: failedQueue에 대기
+        
+        Axios->>AuthStore: 토큰 재발급 (한 번만)
+        AuthStore-->>Axios: 새 토큰 반환
+        
+        Axios->>Axios: processQueue로 대기 중인 모든 요청 처리
+        
+        par 모든 요청 재시도
+            Axios->>API: 요청 A 재시도 (새 토큰)
+        and
+            Axios->>API: 요청 B 재시도 (새 토큰)
+        and  
+            Axios->>API: 요청 C 재시도 (새 토큰)
+        end
+    end
+
+    Note over User,LS: 주요 구현 특징
+    Note over Axios: • Request Interceptor: 엔드포인트별 토큰 분리<br/>• Response Interceptor: 401 에러 자동 처리<br/>• Race Condition 방지: isRefreshing 플래그<br/>• 실패한 요청 큐잉: failedQueue
+    Note over AuthStore: • Zustand 상태 관리<br/>• localStorage 동기화<br/>• 에러 시 완전한 상태 초기화<br/>• 상세한 로깅
+    Note over API: • 새로운 응답 구조: {data: {tokens}}<br/>• refresh token으로 재발급<br/>• 재발급 실패 시 401/403 응답

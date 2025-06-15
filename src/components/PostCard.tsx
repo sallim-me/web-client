@@ -1,5 +1,5 @@
 import React from "react";
-import { Box, Paper, Typography, IconButton, Stack, Chip } from "@mui/material";
+import { Box, Typography, IconButton, Stack } from "@mui/material";
 import BookmarkBorderIcon from "@mui/icons-material/BookmarkBorder";
 import BookmarkIcon from "@mui/icons-material/Bookmark";
 import ImageIcon from "@mui/icons-material/Image";
@@ -11,7 +11,8 @@ interface PostCardProps {
   scrapId?: number;
   title: string;
   modelName: string;
-  minPrice: number;
+  price: number | null;
+  quantity: number | null;
   thumbnailUrl?: string;
   isScraped: boolean;
   onScrapClick: () => void;
@@ -25,7 +26,8 @@ const PostCard: React.FC<PostCardProps> = ({
   scrapId,
   title,
   modelName,
-  minPrice,
+  price,
+  quantity,
   thumbnailUrl,
   isScraped,
   onScrapClick,
@@ -47,7 +49,7 @@ const PostCard: React.FC<PostCardProps> = ({
   const imageUrl = thumbnailUrl ? thumbnailUrl : null;
 
   return (
-    <Paper
+    <Box
       onClick={handleClick}
       sx={{
         p: 2,
@@ -56,6 +58,8 @@ const PostCard: React.FC<PostCardProps> = ({
         display: "flex",
         flexDirection: "column",
         gap: 1,
+        outline: "1px solid rgba(0, 0, 0, 0.12)",
+        borderRadius: 2,
         "&:hover": {
           bgcolor: "action.hover",
         },
@@ -135,7 +139,12 @@ const PostCard: React.FC<PostCardProps> = ({
             whiteSpace: "nowrap",
           }}
         >
-          ₩{(minPrice ?? 0).toLocaleString()}
+          {/* ₩{(minPrice ?? 0).toLocaleString()} */}
+          {postType === "buying" ? (
+            `수량: ${(quantity ?? 0).toLocaleString()}`
+          ) : (
+            `₩${price?.toLocaleString() ?? ""}`
+          )}
         </Typography>
 
         <IconButton
@@ -155,7 +164,7 @@ const PostCard: React.FC<PostCardProps> = ({
           )}
         </IconButton>
       </Stack>
-    </Paper>
+    </Box>
   );
 };
 
