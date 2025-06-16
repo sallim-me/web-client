@@ -4,7 +4,7 @@ const DEFAULT_IMAGES = {
   WASHER: "/images/washer.svg",
 } as const;
 
-type DefaultImageType = keyof typeof DEFAULT_IMAGES;
+export type DefaultImageType = keyof typeof DEFAULT_IMAGES;
 
 export const getImageUrl = (
   imageUrl: string | null | undefined,

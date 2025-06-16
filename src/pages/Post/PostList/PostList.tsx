@@ -170,7 +170,9 @@ const PostList = () => {
         // Update the product's scrap status in the local state
         setProducts((prevProducts) =>
           prevProducts.map((p) =>
-            p.id === productId ? { ...p, isScraped: false, scrapId: undefined } : p
+            p.id === productId
+              ? { ...p, isScraped: false, scrapId: undefined }
+              : p
           )
         );
       } else {
@@ -178,7 +180,9 @@ const PostList = () => {
         // Update the product's scrap status in the local state
         setProducts((prevProducts) =>
           prevProducts.map((p) =>
-            p.id === productId ? { ...p, isScraped: true, scrapId: response.id } : p
+            p.id === productId
+              ? { ...p, isScraped: true, scrapId: response.id }
+              : p
           )
         );
       }
@@ -226,13 +230,35 @@ const PostList = () => {
             <Divider />
 
             {/* 게시물 목록 스켈레톤 */}
-            <Grid container spacing={0} justifyContent="center" sx={{ px: 0, width: "100%" }}>
+            <Grid
+              container
+              spacing={0}
+              justifyContent="center"
+              sx={{ px: 0, width: "100%" }}
+            >
               {Array.from({ length: 6 }).map((_, index) => (
                 <Grid item xs={6} key={index} sx={{ p: 1 }}>
-                  <Box sx={{ border: "1px solid #e0e0e0", borderRadius: 2, p: 1 }}>
-                    <Skeleton variant="rectangular" width="100%" height={120} sx={{ borderRadius: 1, mb: 1 }} />
-                    <Skeleton variant="text" width="80%" height={20} sx={{ mb: 0.5 }} />
-                    <Skeleton variant="text" width="60%" height={16} sx={{ mb: 0.5 }} />
+                  <Box
+                    sx={{ border: "1px solid #e0e0e0", borderRadius: 2, p: 1 }}
+                  >
+                    <Skeleton
+                      variant="rectangular"
+                      width="100%"
+                      height={120}
+                      sx={{ borderRadius: 1, mb: 1 }}
+                    />
+                    <Skeleton
+                      variant="text"
+                      width="80%"
+                      height={20}
+                      sx={{ mb: 0.5 }}
+                    />
+                    <Skeleton
+                      variant="text"
+                      width="60%"
+                      height={16}
+                      sx={{ mb: 0.5 }}
+                    />
                     <Skeleton variant="text" width="70%" height={18} />
                   </Box>
                 </Grid>
@@ -240,7 +266,14 @@ const PostList = () => {
             </Grid>
 
             {/* 중앙 로딩 스피너 */}
-            <Box sx={{ display: "flex", justifyContent: "center", alignItems: "center", py: 4 }}>
+            <Box
+              sx={{
+                display: "flex",
+                justifyContent: "center",
+                alignItems: "center",
+                py: 4,
+              }}
+            >
               <CircularProgress size={40} />
             </Box>
           </Stack>
@@ -345,7 +378,12 @@ const PostList = () => {
           <Divider />
 
           {/* 게시물 목록 */}
-          <Grid container spacing={0} justifyContent="center" sx={{ px: 0, width: "100%" }}>
+          <Grid
+            container
+            spacing={0}
+            justifyContent="center"
+            sx={{ px: 0, width: "100%" }}
+          >
             {currentProducts.map((product) => (
               <Grid item xs={6} key={product.id} sx={{ p: 1 }}>
                 <PostCard
@@ -362,6 +400,7 @@ const PostList = () => {
                     product.tradeType.toLowerCase() as "buying" | "selling"
                   }
                   isActive={product.isActive}
+                  applianceType={product.category}
                 />
               </Grid>
             ))}

@@ -3,7 +3,7 @@ import { Box, Typography, IconButton, Stack } from "@mui/material";
 import BookmarkBorderIcon from "@mui/icons-material/BookmarkBorder";
 import BookmarkIcon from "@mui/icons-material/Bookmark";
 import ImageIcon from "@mui/icons-material/Image";
-import { getImageUrl } from "../utils/image";
+import { getImageUrl, DefaultImageType } from "../utils/image";
 import { useNavigate } from "react-router-dom";
 
 interface PostCardProps {
@@ -19,6 +19,7 @@ interface PostCardProps {
   postType: "buying" | "selling";
   isActive?: boolean;
   createdAt?: string;
+  applianceType?: string;
 }
 
 const PostCard: React.FC<PostCardProps> = ({
@@ -34,6 +35,7 @@ const PostCard: React.FC<PostCardProps> = ({
   postType,
   isActive,
   createdAt,
+  applianceType,
 }) => {
   const navigate = useNavigate();
 
@@ -46,7 +48,28 @@ const PostCard: React.FC<PostCardProps> = ({
     navigate(`/post/detail/${id}?type=${postType}`);
   };
 
-  const imageUrl = thumbnailUrl ? thumbnailUrl : null;
+  let displayedImageUrl: string | null | undefined = thumbnailUrl;
+
+  if (postType === "buying" && !thumbnailUrl && applianceType) {
+    let imageTypeForUrl: DefaultImageType | undefined;
+    switch (applianceType) {
+      case "REFRIGERATOR":
+        imageTypeForUrl = "REFRIGERATOR";
+        break;
+      case "WASHING_MACHINE":
+        imageTypeForUrl = "WASHER";
+        break;
+      case "AIR_CONDITIONER":
+        imageTypeForUrl = "AIRCONDITIONER";
+        break;
+    }
+
+    if (imageTypeForUrl) {
+      displayedImageUrl = getImageUrl(null, imageTypeForUrl);
+    } else {
+      displayedImageUrl = null;
+    }
+  }
 
   return (
     <Box
@@ -78,9 +101,9 @@ const PostCard: React.FC<PostCardProps> = ({
           alignItems: "center",
         }}
       >
-        {imageUrl ? (
+        {displayedImageUrl ? (
           <img
-            src={imageUrl}
+            src={displayedImageUrl}
             alt={title}
             style={{
               width: "100%",

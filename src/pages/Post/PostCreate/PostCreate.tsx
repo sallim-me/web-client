@@ -452,24 +452,25 @@ const PostCreate = () => {
         setQuestions(response.data);
 
         // 구매글인 경우 카테고리에 맞는 기본 이미지 설정
-        if (form.tradeType === "buy") {
-          let defaultImage = "";
-          switch (value.toUpperCase()) {
-            case "REFRIGERATOR":
-              defaultImage = "/images/refrigerator.png";
-              break;
-            case "WASHING_MACHINE":
-              defaultImage = "/images/washing_machine.png";
-              break;
-            case "AIR_CONDITIONER":
-              defaultImage = "/images/air_conditioner.png";
-              break;
-          }
-          setForm((prev) => ({
-            ...prev,
-            images: [defaultImage],
-          }));
-        }
+        // 사용자의 요청에 따라 이 로직은 PostList 카드 등에서 처리하도록 변경합니다.
+        // if (form.tradeType === "buy") {
+        //   let defaultImage = "";
+        //   switch (value.toUpperCase()) {
+        //     case "REFRIGERATOR":
+        //       defaultImage = "/images/refrigerator.png";
+        //       break;
+        //     case "WASHING_MACHINE":
+        //       defaultImage = "/images/washing_machine.png";
+        //       break;
+        //     case "AIR_CONDITIONER":
+        //       defaultImage = "/images/air_conditioner.png";
+        //       break;
+        //   }
+        //   setForm((prev) => ({
+        //     ...prev,
+        //     images: [defaultImage],
+        //   }));
+        // }
       } catch (error) {
         console.error("Error fetching questions:", error);
         alert("질문을 불러오는데 실패했습니다.");
@@ -1278,8 +1279,8 @@ const PostCreate = () => {
                   </Select>
                 </FormControl>
 
-                {/* 구매글 기본 이미지 표시 */}
-                {form.images.length > 0 && (
+                {/* 구매글 기본 이미지 표시 (사용자 요청에 따라 삭제) */}
+                {/* {form.images.length > 0 && (
                   <Box
                     sx={{
                       width: "100%",
@@ -1303,7 +1304,7 @@ const PostCreate = () => {
                       }}
                     />
                   </Box>
-                )}
+                )} */}
 
                 <TextField
                   label="수량"
