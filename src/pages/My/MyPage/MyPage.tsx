@@ -74,7 +74,7 @@ const MyPage = () => {
   return (
     <Container maxWidth="sm" sx={{ pb: "76px" }}>
       {/* 헤더 */}
-      <Paper
+      {/* <Paper
         sx={{
           position: "sticky",
           top: 0,
@@ -90,10 +90,10 @@ const MyPage = () => {
         <Typography variant="h6" align="center">
           마이페이지
         </Typography>
-      </Paper>
+      </Paper> */}
 
       {/* 프로필 섹션 */}
-      <Paper sx={{ p: 3, mb: 2 }}>
+      <Paper sx={{ p: 3, mb: 2, boxShadow: 0 }}>
         <Stack direction="row" spacing={2} alignItems="center">
           <Avatar
             sx={{
@@ -116,7 +116,7 @@ const MyPage = () => {
         </Stack>
         <Stack direction="row" spacing={2} sx={{ mt: 2 }}>
           <Button
-            variant="outlined"
+            variant="contained"
             fullWidth
             onClick={() => navigate("/my-page/edit-profile")}
           >
@@ -289,11 +289,12 @@ const MyPage = () => {
                   </Typography>
                   <Typography
                     variant="body2"
-                    color={post.isActive ? "primary" : "text.secondary"}
+                    color={"text.black"}
+                    // color={post.isActive ? "primary" : "text.secondary"}
                     fontWeight="bold"
                   >
                     {post.postType === "SELLING" ? "판매" : "구매"}
-                    {!post.isActive && " (비활성)"}
+                    {/* {!post.isActive && " (비활성)"} */}
                   </Typography>
                 </Box>
               </Paper>
