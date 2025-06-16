@@ -424,6 +424,7 @@ const PostList = () => {
           <Grid
             container
             spacing={0}
+
             justifyContent="flex-start"
             sx={{ px: 0, width: "100%" }}
           >
@@ -448,6 +449,7 @@ const PostList = () => {
                     product.tradeType.toLowerCase() as "buying" | "selling"
                   }
                   isActive={product.isActive}
+                  applianceType={product.category}
                 />
               </Grid>
             ))}
