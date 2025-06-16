@@ -1,8 +1,6 @@
 import React from "react";
 import { useNavigate } from "react-router-dom";
-import { AppBar, Toolbar, IconButton, Box, styled, Badge } from "@mui/material";
-import NotificationsIcon from "@mui/icons-material/Notifications";
-import { useAlarmStore } from "../../store/alarmStore";
+import { AppBar, Toolbar, Box, styled } from "@mui/material";
 
 const StyledAppBar = styled(AppBar)(({ theme }) => ({
   backgroundColor: "white",
@@ -12,24 +10,12 @@ const StyledAppBar = styled(AppBar)(({ theme }) => ({
 
 const Header: React.FC = () => {
   const navigate = useNavigate();
-  const { alarms } = useAlarmStore();
-  const unreadAlarms = alarms.filter((alarm) => !alarm.isRead).length;
 
   return (
     <StyledAppBar position="sticky">
       <Toolbar sx={{ justifyContent: "flex-end", minHeight: 60 }}>
         <Box sx={{ display: "flex", gap: 1 }}>
-          <IconButton
-            onClick={() => navigate("/alarm")}
-            size="large"
-            edge="end"
-            color="inherit"
-            aria-label="notifications"
-          >
-            <Badge badgeContent={unreadAlarms} color="primary">
-              <NotificationsIcon />
-            </Badge>
-          </IconButton>
+          {/* 알람 아이콘이 제거되었습니다. */}
         </Box>
       </Toolbar>
     </StyledAppBar>
