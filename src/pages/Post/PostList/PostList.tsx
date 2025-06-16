@@ -11,8 +11,11 @@ import {
   Pagination,
   CircularProgress,
   Skeleton,
+  TextField,
+  InputAdornment,
 } from "@mui/material";
 import AddIcon from "@mui/icons-material/Add";
+import SearchIcon from "@mui/icons-material/Search";
 import PostCard from "@/components/PostCard";
 import { getAllProducts, Product } from "@/api/product";
 import { scrapApi } from "@/api/scrap";
@@ -25,6 +28,7 @@ const PostList = () => {
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [searchQuery, setSearchQuery] = useState("");
   const postsPerPage = 10;
 
   // 이전 페이지 경로 저장
@@ -92,7 +96,11 @@ const PostList = () => {
   }, []);
 
   // URL 쿼리 파라미터 업데이트 함수
-  const updateSearchParams = (categories: string[], statuses: string[]) => {
+  const updateSearchParams = (
+    categories: string[],
+    statuses: string[],
+    search: string
+  ) => {
     const params = new URLSearchParams();
     if (categories.length > 0) {
       params.set("categories", categories.join(","));
@@ -100,7 +108,17 @@ const PostList = () => {
     if (statuses.length > 0) {
       params.set("statuses", statuses.join(","));
     }
+    if (search) {
+      params.set("search", search);
+    }
     setSearchParams(params);
+  };
+
+  const handleSearchChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const newSearchQuery = event.target.value;
+    setSearchQuery(newSearchQuery);
+    setCurrentPage(1); // 검색 시 첫 페이지로 이동
+    updateSearchParams(selectedCategories, selectedStatuses, newSearchQuery);
   };
 
   const toggleCategory = (category: string) => {
@@ -108,7 +126,7 @@ const PostList = () => {
       const newCategories = prev.includes(category)
         ? prev.filter((c) => c !== category)
         : [...prev, category];
-      updateSearchParams(newCategories, selectedStatuses);
+      updateSearchParams(newCategories, selectedStatuses, searchQuery);
       return newCategories;
     });
   };
@@ -118,7 +136,7 @@ const PostList = () => {
       const newStatuses = prev.includes(status)
         ? prev.filter((s) => s !== status)
         : [...prev, status];
-      updateSearchParams(selectedCategories, newStatuses);
+      updateSearchParams(selectedCategories, newStatuses, searchQuery);
       return newStatuses;
     });
   };
@@ -134,16 +152,17 @@ const PostList = () => {
       selectedStatuses.length === 0 ||
       selectedStatuses.some((status) => {
         const { type, isActive } = statusMapping[status];
-        console.log(`Checking product ${product.id}:`, {
-          productTradeType: product.tradeType,
-          productIsActive: product.isActive,
-          filterType: type,
-          filterIsActive: isActive,
-        });
         return product.tradeType === type && product.isActive === isActive;
       });
 
-    return categoryMatch && statusMatch;
+    const searchMatch =
+      !searchQuery ||
+      (product.title &&
+        product.title.toLowerCase().includes(searchQuery.toLowerCase())) ||
+      (product.modelName &&
+        product.modelName.toLowerCase().includes(searchQuery.toLowerCase()));
+
+    return categoryMatch && statusMatch && searchMatch;
   });
 
   // Pagination calculations
@@ -375,17 +394,47 @@ const PostList = () => {
             ))}
           </Box>
 
+          {/* 검색창 */}
+          <Box sx={{ px: 2 }}>
+            <TextField
+              fullWidth
+              variant="outlined"
+              placeholder="제목 또는 모델명 검색"
+              value={searchQuery}
+              onChange={handleSearchChange}
+              size="small"
+              InputProps={{
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <SearchIcon />
+                  </InputAdornment>
+                ),
+              }}
+              sx={{
+                "& .MuiOutlinedInput-root": {
+                  borderRadius: "8px",
+                },
+              }}
+            />
+          </Box>
+
           <Divider />
 
           {/* 게시물 목록 */}
           <Grid
             container
             spacing={0}
-            justifyContent="center"
+
+            justifyContent="flex-start"
             sx={{ px: 0, width: "100%" }}
           >
             {currentProducts.map((product) => (
-              <Grid item xs={6} key={product.id} sx={{ p: 1 }}>
+              <Grid
+                item
+                xs={currentProducts.length === 1 ? 12 : 6}
+                key={product.id}
+                sx={{ p: 1 }}
+              >
                 <PostCard
                   key={product.id}
                   id={product.id}
@@ -441,6 +490,12 @@ const PostList = () => {
               height: 56,
               "&:hover": {
                 bgcolor: "primary.dark",
+              },
+              "@media (display-mode: standalone)": {
+                "@supports (-webkit-touch-callout: none)": {
+                  bottom: `calc(80px + env(safe-area-inset-bottom))`,
+                  transform: "translate3d(0, 0, 0)",
+                },
               },
             }}
           >
