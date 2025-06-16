@@ -450,6 +450,26 @@ const PostCreate = () => {
             | "AIR_CONDITIONER"
         );
         setQuestions(response.data);
+
+        // 구매글인 경우 카테고리에 맞는 기본 이미지 설정
+        if (form.tradeType === "buy") {
+          let defaultImage = "";
+          switch (value.toUpperCase()) {
+            case "REFRIGERATOR":
+              defaultImage = "/images/refrigerator.png";
+              break;
+            case "WASHING_MACHINE":
+              defaultImage = "/images/washing_machine.png";
+              break;
+            case "AIR_CONDITIONER":
+              defaultImage = "/images/air_conditioner.png";
+              break;
+          }
+          setForm((prev) => ({
+            ...prev,
+            images: [defaultImage],
+          }));
+        }
       } catch (error) {
         console.error("Error fetching questions:", error);
         alert("질문을 불러오는데 실패했습니다.");
@@ -1257,6 +1277,33 @@ const PostCreate = () => {
                     <MenuItem value="AIR_CONDITIONER">에어컨</MenuItem>
                   </Select>
                 </FormControl>
+
+                {/* 구매글 기본 이미지 표시 */}
+                {form.images.length > 0 && (
+                  <Box
+                    sx={{
+                      width: "100%",
+                      height: 200,
+                      display: "flex",
+                      justifyContent: "center",
+                      alignItems: "center",
+                      bgcolor: "grey.100",
+                      borderRadius: 1,
+                      overflow: "hidden",
+                      mb: 2,
+                    }}
+                  >
+                    <img
+                      src={form.images[0]}
+                      alt="기본 이미지"
+                      style={{
+                        width: "100%",
+                        height: "100%",
+                        objectFit: "contain",
+                      }}
+                    />
+                  </Box>
+                )}
 
                 <TextField
                   label="수량"

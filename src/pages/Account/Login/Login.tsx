@@ -39,11 +39,31 @@ const Login = () => {
     try {
       await login(formData.username, formData.password);
       navigate("/post/list");
-    } catch (error) {
+    } catch (error: any) {
       console.error("Login error:", error);
-      setError(
-        error instanceof Error ? error.message : "로그인에 실패했습니다."
-      );
+
+      // 서버 응답에 따른 에러 메시지 처리
+      if (error.response) {
+        switch (error.response.status) {
+          case 401:
+            setError("아이디 또는 비밀번호가 일치하지 않습니다.");
+            break;
+          case 400:
+            setError("아이디와 비밀번호를 모두 입력해주세요.");
+            break;
+          case 500:
+            setError(
+              "서버 내부 오류가 발생했습니다. 잠시 후 다시 시도해주세요."
+            );
+            break;
+          default:
+            setError("로그인에 실패했습니다. 잠시 후 다시 시도해주세요.");
+        }
+      } else if (error.request) {
+        setError("서버에 연결할 수 없습니다. 인터넷 연결을 확인해주세요.");
+      } else {
+        setError("로그인에 실패했습니다. 잠시 후 다시 시도해주세요.");
+      }
     }
   };
 
