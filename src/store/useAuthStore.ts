@@ -2,6 +2,7 @@ import { create } from "zustand";
 import { devtools, persist, createJSONStorage } from "zustand/middleware";
 import { authApi } from "@/api/auth";
 import { LoginRequest, UserProfile } from "@/types/auth";
+import { axiosInstance } from "@/lib/axios";
 
 interface AuthState {
   accessToken: string | null;
@@ -54,11 +55,19 @@ export const useAuthStore = create<AuthState>()(
               accessToken: response["access-token"],
               refreshToken: response["refresh-token"],
             };
-            console.log("Storing tokens:", tokens);
+            console.log("Storing tokens:", {
+              accessToken: tokens.accessToken.substring(0, 20) + "...",
+              refreshToken: tokens.refreshToken.substring(0, 20) + "...",
+            });
 
             // localStorage에 토큰 저장
             localStorage.setItem("accessToken", tokens.accessToken);
             localStorage.setItem("refreshToken", tokens.refreshToken);
+
+            // axiosInstance의 기본 헤더 업데이트
+            axiosInstance.defaults.headers.common[
+              "Authorization"
+            ] = `Bearer ${tokens.accessToken}`;
 
             set({
               ...tokens,
@@ -72,6 +81,11 @@ export const useAuthStore = create<AuthState>()(
             console.log("User profile fetched successfully");
           } catch (error) {
             console.error("Login error:", error);
+            // 로그인 실패 시 토큰 초기화
+            localStorage.removeItem("accessToken");
+            localStorage.removeItem("refreshToken");
+            delete axiosInstance.defaults.headers.common["Authorization"];
+
             set({
               isAuthenticated: false,
               isLoading: false,
@@ -91,6 +105,9 @@ export const useAuthStore = create<AuthState>()(
             // localStorage에서 토큰 제거
             localStorage.removeItem("accessToken");
             localStorage.removeItem("refreshToken");
+            // axiosInstance 헤더에서 토큰 제거
+            delete axiosInstance.defaults.headers.common["Authorization"];
+
             set({
               accessToken: null,
               refreshToken: null,
@@ -149,10 +166,22 @@ export const useAuthStore = create<AuthState>()(
             localStorage.setItem("accessToken", tokens.accessToken);
             localStorage.setItem("refreshToken", tokens.refreshToken);
 
+            // Zustand store 업데이트
             set({
               ...tokens,
               isAuthenticated: true,
               isLoading: false,
+            });
+
+            // axiosInstance의 기본 헤더 업데이트
+            axiosInstance.defaults.headers.common[
+              "Authorization"
+            ] = `Bearer ${tokens.accessToken}`;
+
+            // 모든 요청에 대해 Authorization 헤더 설정
+            axiosInstance.interceptors.request.use((config) => {
+              config.headers.Authorization = `Bearer ${tokens.accessToken}`;
+              return config;
             });
 
             console.log("✅ Token reissue completed successfully");
@@ -162,6 +191,7 @@ export const useAuthStore = create<AuthState>()(
             // 토큰 재발급 실패 시 인증 정보 완전 초기화
             localStorage.removeItem("accessToken");
             localStorage.removeItem("refreshToken");
+            delete axiosInstance.defaults.headers.common["Authorization"];
 
             set({
               accessToken: null,

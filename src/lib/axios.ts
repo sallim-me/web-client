@@ -143,16 +143,18 @@ axiosInstance.interceptors.response.use(
         console.log("🔄 Attempting token refresh...");
         await useAuthStore.getState().reissueToken();
         const newAccessToken = useAuthStore.getState().accessToken;
-        
+
         console.log("🔍 Checking new access token:", {
           hasToken: !!newAccessToken,
-          tokenPreview: newAccessToken ? newAccessToken.substring(0, 20) + "..." : "null"
+          tokenPreview: newAccessToken
+            ? newAccessToken.substring(0, 20) + "..."
+            : "null",
         });
-        
+
         if (!newAccessToken) {
           throw new Error("Token refresh returned null token");
         }
-        
+
         console.log("✅ Token refresh successful, retrying original request");
         processQueue(null, newAccessToken);
 
@@ -161,18 +163,18 @@ axiosInstance.interceptors.response.use(
       } catch (refreshError) {
         console.error("❌ Token refresh failed:", refreshError);
         processQueue(refreshError, null);
-        
+
         // 로그아웃 처리 및 로그인 페이지로 리다이렉트
         console.log("🚪 Logging out and redirecting to login...");
         await useAuthStore.getState().logout();
-        
+
         // 현재 페이지가 로그인 페이지가 아닌 경우에만 리다이렉트
-        if (!window.location.pathname.includes('/login')) {
+        if (!window.location.pathname.includes("/login")) {
           alert("세션이 만료되었습니다. 다시 로그인해주세요.");
           console.log("🔄 Redirecting to login page...");
-          window.location.href = '/login';
+          window.location.href = "/login";
         }
-        
+
         return Promise.reject(
           new Error("세션이 만료되었습니다. 다시 로그인해주세요.")
         );
