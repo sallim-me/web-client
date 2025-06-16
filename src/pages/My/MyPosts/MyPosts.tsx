@@ -126,19 +126,41 @@ const MyPosts = () => {
         }}
         elevation={0}
       >
-        <Stack direction="row" alignItems="center" spacing={1}>
-          <IconButton onClick={handleBack} size="small">
+        <Box
+          sx={{
+            position: "relative",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+          }}
+        >
+          <IconButton
+            onClick={handleBack}
+            size="small"
+            sx={{ position: "absolute", left: 0 }}
+          >
             <ArrowBackIcon />
           </IconButton>
-          <Typography variant="h6" sx={{ flex: 1, textAlign: "center" }}>
-            내가 쓴 글
-          </Typography>
-        </Stack>
+          <Typography variant="h6">내가 쓴 글</Typography>
+        </Box>
       </Paper>
 
       {loading ? (
         <Box sx={{ display: "flex", justifyContent: "center", mt: 4 }}>
           <CircularProgress />
+        </Box>
+      ) : posts.length === 0 ? (
+        <Box
+          sx={{
+            display: "flex",
+            justifyContent: "center",
+            alignItems: "center",
+            minHeight: "calc(100vh - 200px)",
+          }}
+        >
+          <Typography color="text.secondary">
+            아직 작성한 글이 없어요.
+          </Typography>
         </Box>
       ) : (
         <>
@@ -150,7 +172,7 @@ const MyPosts = () => {
             sx={{ px: 2 }}
           >
             {currentPosts.map((post) => (
-              <Grid item xs={12} sm={6} key={post.productId}>
+              <Grid item xs={6} sm={6} key={post.productId}>
                 <PostCard
                   key={post.productId}
                   id={post.productId}
