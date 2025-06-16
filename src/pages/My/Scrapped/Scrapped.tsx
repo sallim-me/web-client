@@ -86,14 +86,23 @@ const Scrapped = () => {
         }}
         elevation={0}
       >
-        <Stack direction="row" alignItems="center" spacing={1}>
-          <IconButton onClick={handleBack} size="small">
+        <Box
+          sx={{
+            position: "relative",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+          }}
+        >
+          <IconButton
+            onClick={handleBack}
+            size="small"
+            sx={{ position: "absolute", left: 0 }}
+          >
             <ArrowBackIcon />
           </IconButton>
-          <Typography variant="h6" sx={{ flex: 1, textAlign: "center" }}>
-            스크랩한 글
-          </Typography>
-        </Stack>
+          <Typography variant="h6">스크랩한 글</Typography>
+        </Box>
       </Paper>
 
       {loading ? (
@@ -101,7 +110,14 @@ const Scrapped = () => {
           <CircularProgress />
         </Box>
       ) : scraps.length === 0 ? (
-        <Box sx={{ textAlign: "center", mt: 4 }}>
+        <Box
+          sx={{
+            display: "flex",
+            justifyContent: "center",
+            alignItems: "center",
+            minHeight: "calc(100vh - 200px)",
+          }}
+        >
           <Typography color="text.secondary">
             스크랩한 글이 없습니다.
           </Typography>
@@ -126,7 +142,7 @@ const Scrapped = () => {
                 createdAt: scrap.createdAt,
               });
               return (
-                <Grid item xs={12} sm={6} key={scrap.productId}>
+                <Grid item xs={6} sm={6} key={scrap.productId}>
                   <PostCard
                     key={scrap.productId}
                     id={scrap.productId}
