@@ -14,7 +14,6 @@ import MyPage from "./pages/My/MyPage/MyPage";
 import MyPosts from "./pages/My/MyPosts/MyPosts";
 import Scrapped from "./pages/My/Scrapped/Scrapped";
 import EditProfile from "./pages/My/EditProfile/EditProfile";
-import Alarm from "./pages/Alarm/Alarm";
 
 export function App() {
   return (
@@ -23,13 +22,16 @@ export function App() {
         <Routes>
           <Route path="/signup" element={<SignUp />} />
           <Route path="/login" element={<Login />} />
+          <Route element={<Layout showHeader showBottomNav />}>
+            <Route path="/" element={<Navigate to="/post/list" replace />} />
+            <Route path="/post/list" element={<PostList />} />
+            <Route path="/post/detail/:id" element={<PostDetail />} />
+          </Route>
 
           {/* 인증이 필요한 페이지들을 ProtectedRoute로 감쌉니다. */}
           <Route element={<ProtectedRoute />}>
             {/* 헤더와 바텀 네비게이션이 필요한 페이지들 */}
             <Route element={<Layout showHeader showBottomNav />}>
-              <Route path="/" element={<Navigate to="/post/list" replace />} />
-              <Route path="/post/list" element={<PostList />} />
               {/* 채팅 및 마이페이지 관련 경로는 인증 필요 */}
               <Route path="/chat" element={<ChatList />} />
               <Route path="/my-page" element={<MyPage />} />
@@ -40,13 +42,7 @@ export function App() {
 
             {/* 게시글 작성/수정 및 상세 페이지는 인증 필요 시 ProtectedRoute 내부로 이동 */}
             <Route path="/post/create" element={<PostCreate />} />
-            <Route path="/post/detail/:id" element={<PostDetail />} />
             <Route path="/chat/:chatId" element={<ChatRoom />} />
-
-            {/* 알람 페이지 - 헤더와 바텀 네비게이션 모두 없음 (인증 필요 시 ProtectedRoute 내부로 이동) */}
-            <Route element={<Layout showHeader={false} showBottomNav={false} />} >
-              <Route path="/alarm" element={<Alarm />} />
-            </Route>
           </Route>
 
           {/* 필요하다면 인증되지 않은 사용자에게 보여줄 404 페이지 등을 여기에 추가 */}

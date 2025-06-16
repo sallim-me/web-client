@@ -439,13 +439,13 @@ const PostCreate = () => {
     }
 
     // 구매 글일 경우 수량이 3 이상인지 확인
-    if (form.tradeType === "buy") {
-      const quantity = parseInt(form.quantity);
-      if (isNaN(quantity) || quantity < 3) {
-        alert("수량은 3 이상이어야 합니다.");
-        return false;
-      }
-    }
+    // if (form.tradeType === "buy") {
+    //   const quantity = parseInt(form.quantity);
+    //   if (isNaN(quantity) || quantity < 3) {
+    //     alert("수량은 3 이상이어야 합니다.");
+    //     return false;
+    //   }
+    // }
 
     return true;
   };
