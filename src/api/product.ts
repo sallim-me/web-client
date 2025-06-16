@@ -157,7 +157,6 @@ export interface UpdateSellingPostRequest {
   content: string;
   applianceType: "REFRIGERATOR" | "WASHING_MACHINE" | "AIR_CONDITIONER";
   isActive: boolean;
-  modelNumber: string;
   modelName: string;
   brand: string;
   price: number;
@@ -197,19 +196,13 @@ export const createSellingPost = async (
   photos?: File[]
 ): Promise<CreateSellingPostResponse> => {
   const formData = new FormData();
-
-  // request 데이터를 JSON 문자열로 추가
-  formData.append("request", JSON.stringify(data));
-
-  // 사진 파일들 추가 (있는 경우)
-  if (photos && photos.length > 0) {
-    photos.forEach((photo) => {
-      formData.append("photos", photo);
-    });
-  } else {
-    // 사진이 없는 경우 빈 photos 필드 추가
-    formData.append("photos", "");
-  }
+  formData.append(
+    "request",
+    new Blob([JSON.stringify(data)], { type: "application/json" })
+  );
+  photos?.forEach((photo) => {
+    formData.append("photos", photo);
+  });
 
   const response = await axiosInstance.post("/product/selling", formData, {
     headers: {
@@ -281,32 +274,60 @@ export const productApi = {
     );
     return response.data;
   },
+
+  updateSellingPost: async (
+    productId: number,
+    data: UpdateSellingPostRequest,
+    newPhotos?: File[],
+    deletedImageUrls?: string[]
+  ): Promise<ApiResponse<any>> => {
+    // 이미지가 있는 경우에만 FormData 사용
+    if (newPhotos && newPhotos.length > 0) {
+      const formData = new FormData();
+      formData.append(
+        "request",
+        new Blob([JSON.stringify(data)], { type: "application/json" })
+      );
+      newPhotos.forEach((photo) => {
+        formData.append("newPhotos", photo);
+      });
+      if (deletedImageUrls && deletedImageUrls.length > 0) {
+        formData.append("deletedImageUrls", JSON.stringify(deletedImageUrls));
+      }
+      const response = await axiosInstance.patch(
+        `/product/selling/${productId}`,
+        formData,
+        {
+          headers: {
+            "Content-Type": "multipart/form-data",
+          },
+        }
+      );
+      return response.data;
+    } else {
+      // 이미지가 없는 경우 JSON으로 전송
+      const response = await axiosInstance.patch(
+        `/product/selling/${productId}`,
+        data,
+        {
+          headers: {
+            "Content-Type": "application/json",
+          },
+          transformRequest: [(data) => JSON.stringify(data)],
+        }
+      );
+      return response.data;
+    }
+  },
 };
 
 export const getApplianceQuestions = async (
   applianceType: "REFRIGERATOR" | "WASHING_MACHINE" | "AIR_CONDITIONER"
 ): Promise<ApplianceQuestionsResponse> => {
-  const response = await axiosInstance.get(
+  const { data } = await axiosInstance.get<ApplianceQuestionsResponse>(
     `/appliance-questions/${applianceType}`
   );
-  return response.data;
-};
-
-export const updateSellingPost = async (
-  productId: number,
-  data: UpdateSellingPostRequest | FormData
-) => {
-  const response = await axiosInstance.patch(
-    `/product/selling/${productId}`,
-    data,
-    {
-      headers: {
-        "Content-Type":
-          data instanceof FormData ? "multipart/form-data" : "application/json",
-      },
-    }
-  );
-  return response.data;
+  return data;
 };
 
 // Define interfaces for comment creation

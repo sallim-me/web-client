@@ -42,6 +42,7 @@ export function App() {
 
             {/* 게시글 작성/수정 및 상세 페이지는 인증 필요 시 ProtectedRoute 내부로 이동 */}
             <Route path="/post/create" element={<PostCreate />} />
+            <Route path="/post/edit/:id" element={<PostCreate />} />
             <Route path="/chat/:chatId" element={<ChatRoom />} />
           </Route>
 

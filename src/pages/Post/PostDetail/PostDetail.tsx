@@ -31,20 +31,22 @@ import MoreVertIcon from "@mui/icons-material/MoreVert";
 import BookmarkIcon from "@mui/icons-material/Bookmark";
 import BookmarkBorderIcon from "@mui/icons-material/BookmarkBorder";
 import ChatIcon from "@mui/icons-material/Chat";
-import { productApi } from "@/api/product";
-import type {
-  SellingPostDetail,
-  BuyingPostDetail,
-  CreateCommentResponseData,
-} from "@/api/product";
 import { scrapApi, getScrapByProductId } from "@/api/scrap";
-import { updateSellingPost, getApplianceQuestions } from "@/api/product";
+import { getApplianceQuestions } from "@/api/product";
 import { chatApi } from "@/api/chat";
 import { useAuthStore } from "@/store/useAuthStore";
 import CloseIcon from "@mui/icons-material/Close";
 // import AddIcon from "@mui/icons-material/Add";
 import { PostPhoto } from "./PostPhoto";
 import { PostPriceCard } from "./PostPriceCard";
+import { productApi } from "@/api/product";
+import type {
+  SellingPostDetail,
+  BuyingPostDetail,
+  CreateCommentResponseData,
+  UpdateSellingPostRequest,
+  UpdateBuyingPostRequest,
+} from "@/api/product";
 
 // 수정 폼의 타입 정의
 interface EditForm {
@@ -57,7 +59,6 @@ interface EditForm {
     answerContent: string;
   }>;
   // 판매글 전용 필드
-  modelNumber: string;
   modelName: string;
   brand: string;
   price: number;
@@ -93,6 +94,38 @@ const PostDetail = () => {
   const [chatLoading, setChatLoading] = useState(false);
   const [isCreatingChat, setIsCreatingChat] = useState(false);
 
+  const fetchPostDetail = useCallback(async () => {
+    try {
+      setLoading(true);
+      if (!id || !postType) return;
+
+      if (postType === "selling") {
+        const response = await productApi.getSellingPostDetail(Number(id));
+        setPostDetail(response);
+      } else if (postType === "buying") {
+        const response = await productApi.getBuyingPostDetail(Number(id));
+        setPostDetail(response);
+      }
+      // 스크랩 상태 확인
+      try {
+        const scrapInfo = await getScrapByProductId(Number(id));
+        setIsScrapped(scrapInfo.isScraped);
+      } catch (error) {
+        console.error("Error checking scrap status:", error);
+        setIsScrapped(false);
+      }
+    } catch (error) {
+      console.error("Error fetching post detail:", error);
+      setError("게시글을 불러오는데 실패했습니다.");
+    } finally {
+      setLoading(false);
+    }
+  }, [id, postType]);
+
+  useEffect(() => {
+    fetchPostDetail();
+  }, [fetchPostDetail]);
+
   // 컴포넌트 마운트 시 userProfile 가져오기
   useEffect(() => {
     const loadUserProfile = async () => {
@@ -125,42 +158,6 @@ const PostDetail = () => {
     }
   }, [location.search]);
 
-  useEffect(() => {
-    const fetchPostDetail = async () => {
-      try {
-        setLoading(true);
-        if (!id || !postType) return;
-
-        if (postType === "selling") {
-          const response = await productApi.getSellingPostDetail(Number(id));
-          console.log("판매글 상세 응답:", response);
-          console.log("모델 번호:", response.modelNumber);
-          setPostDetail(response);
-        } else if (postType === "buying") {
-          const response = await productApi.getBuyingPostDetail(Number(id));
-          setPostDetail(response);
-          console.log("구매글 상세 응답:", response);
-        }
-        // 스크랩 상태 확인
-        try {
-          const scrapInfo = await getScrapByProductId(Number(id));
-          setIsScrapped(scrapInfo.isScraped);
-        } catch (error) {
-          console.error("Error checking scrap status:", error);
-          // 스크랩 상태 확인 실패 시 기본값으로 설정
-          setIsScrapped(false);
-        }
-      } catch (error) {
-        console.error("Error fetching post detail:", error);
-        setError("게시글을 불러오는데 실패했습니다.");
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchPostDetail();
-  }, [id, postType]);
-
   const handleBack = () => {
     navigate("/");
   };
@@ -174,33 +171,87 @@ const PostDetail = () => {
   };
 
   const handleEdit = async () => {
+    console.log("handleEdit called.");
     handleMenuClose();
-    if (!postDetail) return;
+    if (!postDetail) {
+      console.log("No postDetail available.");
+      return;
+    }
 
-    // 1. postDetail 전체를 출력
     console.log("postDetail in handleEdit:", postDetail);
 
-    // 기존 데이터로 폼 초기화
-    const initialForm: EditForm = {
-      title: postDetail.title,
-      content: postDetail.content,
-      applianceType: postDetail.applianceType,
-      isActive: postDetail.isActive,
-      answers: [],
-      modelNumber: (postDetail as SellingPostDetail).modelNumber ?? "",
-      modelName: (postDetail as SellingPostDetail).modelName || "",
-      brand: (postDetail as SellingPostDetail).brand || "",
-      price: (postDetail as SellingPostDetail).price || 0,
-      userPrice: (postDetail as SellingPostDetail).userPrice || 0,
-      quantity: (postDetail as BuyingPostDetail).quantity || 0,
-    };
+    try {
+      if (postType === "selling") {
+        // 판매글 수정 로직
+        console.log(
+          "Fetching questions for appliance type:",
+          postDetail.applianceType
+        );
+        const questionsResponse = await getApplianceQuestions(
+          postDetail.applianceType
+        );
+        console.log("Loaded questions:", questionsResponse.data);
 
-    console.log(
-      "Initial modelNumber:",
-      (postDetail as SellingPostDetail).modelNumber
-    );
+        setEditQuestions(questionsResponse.data);
 
-    setEditForm(initialForm);
+        const existingAnswers = (postDetail as SellingPostDetail).answers || [];
+        console.log("Existing answers:", existingAnswers);
+
+        const mappedAnswers = questionsResponse.data.map((q: any) => {
+          const existingAnswer = existingAnswers.find(
+            (a: any) => a.questionId === q.id
+          );
+          console.log(`Mapping question ${q.id}:`, {
+            questionContent: q.questionContent,
+            existingAnswer: existingAnswer?.answerContent,
+          });
+          return {
+            questionId: q.id,
+            answerContent: existingAnswer ? existingAnswer.answerContent : "",
+          };
+        });
+
+        console.log("Mapped answers:", mappedAnswers);
+
+        const initialForm: EditForm = {
+          title: postDetail.title,
+          content: postDetail.content,
+          applianceType: postDetail.applianceType,
+          isActive: postDetail.isActive,
+          modelName: (postDetail as SellingPostDetail).modelName || "",
+          brand: (postDetail as SellingPostDetail).brand || "",
+          price: (postDetail as SellingPostDetail).price || 0,
+          userPrice: (postDetail as SellingPostDetail).userPrice || 0,
+          quantity: (postDetail as BuyingPostDetail).quantity || 0,
+          answers: mappedAnswers,
+        };
+
+        console.log("Setting initial form for selling post:", initialForm);
+        setEditForm(initialForm);
+        setEditOpen(true);
+      } else if (postType === "buying") {
+        // 구매글 수정 로직
+        const initialForm: EditForm = {
+          title: postDetail.title,
+          content: postDetail.content,
+          applianceType: postDetail.applianceType,
+          isActive: postDetail.isActive,
+          modelName: "",
+          brand: "",
+          price: 0,
+          userPrice: 0,
+          quantity: (postDetail as BuyingPostDetail).quantity || 0,
+          answers: [],
+        };
+
+        console.log("Setting initial form for buying post:", initialForm);
+        setEditForm(initialForm);
+        setEditOpen(true);
+      }
+    } catch (error) {
+      console.error("Error in handleEdit:", error);
+      alert("게시글 수정 정보를 불러오는데 실패했습니다.");
+    }
   };
 
   // 2. setEditForm 이후 editForm 값 출력 (컴포넌트 최상단에 위치)
@@ -252,13 +303,35 @@ const PostDetail = () => {
     questionId: number,
     answerContent: string
   ) => {
+    console.log("handleEditAnswerChange called:", {
+      questionId,
+      answerContent,
+    });
     setEditForm((prev) => {
       if (!prev) return null;
+
+      const existingAnswerIndex = prev.answers.findIndex(
+        (a) => a.questionId === questionId
+      );
+      console.log("Existing answer index:", existingAnswerIndex);
+
+      let updatedAnswers;
+      if (existingAnswerIndex >= 0) {
+        // 기존 답변이 있으면 업데이트
+        updatedAnswers = [...prev.answers];
+        updatedAnswers[existingAnswerIndex] = {
+          questionId,
+          answerContent,
+        };
+      } else {
+        // 새로운 답변 추가
+        updatedAnswers = [...prev.answers, { questionId, answerContent }];
+      }
+
+      console.log("Updated answers:", updatedAnswers);
       return {
         ...prev,
-        answers: prev.answers.map((a: any) =>
-          a.questionId === questionId ? { ...a, answerContent } : a
-        ),
+        answers: updatedAnswers,
       };
     });
   };
@@ -276,43 +349,47 @@ const PostDetail = () => {
   };
 
   const handleEditSubmit = async () => {
-    if (!id || !editForm || !postType) return;
+    if (!editForm || !postDetail || !id) {
+      console.log("Missing editForm, postDetail, or id.", {
+        editForm,
+        postDetail,
+        id,
+      });
+      return;
+    }
+
     setEditLoading(true);
     try {
       if (postType === "selling") {
-        // 판매글 수정
-        await updateSellingPost(Number(id), {
+        const data: UpdateSellingPostRequest = {
           title: editForm.title,
           content: editForm.content,
           applianceType: editForm.applianceType,
           isActive: editForm.isActive,
-          modelNumber: editForm.modelNumber,
           modelName: editForm.modelName,
           brand: editForm.brand,
-          price: Number(editForm.price),
-          userPrice: Number(editForm.userPrice),
-          answers: editQuestions.map((q: any) => ({
-            questionId: q.id,
-            answerContent:
-              editForm.answers?.find((a: any) => a.questionId === q.id)
-                ?.answerContent || "",
-          })),
-        });
+          price: editForm.price,
+          userPrice: editForm.userPrice,
+          answers: editForm.answers,
+        };
+        console.log("Sending update request with data:", data);
+        await productApi.updateSellingPost(parseInt(id), data);
       } else if (postType === "buying") {
-        // 구매글 수정
-        await productApi.updateBuyingPost(Number(id), {
+        const data: UpdateBuyingPostRequest = {
           title: editForm.title,
           content: editForm.content,
+          quantity: editForm.quantity,
           applianceType: editForm.applianceType,
           isActive: editForm.isActive,
-          quantity: Number(editForm.quantity),
-        });
+        };
+        console.log("Sending buying post update request with data:", data);
+        await productApi.updateBuyingPost(parseInt(id), data);
       }
-
       setEditOpen(false);
-      window.location.reload();
-    } catch (e) {
-      alert("수정에 실패했습니다.");
+      await fetchPostDetail();
+    } catch (error) {
+      console.error("Error updating post:", error);
+      alert("게시글 수정에 실패했습니다.");
     } finally {
       setEditLoading(false);
     }
@@ -875,9 +952,6 @@ const PostDetail = () => {
             />
           )} */}
 
-          {/* 상세 설명 */}
-          {/* <Typography variant="body1">{postDetail.content}</Typography> */}
-
           {/* 판매글 추가 정보 (모델명, 브랜드, 가격 등) */}
           {postType === "selling" && postDetail && (
             <>
@@ -1197,41 +1271,12 @@ const PostDetail = () => {
                     <MenuItem value="AIR_CONDITIONER">에어컨</MenuItem>
                   </Select>
                 </FormControl>
-                {postType === "buying" && (
-                  <TextField
-                    label="수량"
-                    name="quantity"
-                    value={editForm.quantity}
-                    onChange={handleEditFormChange}
-                    fullWidth
-                    required
-                    type="number"
-                  />
-                )}
-                <TextField
-                  label="상세 설명"
-                  name="content"
-                  value={editForm.content}
-                  onChange={handleEditFormChange}
-                  fullWidth
-                  multiline
-                  rows={3}
-                  required
-                />
-                {postType === "selling" && (
+                {postType === "selling" ? (
                   <>
                     <TextField
                       label="모델명"
                       name="modelName"
                       value={editForm.modelName}
-                      onChange={handleEditFormChange}
-                      fullWidth
-                      required
-                    />
-                    <TextField
-                      label="모델 번호"
-                      name="modelNumber"
-                      value={editForm.modelNumber}
                       onChange={handleEditFormChange}
                       fullWidth
                       required
@@ -1253,46 +1298,84 @@ const PostDetail = () => {
                       required
                       type="number"
                     />
-                    {/* <TextField
-                      label="희망가"
-                      name="userPrice"
-                      value={editForm.userPrice}
+                    <TextField
+                      label="상세 설명"
+                      name="content"
+                      value={editForm.content}
+                      onChange={handleEditFormChange}
+                      fullWidth
+                      multiline
+                      rows={3}
+                      required
+                    />
+                    {postType === "selling" &&
+                      editQuestions &&
+                      editQuestions.length > 0 && (
+                        <Box sx={{ mt: 2 }}>
+                          <Typography
+                            variant="subtitle2"
+                            sx={{ mb: 2, fontWeight: "bold" }}
+                          >
+                            제품 상태 확인
+                          </Typography>
+                          <Stack spacing={2}>
+                            {editQuestions.map((q: any) => {
+                              const answer = editForm.answers.find(
+                                (a: any) => a.questionId === q.id
+                              );
+                              console.log(`Rendering question ${q.id}:`, {
+                                questionContent: q.questionContent,
+                                answer: answer?.answerContent,
+                              });
+                              return (
+                                <Box key={q.id}>
+                                  <Typography
+                                    variant="body2"
+                                    color="text.secondary"
+                                    sx={{ mb: 1 }}
+                                  >
+                                    {q.questionContent}
+                                  </Typography>
+                                  <TextField
+                                    value={answer?.answerContent || ""}
+                                    onChange={(e) =>
+                                      handleEditAnswerChange(
+                                        q.id,
+                                        e.target.value
+                                      )
+                                    }
+                                    fullWidth
+                                    required
+                                    placeholder="답변을 입력해주세요"
+                                  />
+                                </Box>
+                              );
+                            })}
+                          </Stack>
+                        </Box>
+                      )}
+                  </>
+                ) : (
+                  <>
+                    <TextField
+                      label="수량"
+                      name="quantity"
+                      value={editForm.quantity}
                       onChange={handleEditFormChange}
                       fullWidth
                       required
                       type="number"
-                    /> */}
-                    <Box>
-                      <Typography variant="subtitle2" sx={{ mb: 1 }}>
-                        제품 상태 확인
-                      </Typography>
-                      <Stack spacing={2}>
-                        {editQuestions.map((q: any) => (
-                          <Box key={q.id}>
-                            <Typography
-                              variant="body2"
-                              color="text.secondary"
-                              sx={{ mb: 1 }}
-                            >
-                              {q.questionContent}
-                            </Typography>
-                            <TextField
-                              value={
-                                editForm.answers.find(
-                                  (a: any) => a.questionId === q.id
-                                )?.answerContent || ""
-                              }
-                              onChange={(e) =>
-                                handleEditAnswerChange(q.id, e.target.value)
-                              }
-                              fullWidth
-                              required
-                              placeholder="답변을 입력해주세요"
-                            />
-                          </Box>
-                        ))}
-                      </Stack>
-                    </Box>
+                    />
+                    <TextField
+                      label="상세 설명"
+                      name="content"
+                      value={editForm.content}
+                      onChange={handleEditFormChange}
+                      fullWidth
+                      multiline
+                      rows={3}
+                      required
+                    />
                   </>
                 )}
               </Stack>

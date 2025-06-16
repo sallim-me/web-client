@@ -18,12 +18,12 @@ import {
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import SendIcon from "@mui/icons-material/Send";
 import ArrowForwardIcon from "@mui/icons-material/ArrowForward";
-import { 
-  chatApi, 
+import {
+  chatApi,
   ChatMessageDTO,
   chatWebSocketClient,
   WebSocketReceiveMessage,
-  WebSocketConnectionStatus
+  WebSocketConnectionStatus,
 } from "@/api/chat";
 import { useAuthStore } from "@/store/useAuthStore";
 
@@ -45,88 +45,102 @@ const ChatRoom = () => {
   const { chatId } = useParams();
   const [message, setMessage] = useState("");
   const [messages, setMessages] = useState<MessageGroup[]>([]);
-  const [connectionStatus, setConnectionStatus] = useState<WebSocketConnectionStatus>({ connected: false });
+  const [connectionStatus, setConnectionStatus] =
+    useState<WebSocketConnectionStatus>({ connected: false });
   const chatAreaRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const queryClient = useQueryClient();
   const userProfile = useAuthStore((state) => state.userProfile);
 
   // 웹소켓 메시지 수신 처리
-  const handleWebSocketMessage = useCallback((wsMessage: WebSocketReceiveMessage) => {
-    console.log("🎯 Handling WebSocket message:", wsMessage);
-    if (!userProfile) {
-      console.warn("⚠️  No user profile, ignoring message");
-      return;
-    }
-
-    const newMessage: ExtendedMessage = {
-      id: wsMessage.id,
-      chatRoomId: wsMessage.chatRoomId,
-      senderId: wsMessage.senderId,
-      receiverId: wsMessage.receiverId,
-      content: wsMessage.content,
-      createdAt: wsMessage.createdAt,
-      isMine: wsMessage.senderId === userProfile.memberId,
-      time: new Date(wsMessage.createdAt).toLocaleTimeString("ko-KR", {
-        hour: "2-digit",
-        minute: "2-digit",
-      }),
-    };
-
-    console.log("📝 New message created:", newMessage);
-
-    // 상대방 메시지인 경우 읽음 처리
-    if (!newMessage.isMine && chatId) {
-      console.log("📖 Marking new message as read");
-      chatApi.markMessagesAsRead(chatId).catch((error) => {
-        console.error("❌ Failed to mark message as read:", error);
-      });
-    }
-
-    setMessages(prevMessages => {
-      const messageDate = new Date(wsMessage.createdAt);
-      const today = messageDate.toLocaleDateString("ko-KR", {
-        year: "numeric",
-        month: "long",
-        day: "numeric",
-      });
-
-      const updatedMessages = [...prevMessages];
-      let todayGroup = updatedMessages.find(group => group.date === today);
-
-      if (!todayGroup) {
-        todayGroup = {
-          id: today,
-          date: today,
-          items: []
-        };
-        updatedMessages.push(todayGroup);
-        console.log("📅 Created new date group:", today);
+  const handleWebSocketMessage = useCallback(
+    (wsMessage: WebSocketReceiveMessage) => {
+      console.log("🎯 Handling WebSocket message:", wsMessage);
+      if (!userProfile) {
+        console.warn("⚠️  No user profile, ignoring message");
+        return;
       }
 
-      // 중복 메시지 체크
-      const existingMessage = todayGroup.items.find(msg => msg.id === newMessage.id);
-      if (!existingMessage) {
-        todayGroup.items.push(newMessage);
-        todayGroup.items.sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
-        console.log("✅ Message added to group:", newMessage.content);
-      } else {
-        console.log("⚠️  Duplicate message ignored:", newMessage.id);
+      const newMessage: ExtendedMessage = {
+        id: wsMessage.id,
+        chatRoomId: wsMessage.chatRoomId,
+        senderId: wsMessage.senderId,
+        receiverId: wsMessage.receiverId,
+        content: wsMessage.content,
+        createdAt: wsMessage.createdAt,
+        isMine: wsMessage.senderId === userProfile.memberId,
+        time: new Date(wsMessage.createdAt).toLocaleTimeString("ko-KR", {
+          hour: "2-digit",
+          minute: "2-digit",
+        }),
+      };
+
+      console.log("📝 New message created:", newMessage);
+
+      // 상대방 메시지인 경우 읽음 처리
+      if (!newMessage.isMine && chatId) {
+        console.log("📖 Marking new message as read");
+        chatApi.markMessagesAsRead(chatId).catch((error) => {
+          console.error("❌ Failed to mark message as read:", error);
+        });
       }
 
-      const sortedMessages = updatedMessages.sort((a, b) => 
-        new Date(a.items[0].createdAt).getTime() - new Date(b.items[0].createdAt).getTime()
-      );
-      
-      console.log("📊 Updated messages:", sortedMessages);
-      return sortedMessages;
-    });
-  }, [userProfile, chatId]);
+      setMessages((prevMessages) => {
+        const messageDate = new Date(wsMessage.createdAt);
+        const today = messageDate.toLocaleDateString("ko-KR", {
+          year: "numeric",
+          month: "long",
+          day: "numeric",
+        });
+
+        const updatedMessages = [...prevMessages];
+        let todayGroup = updatedMessages.find((group) => group.date === today);
+
+        if (!todayGroup) {
+          todayGroup = {
+            id: today,
+            date: today,
+            items: [],
+          };
+          updatedMessages.push(todayGroup);
+          console.log("📅 Created new date group:", today);
+        }
+
+        // 중복 메시지 체크
+        const existingMessage = todayGroup.items.find(
+          (msg) => msg.id === newMessage.id
+        );
+        if (!existingMessage) {
+          todayGroup.items.push(newMessage);
+          todayGroup.items.sort(
+            (a, b) =>
+              new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
+          );
+          console.log("✅ Message added to group:", newMessage.content);
+        } else {
+          console.log("⚠️  Duplicate message ignored:", newMessage.id);
+        }
+
+        const sortedMessages = updatedMessages.sort(
+          (a, b) =>
+            new Date(a.items[0].createdAt).getTime() -
+            new Date(b.items[0].createdAt).getTime()
+        );
+
+        console.log("📊 Updated messages:", sortedMessages);
+        return sortedMessages;
+      });
+    },
+    [userProfile, chatId]
+  );
 
   // 웹소켓 연결 상태 변경 처리
-  const handleConnectionChange = useCallback((connected: boolean, error?: string) => {
-    setConnectionStatus({ connected, error });
-  }, []);
+  const handleConnectionChange = useCallback(
+    (connected: boolean, error?: string) => {
+      setConnectionStatus({ connected, error });
+    },
+    []
+  );
 
   // 채팅방 입장 시 웹소켓 연결 및 설정
   useEffect(() => {
@@ -137,7 +151,7 @@ const ChatRoom = () => {
     const setupWebSocket = async () => {
       try {
         console.log("🚀 Setting up WebSocket for room:", chatId);
-        
+
         // 채팅방 입장 API 호출
         await chatApi.enterChatRoom(chatId);
         console.log("✅ Entered chat room via API");
@@ -166,10 +180,12 @@ const ChatRoom = () => {
         console.log("🔔 Subscribing to chat room...");
         chatWebSocketClient.subscribeToChatRoom(chatId);
         console.log("✅ Subscribed to chat room");
-
       } catch (error) {
         console.error("❌ Failed to setup WebSocket:", error);
-        setConnectionStatus({ connected: false, error: "연결에 실패했습니다." });
+        setConnectionStatus({
+          connected: false,
+          error: "연결에 실패했습니다.",
+        });
       }
     };
 
@@ -187,21 +203,29 @@ const ChatRoom = () => {
   }, [chatId, userProfile, handleConnectionChange, handleWebSocketMessage]);
 
   // 채팅방 상태 조회
-  const { data: chatRoomStatus, isLoading: statusLoading, error: statusError } = useQuery({
-    queryKey: ['chatRoomStatus', chatId, userProfile?.memberId],
+  const {
+    data: chatRoomStatus,
+    isLoading: statusLoading,
+    error: statusError,
+  } = useQuery({
+    queryKey: ["chatRoomStatus", chatId, userProfile?.memberId],
     queryFn: () => chatApi.getChatRoomStatus(chatId!),
     enabled: !!chatId && !!userProfile?.memberId,
     staleTime: 30000,
-    gcTime: 300000
+    gcTime: 300000,
   });
 
   // 채팅 메시지 조회
-  const { data: chatMessages, isLoading: messagesLoading, error: messagesError } = useQuery({
-    queryKey: ['chatMessages', chatId, userProfile?.memberId],
+  const {
+    data: chatMessages,
+    isLoading: messagesLoading,
+    error: messagesError,
+  } = useQuery({
+    queryKey: ["chatMessages", chatId, userProfile?.memberId],
     queryFn: () => chatApi.getMessages(chatId!),
     enabled: !!chatId && !!userProfile?.memberId,
     staleTime: 10000,
-    gcTime: 300000
+    gcTime: 300000,
   });
 
   // 메시지를 날짜별로 그룹화하고 확장된 형태로 변환
@@ -210,7 +234,7 @@ const ChatRoom = () => {
       const messages = chatMessages.data || chatMessages; // API 응답 구조에 따라 조정
       const messageArray = Array.isArray(messages) ? messages : [];
       const groupedMessages: { [date: string]: ExtendedMessage[] } = {};
-      
+
       messageArray.forEach((msg: ChatMessageDTO) => {
         const messageDate = new Date(msg.createdAt);
         const dateKey = messageDate.toLocaleDateString("ko-KR", {
@@ -218,7 +242,7 @@ const ChatRoom = () => {
           month: "long",
           day: "numeric",
         });
-        
+
         const extendedMsg: ExtendedMessage = {
           ...msg,
           isMine: msg.senderId === userProfile.memberId,
@@ -234,13 +258,24 @@ const ChatRoom = () => {
         groupedMessages[dateKey].push(extendedMsg);
       });
 
-      const messageGroups: MessageGroup[] = Object.entries(groupedMessages).map(([date, items]) => ({
-        id: date,
-        date,
-        items: items.sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime())
-      }));
+      const messageGroups: MessageGroup[] = Object.entries(groupedMessages).map(
+        ([date, items]) => ({
+          id: date,
+          date,
+          items: items.sort(
+            (a, b) =>
+              new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
+          ),
+        })
+      );
 
-      setMessages(messageGroups.sort((a, b) => new Date(a.items[0].createdAt).getTime() - new Date(b.items[0].createdAt).getTime()));
+      setMessages(
+        messageGroups.sort(
+          (a, b) =>
+            new Date(a.items[0].createdAt).getTime() -
+            new Date(b.items[0].createdAt).getTime()
+        )
+      );
     }
   }, [chatMessages, userProfile]);
 
@@ -248,9 +283,9 @@ const ChatRoom = () => {
   const sendMessageMutation = useMutation({
     mutationFn: async (content: string) => {
       if (!chatId) throw new Error("Chat ID not found");
-      
+
       console.log("📤 Attempting to send message:", content);
-      
+
       // 웹소켓이 연결되어 있으면 웹소켓으로 전송, 아니면 REST API 사용
       if (chatWebSocketClient.isConnected()) {
         console.log("📤 Sending via WebSocket");
@@ -269,15 +304,15 @@ const ChatRoom = () => {
       // REST API로 전송한 경우에만 쿼리 무효화
       if (result.method === "rest") {
         console.log("🔄 Invalidating queries for REST API send");
-        queryClient.invalidateQueries({ queryKey: ['chatMessages', chatId] });
-        queryClient.invalidateQueries({ queryKey: ['chatRooms'] });
+        queryClient.invalidateQueries({ queryKey: ["chatMessages", chatId] });
+        queryClient.invalidateQueries({ queryKey: ["chatRooms"] });
       } else {
         console.log("⏳ Waiting for WebSocket message to arrive");
       }
     },
     onError: (error) => {
-      console.error('❌ 메시지 전송 실패:', error);
-    }
+      console.error("❌ 메시지 전송 실패:", error);
+    },
   });
 
   const handleBack = () => {
@@ -329,12 +364,26 @@ const ChatRoom = () => {
   if (statusLoading || messagesLoading) {
     return (
       <Container maxWidth="sm" sx={{ p: 2 }}>
-        <Skeleton variant="rectangular" width="100%" height={60} sx={{ mb: 2 }} />
+        <Skeleton
+          variant="rectangular"
+          width="100%"
+          height={60}
+          sx={{ mb: 2 }}
+        />
         <Stack spacing={2}>
           {[...Array(5)].map((_, index) => (
-            <Stack key={index} direction={index % 2 === 0 ? "row" : "row-reverse"} spacing={1}>
+            <Stack
+              key={index}
+              direction={index % 2 === 0 ? "row" : "row-reverse"}
+              spacing={1}
+            >
               <Skeleton variant="circular" width={40} height={40} />
-              <Skeleton variant="rectangular" width={200} height={40} sx={{ borderRadius: 2 }} />
+              <Skeleton
+                variant="rectangular"
+                width={200}
+                height={40}
+                sx={{ borderRadius: 2 }}
+              />
             </Stack>
           ))}
         </Stack>
@@ -346,9 +395,7 @@ const ChatRoom = () => {
   if (statusError || messagesError) {
     return (
       <Container maxWidth="sm" sx={{ p: 2 }}>
-        <Alert severity="error">
-          채팅방 정보를 불러오는데 실패했습니다.
-        </Alert>
+        <Alert severity="error">채팅방 정보를 불러오는데 실패했습니다.</Alert>
       </Container>
     );
   }
@@ -357,9 +404,7 @@ const ChatRoom = () => {
   if (!chatRoomStatus) {
     return (
       <Container maxWidth="sm" sx={{ p: 2 }}>
-        <Alert severity="info">
-          채팅방을 찾을 수 없습니다.
-        </Alert>
+        <Alert severity="info">채팅방을 찾을 수 없습니다.</Alert>
       </Container>
     );
   }
@@ -426,7 +471,7 @@ const ChatRoom = () => {
             />
           </Box>
           {/* 연결 상태 표시 */}
-          <Chip
+          {/* <Chip
             size="small"
             label={connectionStatus.connected ? "연결됨" : "연결 안됨"}
             color={connectionStatus.connected ? "success" : "error"}
@@ -435,10 +480,13 @@ const ChatRoom = () => {
               color: "white",
               fontSize: "0.75rem"
             }}
-          />
+          /> */}
         </Stack>
         {connectionStatus.error && (
-          <Typography variant="caption" sx={{ color: "error.light", mt: 0.5, display: "block" }}>
+          <Typography
+            variant="caption"
+            sx={{ color: "error.light", mt: 0.5, display: "block" }}
+          >
             {connectionStatus.error}
           </Typography>
         )}
@@ -511,7 +559,9 @@ const ChatRoom = () => {
                           boxShadow: 0,
                           bgcolor: msg.isMine ? "primary.main" : "grey.200",
                           color: msg.isMine ? "white" : "text.primary",
-                          borderRadius: msg.isMine ? "16px 16px 0 16px" : "16px 16px 16px 0",
+                          borderRadius: msg.isMine
+                            ? "16px 16px 0 16px"
+                            : "16px 16px 16px 0",
                         }}
                       >
                         <Typography variant="body2">{msg.content}</Typography>

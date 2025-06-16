@@ -1,5 +1,5 @@
-import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import React, { useState, useEffect } from "react";
+import { useNavigate, useParams, useLocation } from "react-router-dom";
 import {
   Box,
   Container,
@@ -53,6 +53,11 @@ import {
   createSellingPost,
   getApplianceQuestions,
   analyzeImage,
+  UpdateBuyingPostRequest,
+  UpdateSellingPostRequest,
+  SellingPostDetail,
+  BuyingPostDetail,
+  productApi,
 } from "@/api/product";
 import { useAuthStore } from "@/store/useAuthStore";
 
@@ -67,8 +72,10 @@ interface PostForm {
   userPrice: string;
   description: string;
   quantity: string;
-  images: string[];
-  imageFiles: File[]; // 실제 파일 객체들을 저장
+  images: string[]; // 새로 업로드될 이미지의 미리보기 URL 또는 기존 이미지 URL
+  imageFiles: File[]; // 새로 업로드될 실제 파일 객체들
+  existingImageUrls: string[]; // 서버에 이미 저장된 이미지 URL들 (수정 시)
+  deletedImageUrls: string[]; // 삭제될 이미지 URL들 (수정 시)
   defectAnswers: Record<string, string>;
 }
 
@@ -80,6 +87,8 @@ interface ApplianceQuestion {
 
 const PostCreate = () => {
   const navigate = useNavigate();
+  const { id: postId } = useParams<{ id: string }>(); // 게시글 ID를 URL에서 가져옵니다.
+  const location = useLocation();
   const [form, setForm] = useState<PostForm>({
     title: "",
     tradeType: "",
@@ -93,6 +102,8 @@ const PostCreate = () => {
     quantity: "",
     images: [],
     imageFiles: [],
+    existingImageUrls: [],
+    deletedImageUrls: [],
     defectAnswers: {},
   });
   const [questions, setQuestions] = useState<ApplianceQuestion[]>([]);
@@ -134,6 +145,95 @@ const PostCreate = () => {
     })
   );
 
+  // 게시글 수정 시 데이터 로드
+  useEffect(() => {
+    const fetchPostData = async () => {
+      if (postId) {
+        const params = new URLSearchParams(location.search);
+        const tradeTypeParam = params.get("type");
+
+        if (!tradeTypeParam) {
+          alert("게시글 유형 정보가 부족합니다.");
+          navigate("/");
+          return;
+        }
+
+        try {
+          if (tradeTypeParam === "selling") {
+            const response = await productApi.getSellingPostDetail(
+              parseInt(postId)
+            );
+            const post = response;
+
+            setForm({
+              title: post.title,
+              tradeType: "sell",
+              category: post.applianceType,
+              modelNumber: post.modelNumber || "",
+              modelName: post.modelName || "",
+              brand: post.brand || "",
+              price: post.price?.toString() || "",
+              userPrice: post.userPrice?.toString() || "",
+              description: post.content,
+              quantity: "", // 판매글에는 수량 없음
+              images: post.images || [],
+              imageFiles: [], // 수정 시 새로운 파일은 여기에 추가
+              existingImageUrls: post.images || [],
+              deletedImageUrls: [],
+              defectAnswers: post.answers.reduce(
+                (
+                  acc: Record<string, string>,
+                  answer: { questionContent: string; answerContent: string }
+                ) => {
+                  acc[answer.questionContent] = answer.answerContent;
+                  return acc;
+                },
+                {} as Record<string, string>
+              ),
+            });
+            // 질문 불러오기
+            const questionsResponse = await getApplianceQuestions(
+              post.applianceType
+            );
+            setQuestions(questionsResponse.data);
+          } else if (tradeTypeParam === "buying") {
+            const response = await productApi.getBuyingPostDetail(
+              parseInt(postId)
+            );
+            const post = response;
+
+            setForm({
+              title: post.title,
+              tradeType: "buy",
+              category: post.applianceType,
+              modelNumber: "",
+              modelName: "",
+              brand: "",
+              price: "",
+              userPrice: "",
+              description: post.content,
+              quantity: post.quantity?.toString() || "",
+              images: [], // 구매글에는 이미지 없음
+              imageFiles: [],
+              existingImageUrls: [],
+              deletedImageUrls: [],
+              defectAnswers: {},
+            });
+          }
+        } catch (error) {
+          console.error("Error fetching post for edit:", error);
+          alert("게시글을 불러오는데 실패했습니다.");
+          navigate("/"); // 에러 발생 시 목록 페이지로 이동
+        } finally {
+          setIsSubmitting(false); // 로딩 상태 종료 (PostCreate 내부에 로딩 상태 추가 필요)
+        }
+      } else {
+        setIsSubmitting(false); // 새로 생성하는 경우에도 로딩 상태 종료
+      }
+    };
+    fetchPostData();
+  }, [postId, navigate, location.search]); // 의존성 배열에 추가
+
   const handleBack = () => {
     navigate("/");
   };
@@ -144,74 +244,132 @@ const PostCreate = () => {
 
     setIsSubmitting(true);
     try {
-      if (form.tradeType === "buy") {
-        const userProfile = useAuthStore.getState().userProfile;
-        console.log("Submitting as buyer, user profile:", userProfile);
-
-        if (!userProfile?.isBuyer) {
-          alert("바이어로 등록된 사용자만 구매글을 작성할 수 있습니다.");
-          setIsSubmitting(false);
-          return;
-        }
-
-        const data = {
-          title: form.title,
-          content: form.description,
-          applianceType: form.category.toUpperCase() as
-            | "REFRIGERATOR"
-            | "WASHING_MACHINE"
-            | "AIR_CONDITIONER",
-          quantity: parseInt(form.quantity),
-        };
-
-        console.log("Submitting buying post data:", data);
-        const response = await createBuyingPost(data);
-
-        // 구매글 생성 성공 시 상세 페이지로 이동
-        if (response.data && response.data.id) {
-          navigate(`/post/detail/${response.data.id}?type=buying`);
+      if (postId) {
+        // 게시글 수정
+        if (form.tradeType === "buy") {
+          const data: UpdateBuyingPostRequest = {
+            title: form.title,
+            content: form.description,
+            quantity: parseInt(form.quantity),
+            applianceType: form.category.toUpperCase() as
+              | "REFRIGERATOR"
+              | "WASHING_MACHINE"
+              | "AIR_CONDITIONER",
+            isActive: true, // 수정 시 활성 상태는 유지
+          };
+          await productApi.updateBuyingPost(parseInt(postId), data);
         } else {
-          navigate("/");
+          // 판매글 수정
+          const answers = questions.map((question) => ({
+            questionId: question.id,
+            answerContent: form.defectAnswers[question.questionContent] || "",
+          }));
+
+          const baseRequestData = {
+            title: form.title,
+            content: form.description,
+            applianceType: form.category.toUpperCase() as
+              | "REFRIGERATOR"
+              | "WASHING_MACHINE"
+              | "AIR_CONDITIONER",
+            modelName: form.modelName,
+            brand: form.brand,
+            price: parseInt(form.price),
+            userPrice: parseInt(form.userPrice),
+            answers,
+          };
+
+          await productApi.updateSellingPost(
+            parseInt(postId),
+            {
+              ...baseRequestData,
+              isActive: true,
+            },
+            form.imageFiles,
+            form.deletedImageUrls
+          );
         }
+        navigate(
+          `/post/detail/${postId}?type=${
+            form.tradeType === "sell" ? "selling" : "buying"
+          }`
+        );
       } else {
-        const userProfile = useAuthStore.getState().userProfile;
-        if (!userProfile) {
-          alert("로그인이 필요합니다.");
-          navigate("/login");
-          setIsSubmitting(false);
-          return;
-        }
+        // 게시글 생성
+        if (form.tradeType === "buy") {
+          const userProfile = useAuthStore.getState().userProfile;
+          console.log("Submitting as buyer, user profile:", userProfile);
 
-        // 판매글 작성
-        const answers = questions.map((question) => ({
-          questionId: question.id,
-          answerContent: form.defectAnswers[question.questionContent] || "",
-        }));
+          if (!userProfile?.isBuyer) {
+            alert("바이어로 등록된 사용자만 구매글을 작성할 수 있습니다.");
+            setIsSubmitting(false);
+            return;
+          }
 
-        const data = {
-          title: form.title,
-          content: form.description,
-          applianceType: form.category.toUpperCase() as
-            | "REFRIGERATOR"
-            | "WASHING_MACHINE"
-            | "AIR_CONDITIONER",
-          modelNumber: form.modelNumber,
-          modelName: form.modelName,
-          brand: form.brand,
-          price: parseInt(form.price),
-          userPrice: parseInt(form.userPrice),
-          answers,
-        };
+          const data = {
+            title: form.title,
+            content: form.description,
+            applianceType: form.category.toUpperCase() as
+              | "REFRIGERATOR"
+              | "WASHING_MACHINE"
+              | "AIR_CONDITIONER",
+            quantity: parseInt(form.quantity),
+          };
 
-        console.log("Submitting selling post data:", data);
-        console.log("Image files:", form.imageFiles);
-        const response = await createSellingPost(data, form.imageFiles);
+          console.log("Submitting buying post data:", data);
+          const response = await createBuyingPost(data);
 
-        // 판매글 생성 성공 시 상세 페이지로 이동
-        if (response.data && response.data.id) {
-          navigate(`/post/detail/${response.data.id}?type=selling`);
+          // 구매글 생성 성공 시 상세 페이지로 이동
+          if (response.data && response.data.id) {
+            navigate(`/post/detail/${response.data.id}?type=buying`);
+          } else {
+            navigate("/");
+          }
         } else {
-          navigate("/");
+          const userProfile = useAuthStore.getState().userProfile;
+          if (!userProfile) {
+            alert("로그인이 필요합니다.");
+            navigate("/login");
+            setIsSubmitting(false);
+            return;
+          }
+
+          // 판매글 작성
+          const answers = questions.map((question) => ({
+            questionId: question.id,
+            answerContent: form.defectAnswers[question.questionContent] || "",
+          }));
+
+          const baseRequestData = {
+            title: form.title,
+            content: form.description,
+            applianceType: form.category.toUpperCase() as
+              | "REFRIGERATOR"
+              | "WASHING_MACHINE"
+              | "AIR_CONDITIONER",
+            modelName: form.modelName,
+            brand: form.brand,
+            price: parseInt(form.price),
+            userPrice: parseInt(form.userPrice),
+            answers,
+          };
+
+          console.log("Submitting selling post data:", baseRequestData);
+          console.log("Image files:", form.imageFiles);
+          const response = await createSellingPost(
+            {
+              ...baseRequestData,
+              modelNumber: form.modelNumber,
+            },
+            form.imageFiles
+          );
+
+          // 판매글 생성 성공 시 상세 페이지로 이동
+          if (response.data && response.data.id) {
+            navigate(`/post/detail/${response.data.id}?type=selling`);
+          } else {
+            navigate("/");
+          }
         }
       }
     } catch (error) {
@@ -432,20 +590,21 @@ const PostCreate = () => {
   };
 
   const validateForm = () => {
-    // 모든 필수 필드가 채워져 있는지 확인
     if (!form.title || !form.tradeType || !form.category || !form.description) {
       alert("모든 필수 항목을 입력해주세요.");
       return false;
     }
 
     // 구매 글일 경우 수량이 3 이상인지 확인
-    // if (form.tradeType === "buy") {
-    //   const quantity = parseInt(form.quantity);
-    //   if (isNaN(quantity) || quantity < 3) {
-    //     alert("수량은 3 이상이어야 합니다.");
-    //     return false;
-    //   }
-    // }
+    /*
+    if (form.tradeType === "buy") {
+      const quantity = parseInt(form.quantity);
+      if (isNaN(quantity) || quantity < 3) {
+        alert("수량은 3 이상이어야 합니다.");
+        return false;
+      }
+    }
+    */
 
     return true;
   };
@@ -978,9 +1137,6 @@ const PostCreate = () => {
                     fullWidth
                     required
                     type="number"
-                    InputProps={{
-                      inputProps: { min: 0 },
-                    }}
                     sx={{
                       textDecoration:
                         autoFilled && autoFilledFields.has("price")
@@ -1110,9 +1266,6 @@ const PostCreate = () => {
                   fullWidth
                   required
                   type="number"
-                  InputProps={{
-                    inputProps: { min: 3 },
-                  }}
                 />
                 <TextField
                   label="상세 설명"
