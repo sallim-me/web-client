@@ -13,7 +13,17 @@ const Header: React.FC = () => {
 
   return (
     <StyledAppBar position="sticky">
-      <Toolbar sx={{ justifyContent: "flex-end", minHeight: 60 }}>
+      <Toolbar sx={{ justifyContent: "space-between", minHeight: 60 }}>
+        <Box sx={{ display: "flex", alignItems: "center" }}>
+          <img
+            src="/images/logo.png"
+            alt="Logo"
+            style={{
+              height: "40px",
+              objectFit: "contain",
+            }}
+          />
+        </Box>
         <Box sx={{ display: "flex", gap: 1 }}>
           {/* 알람 아이콘이 제거되었습니다. */}
         </Box>
