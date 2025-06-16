@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from "react";
 import {
   Box,
   Card,
@@ -12,7 +12,7 @@ import {
   Fab,
   useTheme,
   useMediaQuery,
-} from '@mui/material';
+} from "@mui/material";
 import {
   Close as CloseIcon,
   ZoomIn as ZoomInIcon,
@@ -20,8 +20,8 @@ import {
   RotateRight as RotateRightIcon,
   ArrowBackIos as ArrowBackIcon,
   ArrowForwardIos as ArrowForwardIcon,
-} from '@mui/icons-material';
-import { getProductPhotos, Photo } from '@/api/photo';
+} from "@mui/icons-material";
+import { getProductPhotos, Photo } from "@/api/photo";
 
 interface PostPhotoProps {
   productId: number;
@@ -31,12 +31,14 @@ export const PostPhoto: React.FC<PostPhotoProps> = ({ productId }) => {
   const [photos, setPhotos] = useState<Photo[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [selectedPhotoIndex, setSelectedPhotoIndex] = useState<number | null>(null);
+  const [selectedPhotoIndex, setSelectedPhotoIndex] = useState<number | null>(
+    null
+  );
   const [zoom, setZoom] = useState(1);
   const [rotation, setRotation] = useState(0);
 
   const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
+  const isMobile = useMediaQuery(theme.breakpoints.down("md"));
 
   useEffect(() => {
     const fetchPhotos = async () => {
@@ -45,8 +47,8 @@ export const PostPhoto: React.FC<PostPhotoProps> = ({ productId }) => {
         const photoData = await getProductPhotos(productId);
         setPhotos(photoData);
       } catch (err) {
-        setError('사진을 불러오는데 실패했습니다.');
-        console.error('Failed to fetch photos:', err);
+        setError("사진을 불러오는데 실패했습니다.");
+        console.error("Failed to fetch photos:", err);
       } finally {
         setLoading(false);
       }
@@ -72,15 +74,15 @@ export const PostPhoto: React.FC<PostPhotoProps> = ({ productId }) => {
   };
 
   const handleZoomIn = () => {
-    setZoom(prev => Math.min(prev + 0.5, 3));
+    setZoom((prev) => Math.min(prev + 0.5, 3));
   };
 
   const handleZoomOut = () => {
-    setZoom(prev => Math.max(prev - 0.5, 0.5));
+    setZoom((prev) => Math.max(prev - 0.5, 0.5));
   };
 
   const handleRotate = () => {
-    setRotation(prev => (prev + 90) % 360);
+    setRotation((prev) => (prev + 90) % 360);
   };
 
   const handlePrevPhoto = () => {
@@ -92,7 +94,12 @@ export const PostPhoto: React.FC<PostPhotoProps> = ({ productId }) => {
   };
 
   const handleNextPhoto = () => {
-    if (selectedPhotoIndex !== null && photos && photos.length > 0 && selectedPhotoIndex < photos.length - 1) {
+    if (
+      selectedPhotoIndex !== null &&
+      photos &&
+      photos.length > 0 &&
+      selectedPhotoIndex < photos.length - 1
+    ) {
       setSelectedPhotoIndex(selectedPhotoIndex + 1);
       setZoom(1);
       setRotation(0);
@@ -106,11 +113,11 @@ export const PostPhoto: React.FC<PostPhotoProps> = ({ productId }) => {
 
   if (loading) {
     return (
-      <Box sx={{ width: '100%', mb: 2 }}>
+      <Box sx={{ width: "100%", mb: 2 }}>
         <Typography variant="h6" gutterBottom>
           상품 사진
         </Typography>
-        <Box sx={{ display: 'flex', gap: 1, overflowX: 'auto', pb: 1 }}>
+        <Box sx={{ display: "flex", gap: 1, overflowX: "auto", pb: 1 }}>
           {[...Array(3)].map((_, index) => (
             <Skeleton
               key={index}
@@ -127,7 +134,7 @@ export const PostPhoto: React.FC<PostPhotoProps> = ({ productId }) => {
 
   if (error) {
     return (
-      <Box sx={{ width: '100%', mb: 2 }}>
+      <Box sx={{ width: "100%", mb: 2 }}>
         <Typography variant="h6" gutterBottom>
           상품 사진
         </Typography>
@@ -148,29 +155,26 @@ export const PostPhoto: React.FC<PostPhotoProps> = ({ productId }) => {
     );
   }
 
-  return (
-    !photos?.length ? <></> :
-    <Box sx={{ width: '100%' }}>
-      <Typography variant="h6" gutterBottom>
-        상품 사진 ({photos?.length || 0}장)
-      </Typography>
-      
+  return !photos?.length ? (
+    <></>
+  ) : (
+    <Box sx={{ width: "100%" }}>
       {/* Photo Thumbnails with Horizontal Scroll */}
       <Box
         sx={{
-          display: 'flex',
+          display: "flex",
           gap: 1,
-          overflowX: 'auto',
+          overflowX: "auto",
           pb: 1,
-          '&::-webkit-scrollbar': {
+          "&::-webkit-scrollbar": {
             height: 6,
           },
-          '&::-webkit-scrollbar-track': {
-            backgroundColor: 'rgba(0,0,0,0.1)',
+          "&::-webkit-scrollbar-track": {
+            backgroundColor: "rgba(0,0,0,0.1)",
             borderRadius: 3,
           },
-          '&::-webkit-scrollbar-thumb': {
-            backgroundColor: 'rgba(0,0,0,0.3)',
+          "&::-webkit-scrollbar-thumb": {
+            backgroundColor: "rgba(0,0,0,0.3)",
             borderRadius: 3,
           },
         }}
@@ -181,14 +185,14 @@ export const PostPhoto: React.FC<PostPhotoProps> = ({ productId }) => {
             sx={{
               minWidth: 120,
               height: 120,
-              cursor: 'pointer',
-              transition: 'transform 0.2s, box-shadow 0.2s',
-              '&:hover': {
-                transform: 'scale(1.05)',
+              cursor: "pointer",
+              transition: "transform 0.2s, box-shadow 0.2s",
+              "&:hover": {
+                transform: "scale(1.05)",
                 boxShadow: theme.shadows[4],
               },
-              '&:active': {
-                transform: 'scale(0.95)',
+              "&:active": {
+                transform: "scale(0.95)",
               },
             }}
             onClick={() => handlePhotoClick(index)}
@@ -199,9 +203,9 @@ export const PostPhoto: React.FC<PostPhotoProps> = ({ productId }) => {
               image={photo.fileUrl}
               alt={`상품 사진 ${index + 1}`}
               sx={{
-                objectFit: 'cover',
-                width: '100%',
-                height: '100%',
+                objectFit: "cover",
+                width: "100%",
+                height: "100%",
               }}
             />
           </Card>
@@ -216,8 +220,8 @@ export const PostPhoto: React.FC<PostPhotoProps> = ({ productId }) => {
         fullScreen={isMobile}
         PaperProps={{
           sx: {
-            backgroundColor: 'black',
-            color: 'white',
+            backgroundColor: "black",
+            color: "white",
             margin: isMobile ? 0 : 2,
             borderRadius: isMobile ? 0 : 2,
           },
@@ -226,26 +230,26 @@ export const PostPhoto: React.FC<PostPhotoProps> = ({ productId }) => {
         <DialogContent
           sx={{
             padding: 0,
-            position: 'relative',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            minHeight: isMobile ? '100vh' : '80vh',
-            overflow: 'hidden',
+            position: "relative",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            minHeight: isMobile ? "100vh" : "80vh",
+            overflow: "hidden",
           }}
         >
           {/* Close Button */}
           <IconButton
             onClick={handleCloseModal}
             sx={{
-              position: 'absolute',
+              position: "absolute",
               top: 16,
               right: 16,
               zIndex: 10,
-              color: 'white',
-              backgroundColor: 'rgba(0,0,0,0.5)',
-              '&:hover': {
-                backgroundColor: 'rgba(0,0,0,0.7)',
+              color: "white",
+              backgroundColor: "rgba(0,0,0,0.5)",
+              "&:hover": {
+                backgroundColor: "rgba(0,0,0,0.7)",
               },
             }}
           >
@@ -256,17 +260,18 @@ export const PostPhoto: React.FC<PostPhotoProps> = ({ productId }) => {
           <Typography
             variant="body2"
             sx={{
-              position: 'absolute',
+              position: "absolute",
               top: 16,
               left: 16,
               zIndex: 10,
-              color: 'white',
-              backgroundColor: 'rgba(0,0,0,0.5)',
-              padding: '4px 8px',
+              color: "white",
+              backgroundColor: "rgba(0,0,0,0.5)",
+              padding: "4px 8px",
               borderRadius: 1,
             }}
           >
-            {selectedPhotoIndex !== null ? selectedPhotoIndex + 1 : 0} / {photos?.length || 0}
+            {selectedPhotoIndex !== null ? selectedPhotoIndex + 1 : 0} /{" "}
+            {photos?.length || 0}
           </Typography>
 
           {/* Navigation Buttons */}
@@ -274,15 +279,15 @@ export const PostPhoto: React.FC<PostPhotoProps> = ({ productId }) => {
             <IconButton
               onClick={handlePrevPhoto}
               sx={{
-                position: 'absolute',
+                position: "absolute",
                 left: 16,
-                top: '50%',
-                transform: 'translateY(-50%)',
+                top: "50%",
+                transform: "translateY(-50%)",
                 zIndex: 10,
-                color: 'white',
-                backgroundColor: 'rgba(0,0,0,0.5)',
-                '&:hover': {
-                  backgroundColor: 'rgba(0,0,0,0.7)',
+                color: "white",
+                backgroundColor: "rgba(0,0,0,0.5)",
+                "&:hover": {
+                  backgroundColor: "rgba(0,0,0,0.7)",
                 },
               }}
             >
@@ -290,56 +295,68 @@ export const PostPhoto: React.FC<PostPhotoProps> = ({ productId }) => {
             </IconButton>
           )}
 
-          {selectedPhotoIndex !== null && photos && photos.length > 0 && selectedPhotoIndex < photos.length - 1 && (
-            <IconButton
-              onClick={handleNextPhoto}
-              sx={{
-                position: 'absolute',
-                right: 16,
-                top: '50%',
-                transform: 'translateY(-50%)',
-                zIndex: 10,
-                color: 'white',
-                backgroundColor: 'rgba(0,0,0,0.5)',
-                '&:hover': {
-                  backgroundColor: 'rgba(0,0,0,0.7)',
-                },
-              }}
-            >
-              <ArrowForwardIcon />
-            </IconButton>
-          )}
+          {selectedPhotoIndex !== null &&
+            photos &&
+            photos.length > 0 &&
+            selectedPhotoIndex < photos.length - 1 && (
+              <IconButton
+                onClick={handleNextPhoto}
+                sx={{
+                  position: "absolute",
+                  right: 16,
+                  top: "50%",
+                  transform: "translateY(-50%)",
+                  zIndex: 10,
+                  color: "white",
+                  backgroundColor: "rgba(0,0,0,0.5)",
+                  "&:hover": {
+                    backgroundColor: "rgba(0,0,0,0.7)",
+                  },
+                }}
+              >
+                <ArrowForwardIcon />
+              </IconButton>
+            )}
 
           {/* Main Photo */}
           {selectedPhotoIndex !== null && (
             <Box
               sx={{
-                width: '100%',
-                height: '100%',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                overflow: 'hidden',
-                cursor: zoom > 1 ? 'grab' : 'zoom-in',
-                '&:active': {
-                  cursor: zoom > 1 ? 'grabbing' : 'zoom-in',
+                width: "100%",
+                height: "100%",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                overflow: "hidden",
+                cursor: zoom > 1 ? "grab" : "zoom-in",
+                "&:active": {
+                  cursor: zoom > 1 ? "grabbing" : "zoom-in",
                 },
               }}
               onClick={(e) => {
-                if (e.detail === 2) { // Double click
+                if (e.detail === 2) {
+                  // Double click
                   setZoom(zoom === 1 ? 2 : 1);
                 }
               }}
             >
               <img
-                src={photos && selectedPhotoIndex !== null && photos[selectedPhotoIndex] ? photos[selectedPhotoIndex].fileUrl : ''}
-                alt={`상품 사진 ${selectedPhotoIndex !== null ? selectedPhotoIndex + 1 : 0}`}
+                src={
+                  photos &&
+                  selectedPhotoIndex !== null &&
+                  photos[selectedPhotoIndex]
+                    ? photos[selectedPhotoIndex].fileUrl
+                    : ""
+                }
+                alt={`상품 사진 ${
+                  selectedPhotoIndex !== null ? selectedPhotoIndex + 1 : 0
+                }`}
                 style={{
-                  maxWidth: '100%',
-                  maxHeight: '100%',
+                  maxWidth: "100%",
+                  maxHeight: "100%",
                   transform: `scale(${zoom}) rotate(${rotation}deg)`,
-                  transition: 'transform 0.3s ease',
-                  objectFit: 'contain',
+                  transition: "transform 0.3s ease",
+                  objectFit: "contain",
                 }}
                 draggable={false}
               />
@@ -349,11 +366,11 @@ export const PostPhoto: React.FC<PostPhotoProps> = ({ productId }) => {
           {/* Control Buttons */}
           <Box
             sx={{
-              position: 'absolute',
+              position: "absolute",
               bottom: 16,
-              left: '50%',
-              transform: 'translateX(-50%)',
-              display: 'flex',
+              left: "50%",
+              transform: "translateX(-50%)",
+              display: "flex",
               gap: 1,
               zIndex: 10,
             }}
@@ -363,47 +380,47 @@ export const PostPhoto: React.FC<PostPhotoProps> = ({ productId }) => {
               onClick={handleZoomOut}
               disabled={zoom <= 0.5}
               sx={{
-                backgroundColor: 'rgba(255,255,255,0.2)',
-                color: 'white',
-                '&:hover': {
-                  backgroundColor: 'rgba(255,255,255,0.3)',
+                backgroundColor: "rgba(255,255,255,0.2)",
+                color: "white",
+                "&:hover": {
+                  backgroundColor: "rgba(255,255,255,0.3)",
                 },
-                '&:disabled': {
-                  backgroundColor: 'rgba(255,255,255,0.1)',
-                  color: 'rgba(255,255,255,0.5)',
+                "&:disabled": {
+                  backgroundColor: "rgba(255,255,255,0.1)",
+                  color: "rgba(255,255,255,0.5)",
                 },
               }}
             >
               <ZoomOutIcon />
             </Fab>
-            
+
             <Fab
               size="small"
               onClick={handleZoomIn}
               disabled={zoom >= 3}
               sx={{
-                backgroundColor: 'rgba(255,255,255,0.2)',
-                color: 'white',
-                '&:hover': {
-                  backgroundColor: 'rgba(255,255,255,0.3)',
+                backgroundColor: "rgba(255,255,255,0.2)",
+                color: "white",
+                "&:hover": {
+                  backgroundColor: "rgba(255,255,255,0.3)",
                 },
-                '&:disabled': {
-                  backgroundColor: 'rgba(255,255,255,0.1)',
-                  color: 'rgba(255,255,255,0.5)',
+                "&:disabled": {
+                  backgroundColor: "rgba(255,255,255,0.1)",
+                  color: "rgba(255,255,255,0.5)",
                 },
               }}
             >
               <ZoomInIcon />
             </Fab>
-            
+
             <Fab
               size="small"
               onClick={handleRotate}
               sx={{
-                backgroundColor: 'rgba(255,255,255,0.2)',
-                color: 'white',
-                '&:hover': {
-                  backgroundColor: 'rgba(255,255,255,0.3)',
+                backgroundColor: "rgba(255,255,255,0.2)",
+                color: "white",
+                "&:hover": {
+                  backgroundColor: "rgba(255,255,255,0.3)",
                 },
               }}
             >
