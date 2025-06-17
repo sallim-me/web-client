@@ -12,6 +12,7 @@ export interface ScrapApiResponse {
   memo: string | null;
   createdAt: string;
   postType: "BUYING" | "SELLING";
+  category?: string;
 }
 
 // 클라이언트에서 사용하는 스크랩 데이터 구조
@@ -28,6 +29,7 @@ export interface Scrap {
   createdAt: string;
   postType: "BUYING" | "SELLING";
   isActive: boolean;
+  category?: string;
 }
 
 export interface GetScrapsApiResponse {
@@ -76,6 +78,7 @@ export const scrapApi = {
         title: scrap.productTitle,
         memo: scrap.memo || "", // null인 경우 빈 문자열로 변환
         isActive: true,
+        category: scrap.category,
       }));
 
       return {

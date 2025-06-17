@@ -10,16 +10,17 @@ interface PostCardProps {
   id: number;
   scrapId?: number;
   title: string;
-  modelName: string;
+  modelName: string | null;
   price: number | null;
   quantity: number | null;
-  thumbnailUrl?: string;
+  thumbnailUrl?: string | null;
   isScraped: boolean;
   onScrapClick: () => void;
   postType: "buying" | "selling";
   isActive?: boolean;
   createdAt?: string;
   applianceType?: string;
+  category?: string;
 }
 
 const PostCard: React.FC<PostCardProps> = ({
@@ -36,6 +37,7 @@ const PostCard: React.FC<PostCardProps> = ({
   isActive,
   createdAt,
   applianceType,
+  category,
 }) => {
   const navigate = useNavigate();
 
@@ -48,26 +50,39 @@ const PostCard: React.FC<PostCardProps> = ({
     navigate(`/post/detail/${id}?type=${postType}`);
   };
 
-  let displayedImageUrl: string | null | undefined = thumbnailUrl;
+  let finalImageUrl: string | undefined;
 
-  if (postType === "buying" && !thumbnailUrl && applianceType) {
+  if (thumbnailUrl) {
+    finalImageUrl = thumbnailUrl;
+  } else {
     let imageTypeForUrl: DefaultImageType | undefined;
-    switch (applianceType) {
-      case "REFRIGERATOR":
-        imageTypeForUrl = "REFRIGERATOR";
-        break;
-      case "WASHING_MACHINE":
-        imageTypeForUrl = "WASHER";
-        break;
-      case "AIR_CONDITIONER":
-        imageTypeForUrl = "AIRCONDITIONER";
-        break;
+    const typeIdentifier = applianceType || category;
+
+    if (typeIdentifier) {
+      switch (typeIdentifier.toUpperCase()) {
+        case "TV":
+          imageTypeForUrl = "AIRCONDITIONER";
+          break;
+        case "REFRIGERATOR":
+          imageTypeForUrl = "REFRIGERATOR";
+          break;
+        case "WASHER":
+        case "WASHING_MACHINE":
+          imageTypeForUrl = "WASHER";
+          break;
+        case "AIR_CONDITIONER":
+          imageTypeForUrl = "AIRCONDITIONER";
+          break;
+        default:
+          imageTypeForUrl = undefined;
+          break;
+      }
     }
 
     if (imageTypeForUrl) {
-      displayedImageUrl = getImageUrl(null, imageTypeForUrl);
+      finalImageUrl = getImageUrl(null, imageTypeForUrl);
     } else {
-      displayedImageUrl = null;
+      finalImageUrl = getImageUrl(null);
     }
   }
 
@@ -82,8 +97,6 @@ const PostCard: React.FC<PostCardProps> = ({
         display: "flex",
         flexDirection: "column",
         gap: 1,
-        outline: "1px solid rgba(0, 0, 0, 0.12)",
-        borderRadius: 2,
         "&:hover": {
           bgcolor: "action.hover",
         },
@@ -101,9 +114,9 @@ const PostCard: React.FC<PostCardProps> = ({
           alignItems: "center",
         }}
       >
-        {displayedImageUrl ? (
+        {finalImageUrl ? (
           <img
-            src={displayedImageUrl}
+            src={finalImageUrl}
             alt={title}
             style={{
               width: "100%",
@@ -145,7 +158,7 @@ const PostCard: React.FC<PostCardProps> = ({
           wordBreak: "break-all",
         }}
       >
-        {modelName}
+        {modelName || "모델명 정보 없음"}
       </Typography>
 
       <Stack
@@ -163,7 +176,6 @@ const PostCard: React.FC<PostCardProps> = ({
             whiteSpace: "nowrap",
           }}
         >
-          {/* ₩{(minPrice ?? 0).toLocaleString()} */}
           {postType === "buying"
             ? `수량: ${(quantity ?? 0).toLocaleString()}`
             : `₩${price?.toLocaleString() ?? ""}`}

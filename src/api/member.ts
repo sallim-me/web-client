@@ -21,13 +21,15 @@ export interface EditProfileResponse {
 export interface MyPost {
   productId: number;
   title: string;
-  thumbnailUrl: string;
+  thumbnailUrl: string | null;
   modelName: string;
   price: number;
   postType: "SELLING" | "BUYING";
   priceOrQuantity: number;
   isActive: boolean;
   createdAt: string;
+  applianceType?: string;
+  category?: string;
 }
 
 export interface GetMyPostsResponse {
