@@ -17,6 +17,7 @@ import { useAuthStore } from "@/store/useAuthStore";
 import { memberApi, MyPost } from "@/api/member";
 import { scrapApi, Scrap } from "@/api/scrap";
 import { getProfileColor } from "@/utils/color";
+import { getImageUrl, DefaultImageType } from "@/utils/image";
 
 const MyPage = () => {
   const navigate = useNavigate();
@@ -69,6 +70,60 @@ const MyPage = () => {
     } catch (error) {
       console.error("Logout failed:", error);
     }
+  };
+
+  const getCardImageType = (
+    typeIdentifier: string | undefined,
+    title: string
+  ): DefaultImageType => {
+    let finalType: DefaultImageType = "REFRIGERATOR"; // 기본값은 냉장고
+
+    if (typeIdentifier) {
+      const cleanedType = typeIdentifier
+        .toUpperCase()
+        .trim()
+        .replace(/ /g, "_");
+      switch (cleanedType) {
+        case "TV":
+          finalType = "AIRCONDITIONER";
+          break;
+        case "REFRIGERATOR":
+          finalType = "REFRIGERATOR";
+          break;
+        case "WASHER":
+        case "WASHING_MACHINE":
+          finalType = "WASHER";
+          break;
+        case "AIR_CONDITIONER":
+          finalType = "AIRCONDITIONER";
+          break;
+        default:
+          break;
+      }
+    }
+
+    // typeIdentifier로 적절한 이미지를 찾지 못했거나 없는 경우 제목에서 유추
+    if (finalType === "REFRIGERATOR" && title) {
+      const lowerCaseTitle = title.toLowerCase();
+      if (lowerCaseTitle.includes("냉장고")) {
+        finalType = "REFRIGERATOR";
+      } else if (lowerCaseTitle.includes("세탁기")) {
+        finalType = "WASHER";
+      } else if (
+        lowerCaseTitle.includes("에어컨") ||
+        lowerCaseTitle.includes("에어콘")
+      ) {
+        finalType = "AIRCONDITIONER";
+      } else if (
+        lowerCaseTitle.includes("티비") ||
+        lowerCaseTitle.includes("tv")
+      ) {
+        finalType = "AIRCONDITIONER"; // TV도 일단 에어컨 이미지 사용 (DefaultImageType에 TV 없음)
+      }
+    }
+
+    // console.log(`getCardImageType: Original type: '${typeIdentifier}', Title: '${title}', Final type: '${finalType}'`);
+    return finalType;
   };
 
   return (
@@ -243,62 +298,65 @@ const MyPage = () => {
               },
             }}
           >
-            {myPosts.slice(0, 5).map((post) => (
-              <Paper
-                key={post.productId}
-                onClick={() =>
-                  navigate(
-                    `/post/detail/${
-                      post.productId
-                    }?type=${post.postType.toLowerCase()}`
-                  )
-                }
-                sx={{
-                  flexShrink: 0,
-                  width: 140,
-                  cursor: "pointer",
-                  "&:hover": {
-                    bgcolor: "action.hover",
-                  },
-                }}
-              >
-                <Box
+            {myPosts.slice(0, 5).map((post) => {
+              return (
+                <Paper
+                  key={post.productId}
+                  onClick={() =>
+                    navigate(
+                      `/post/detail/${
+                        post.productId
+                      }?type=${post.postType.toLowerCase()}`
+                    )
+                  }
                   sx={{
-                    height: 70,
-                    bgcolor: "grey.200",
-                    borderRadius: "8px 8px 0 0",
-                    overflow: "hidden",
+                    flexShrink: 0,
+                    width: 140,
+                    cursor: "pointer",
+                    "&:hover": {
+                      bgcolor: "action.hover",
+                    },
                   }}
                 >
-                  <img
-                    // src={`${process.env.PUBLIC_URL}/images/${
-                    //   post.postType === "BUYING" ? "buy" : "sell"
-                    // }.svg`}
-                    src={post.thumbnailUrl || "/public/images/refrigerator.svg"}
-                    alt={post.title}
-                    style={{
-                      width: "100%",
-                      height: "100%",
-                      objectFit: "cover",
+                  <Box
+                    sx={{
+                      height: 70,
+                      bgcolor: "grey.200",
+                      borderRadius: "8px 8px 0 0",
+                      overflow: "hidden",
                     }}
-                  />
-                </Box>
-                <Box sx={{ p: 1 }}>
-                  <Typography variant="body2" noWrap sx={{ mb: 0.5 }}>
-                    {post.title}
-                  </Typography>
-                  <Typography
-                    variant="body2"
-                    color={"text.black"}
-                    // color={post.isActive ? "primary" : "text.secondary"}
-                    fontWeight="bold"
                   >
-                    {post.postType === "SELLING" ? "판매" : "구매"}
-                    {/* {!post.isActive && " (비활성)"} */}
-                  </Typography>
-                </Box>
-              </Paper>
-            ))}
+                    <img
+                      src={
+                        post.thumbnailUrl ||
+                        getImageUrl(
+                          null,
+                          getCardImageType(post.category, post.title)
+                        )
+                      }
+                      alt={post.title}
+                      style={{
+                        width: "100%",
+                        height: "100%",
+                        objectFit: "cover",
+                      }}
+                    />
+                  </Box>
+                  <Box sx={{ p: 1 }}>
+                    <Typography variant="body2" noWrap sx={{ mb: 0.5 }}>
+                      {post.title}
+                    </Typography>
+                    <Typography
+                      variant="body2"
+                      color={"text.black"}
+                      fontWeight="bold"
+                    >
+                      {post.postType === "SELLING" ? "판매" : "구매"}
+                    </Typography>
+                  </Box>
+                </Paper>
+              );
+            })}
           </Box>
         )}
       </Box>
@@ -375,70 +433,70 @@ const MyPage = () => {
               },
             }}
           >
-            {scraps.slice(0, 5).map((scrap) => (
-              <Paper
-                key={scrap.id}
-                onClick={() =>
-                  navigate(
-                    `/post/detail/${
-                      scrap.productId
-                    }?type=${scrap.postType.toLowerCase()}`
-                  )
-                }
-                sx={{
-                  flexShrink: 0,
-                  width: 140,
-                  cursor: "pointer",
-                  "&:hover": {
-                    bgcolor: "action.hover",
-                  },
-                }}
-              >
-                <Box
+            {scraps.slice(0, 5).map((scrap) => {
+              return (
+                <Paper
+                  key={scrap.id}
+                  onClick={() =>
+                    navigate(
+                      `/post/detail/${
+                        scrap.productId
+                      }?type=${scrap.postType.toLowerCase()}`
+                    )
+                  }
                   sx={{
-                    height: 70,
-                    bgcolor: "grey.200",
-                    borderRadius: "8px 8px 0 0",
-                    overflow: "hidden",
+                    flexShrink: 0,
+                    width: 140,
+                    cursor: "pointer",
+                    "&:hover": {
+                      bgcolor: "action.hover",
+                    },
                   }}
                 >
-                  {scrap.thumbnailUrl ? (
-                    <img
-                      src={scrap.thumbnailUrl}
-                      alt={scrap.productTitle}
-                      style={{
-                        width: "100%",
-                        height: "100%",
-                        objectFit: "cover",
-                      }}
-                    />
-                  ) : (
-                    <Box
-                      sx={{
-                        width: "100%",
-                        height: "100%",
-                        display: "flex",
-                        justifyContent: "center",
-                        alignItems: "center",
-                        bgcolor: "grey.300",
-                      }}
-                    >
-                      <Typography variant="caption" color="text.secondary">
-                        이미지 없음
-                      </Typography>
-                    </Box>
-                  )}
-                </Box>
-                <Box sx={{ p: 1 }}>
-                  <Typography variant="body2" noWrap sx={{ mb: 0.5 }}>
-                    {scrap.productTitle}
-                  </Typography>
-                  <Typography variant="body2" fontWeight="bold">
-                    ₩{(scrap.productPrice ?? 0).toLocaleString()}
-                  </Typography>
-                </Box>
-              </Paper>
-            ))}
+                  <Box
+                    sx={{
+                      height: 70,
+                      bgcolor: "grey.200",
+                      borderRadius: "8px 8px 0 0",
+                      overflow: "hidden",
+                    }}
+                  >
+                    {scrap.thumbnailUrl ? (
+                      <img
+                        src={scrap.thumbnailUrl}
+                        alt={scrap.productTitle}
+                        style={{
+                          width: "100%",
+                          height: "100%",
+                          objectFit: "cover",
+                        }}
+                      />
+                    ) : (
+                      <img
+                        src={getImageUrl(
+                          null,
+                          getCardImageType(scrap.category, scrap.productTitle)
+                        )}
+                        alt={scrap.productTitle}
+                        style={{
+                          width: "100%",
+                          height: "100%",
+                          objectFit: "cover",
+                        }}
+                      />
+                    )}
+                  </Box>
+                  <Box sx={{ p: 1 }}>
+                    <Typography variant="body2" noWrap sx={{ mb: 0.5 }}>
+                      {scrap.productTitle}
+                    </Typography>
+                    <Typography variant="body2" fontWeight="bold">
+                      ₩{(scrap.productPrice ?? 0).toLocaleString()}
+                    </Typography>
+                  </Box>
+                </Paper>
+              );
+            })}
           </Box>
         )}
       </Box>

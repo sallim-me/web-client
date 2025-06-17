@@ -14,6 +14,7 @@ import {
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import PostCard from "@/components/PostCard";
 import { scrapApi, Scrap } from "@/api/scrap";
+import { getImageUrl, DefaultImageType } from "@/utils/image";
 
 const Scrapped = () => {
   const navigate = useNavigate();
@@ -53,6 +54,58 @@ const Scrapped = () => {
 
   const handleBack = () => {
     navigate("/my-page");
+  };
+
+  const getCardImageType = (
+    typeIdentifier: string | undefined,
+    title: string
+  ): DefaultImageType => {
+    let finalType: DefaultImageType = "REFRIGERATOR"; // 기본값은 냉장고
+
+    if (typeIdentifier) {
+      const cleanedType = typeIdentifier
+        .toUpperCase()
+        .trim()
+        .replace(/ /g, "_");
+      switch (cleanedType) {
+        case "TV":
+          finalType = "AIRCONDITIONER";
+          break;
+        case "REFRIGERATOR":
+          finalType = "REFRIGERATOR";
+          break;
+        case "WASHER":
+        case "WASHING_MACHINE":
+          finalType = "WASHER";
+          break;
+        case "AIR_CONDITIONER":
+          finalType = "AIRCONDITIONER";
+          break;
+        default:
+          break;
+      }
+    }
+
+    // typeIdentifier로 적절한 이미지를 찾지 못했거나 없는 경우 제목에서 유추
+    if (finalType === "REFRIGERATOR" && title) {
+      const lowerCaseTitle = title.toLowerCase();
+      if (lowerCaseTitle.includes("냉장고")) {
+        finalType = "REFRIGERATOR";
+      } else if (lowerCaseTitle.includes("세탁기")) {
+        finalType = "WASHER";
+      } else if (
+        lowerCaseTitle.includes("에어컨") ||
+        lowerCaseTitle.includes("에어콘")
+      ) {
+        finalType = "AIRCONDITIONER";
+      } else if (
+        lowerCaseTitle.includes("티비") ||
+        lowerCaseTitle.includes("tv")
+      ) {
+        finalType = "AIRCONDITIONER"; // TV도 일단 에어컨 이미지 사용 (DefaultImageType에 TV 없음)
+      }
+    }
+    return finalType;
   };
 
   const handleScrapClick = async (productId: number) => {
@@ -132,15 +185,6 @@ const Scrapped = () => {
             sx={{ px: 2 }}
           >
             {scraps.map((scrap) => {
-              console.log("Scrap item data:", {
-                id: scrap.productId,
-                scrapId: scrap.id,
-                postType: scrap.postType,
-                title: scrap.productTitle,
-                modelName: scrap.memberNickname,
-                price: scrap.productPrice,
-                createdAt: scrap.createdAt,
-              });
               return (
                 <Grid item xs={6} sm={6} key={scrap.productId}>
                   <PostCard
@@ -152,9 +196,10 @@ const Scrapped = () => {
                     price={scrap.productPrice || 0}
                     thumbnailUrl={
                       scrap.thumbnailUrl ||
-                      `${process.env.PUBLIC_URL}/images/${
-                        scrap.postType === "BUYING" ? "buy" : "sell"
-                      }.svg`
+                      getImageUrl(
+                        null,
+                        getCardImageType(scrap.category, scrap.productTitle)
+                      )
                     }
                     quantity={null}
                     isScraped={true}

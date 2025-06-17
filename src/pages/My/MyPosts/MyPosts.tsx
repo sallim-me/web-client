@@ -15,6 +15,7 @@ import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import PostCard from "@/components/PostCard";
 import { memberApi, MyPost } from "@/api/member";
 import { scrapApi, getScrapByProductId } from "@/api/scrap";
+import { getImageUrl, DefaultImageType } from "@/utils/image";
 
 // MyPost에 스크랩 상태를 추가한 확장 타입
 interface MyPostWithScrap extends MyPost {
@@ -110,6 +111,58 @@ const MyPosts = () => {
     navigate("/my-page");
   };
 
+  const getCardImageType = (
+    typeIdentifier: string | undefined,
+    title: string
+  ): DefaultImageType => {
+    let finalType: DefaultImageType = "REFRIGERATOR"; // 기본값은 냉장고
+
+    if (typeIdentifier) {
+      const cleanedType = typeIdentifier
+        .toUpperCase()
+        .trim()
+        .replace(/ /g, "_");
+      switch (cleanedType) {
+        case "TV":
+          finalType = "AIRCONDITIONER";
+          break;
+        case "REFRIGERATOR":
+          finalType = "REFRIGERATOR";
+          break;
+        case "WASHER":
+        case "WASHING_MACHINE":
+          finalType = "WASHER";
+          break;
+        case "AIR_CONDITIONER":
+          finalType = "AIRCONDITIONER";
+          break;
+        default:
+          break;
+      }
+    }
+
+    // typeIdentifier로 적절한 이미지를 찾지 못했거나 없는 경우 제목에서 유추
+    if (finalType === "REFRIGERATOR" && title) {
+      const lowerCaseTitle = title.toLowerCase();
+      if (lowerCaseTitle.includes("냉장고")) {
+        finalType = "REFRIGERATOR";
+      } else if (lowerCaseTitle.includes("세탁기")) {
+        finalType = "WASHER";
+      } else if (
+        lowerCaseTitle.includes("에어컨") ||
+        lowerCaseTitle.includes("에어콘")
+      ) {
+        finalType = "AIRCONDITIONER";
+      } else if (
+        lowerCaseTitle.includes("티비") ||
+        lowerCaseTitle.includes("tv")
+      ) {
+        finalType = "AIRCONDITIONER"; // TV도 일단 에어컨 이미지 사용 (DefaultImageType에 TV 없음)
+      }
+    }
+    return finalType;
+  };
+
   return (
     <Container maxWidth="sm" sx={{ pb: "76px" }}>
       {/* 헤더 */}
@@ -180,7 +233,13 @@ const MyPosts = () => {
                   modelName={post.modelName}
                   price={post.price}
                   quantity={null}
-                  thumbnailUrl={post.thumbnailUrl || ""}
+                  thumbnailUrl={
+                    post.thumbnailUrl ||
+                    getImageUrl(
+                      null,
+                      getCardImageType(post.category, post.title)
+                    )
+                  }
                   isScraped={post.isScraped || false}
                   onScrapClick={() => handleScrapClick(post.productId)}
                   postType={post.postType.toLowerCase() as "buying" | "selling"}
