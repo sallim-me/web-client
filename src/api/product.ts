@@ -25,11 +25,19 @@ export interface ProductListResponse {
   data: Product[];
 }
 
+export interface GetAllProductsParams {
+  categories?: string[];
+  tradeTypes?: Array<"SELLING" | "BUYING">;
+  isActive?: boolean;
+  searchQuery?: string;
+}
+
 export interface CreateBuyingPostRequest {
   title: string;
   content: string;
   quantity: number;
   applianceType: "REFRIGERATOR" | "WASHING_MACHINE" | "AIR_CONDITIONER";
+  isActive: boolean;
 }
 
 export interface CreateBuyingPostResponse {
@@ -177,9 +185,34 @@ export interface UpdateBuyingPostRequest {
   isActive: boolean;
 }
 
-export const getAllProducts = async (): Promise<ProductListResponse> => {
-  console.log("Calling getAllProducts API...");
-  const response = await axiosInstance.get("/product/all");
+export const getAllProducts = async (
+  params?: GetAllProductsParams
+): Promise<ProductListResponse> => {
+  console.log("Calling getAllProducts API with params:", params);
+  const response = await axiosInstance.get<ProductListResponse>(
+    "/product/all",
+    {
+      params: {
+        category: params?.categories?.join(","),
+        tradeType: params?.tradeTypes?.join(","),
+        isActive: params?.isActive,
+        search: params?.searchQuery,
+      },
+      paramsSerializer: (p) => {
+        const sp = new URLSearchParams();
+        for (const key in p) {
+          if (p[key] !== undefined && p[key] !== null) {
+            if (Array.isArray(p[key])) {
+              p[key].forEach((item: string) => sp.append(key, item));
+            } else {
+              sp.append(key, p[key]);
+            }
+          }
+        }
+        return sp.toString();
+      },
+    }
+  );
   console.log("getAllProducts response:", response);
   return response.data;
 };
