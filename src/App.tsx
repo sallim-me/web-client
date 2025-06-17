@@ -25,8 +25,8 @@ export function App() {
           <Route element={<Layout showHeader showBottomNav />}>
             <Route path="/" element={<Navigate to="/post/list" replace />} />
             <Route path="/post/list" element={<PostList />} />
-            <Route path="/post/detail/:id" element={<PostDetail />} />
           </Route>
+          <Route path="/post/detail/:id" element={<PostDetail />} />
 
           {/* 인증이 필요한 페이지들을 ProtectedRoute로 감쌉니다. */}
           <Route element={<ProtectedRoute />}>
@@ -35,12 +35,12 @@ export function App() {
               {/* 채팅 및 마이페이지 관련 경로는 인증 필요 */}
               <Route path="/chat" element={<ChatList />} />
               <Route path="/my-page" element={<MyPage />} />
-              <Route path="/my-page/my-posts" element={<MyPosts />} />
-              <Route path="/my-page/scraps" element={<Scrapped />} />
-              <Route path="/my-page/edit-profile" element={<EditProfile />} />
             </Route>
 
-            {/* 게시글 작성/수정 및 상세 페이지는 인증 필요 시 ProtectedRoute 내부로 이동 */}
+            <Route path="/my-page/edit-profile" element={<EditProfile />} />
+            <Route path="/my-page/my-posts" element={<MyPosts />} />
+            <Route path="/my-page/scraps" element={<Scrapped />} />
+
             <Route path="/post/create" element={<PostCreate />} />
             <Route path="/post/edit/:id" element={<PostCreate />} />
             <Route path="/chat/:chatId" element={<ChatRoom />} />

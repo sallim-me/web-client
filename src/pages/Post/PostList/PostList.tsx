@@ -19,6 +19,7 @@ import SearchIcon from "@mui/icons-material/Search";
 import PostCard from "@/components/PostCard";
 import { getAllProducts, Product } from "@/api/product";
 import { scrapApi } from "@/api/scrap";
+import { getImageUrl, DefaultImageType } from "@/utils/image";
 
 const PostList = () => {
   const navigate = useNavigate();
@@ -28,19 +29,23 @@ const PostList = () => {
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [searchQuery, setSearchQuery] = useState("");
   const postsPerPage = 10;
 
-  // 이전 페이지 경로 저장
-  const [previousPath, setPreviousPath] = useState<string | null>(null);
+  // URL 쿼리 파라미터에서 초기 상태 가져오기
+  const [selectedCategories, setSelectedCategories] = useState<string[]>(() => {
+    const categories = searchParams.get("categories");
+    return categories ? categories.split(",") : [];
+  });
 
-  // location이 변경될 때마다 이전 페이지 경로 업데이트
-  useEffect(() => {
-    const currentPath = location.pathname;
-    if (currentPath !== "/post/list") {
-      setPreviousPath(currentPath);
-    }
-  }, [location]);
+  const [selectedStatuses, setSelectedStatuses] = useState<string[]>(() => {
+    const statuses = searchParams.get("statuses");
+    return statuses ? statuses.split(",") : [];
+  });
+
+  const [searchQuery, setSearchQuery] = useState(() => {
+    const search = searchParams.get("search");
+    return search || "";
+  });
 
   const categories = ["냉장고", "에어컨", "세탁기"];
   const categoryMapping: Record<string, string> = {
@@ -60,40 +65,110 @@ const PostList = () => {
     구매완료: { type: "BUYING", isActive: false },
   };
 
-  // URL 쿼리 파라미터에서 초기 상태 가져오기
-  const [selectedCategories, setSelectedCategories] = useState<string[]>(() => {
-    // 이전 페이지가 post detail인 경우에만 필터링 상태 유지
-    if (previousPath?.includes("/post/detail")) {
-      const categories = searchParams.get("categories");
-      return categories ? categories.split(",") : [];
-    }
-    return [];
-  });
+  const getCardImageType = (
+    typeIdentifier: string | undefined,
+    title: string
+  ): DefaultImageType => {
+    let finalType: DefaultImageType = "REFRIGERATOR"; // 기본값은 냉장고
 
-  const [selectedStatuses, setSelectedStatuses] = useState<string[]>(() => {
-    // 이전 페이지가 post detail인 경우에만 필터링 상태 유지
-    if (previousPath?.includes("/post/detail")) {
-      const statuses = searchParams.get("statuses");
-      return statuses ? statuses.split(",") : [];
+    if (typeIdentifier) {
+      const cleanedType = typeIdentifier
+        .toUpperCase()
+        .trim()
+        .replace(/ /g, "_");
+      switch (cleanedType) {
+        case "TV":
+          finalType = "AIRCONDITIONER";
+          break;
+        case "REFRIGERATOR":
+          finalType = "REFRIGERATOR";
+          break;
+        case "WASHER":
+        case "WASHING_MACHINE":
+          finalType = "WASHER";
+          break;
+        case "AIR_CONDITIONER":
+          finalType = "AIRCONDITIONER";
+          break;
+        default:
+          break;
+      }
     }
-    return [];
-  });
+
+    // typeIdentifier로 적절한 이미지를 찾지 못했거나 없는 경우 제목에서 유추
+    if (finalType === "REFRIGERATOR" && title) {
+      const lowerCaseTitle = title.toLowerCase();
+      if (lowerCaseTitle.includes("냉장고")) {
+        finalType = "REFRIGERATOR";
+      } else if (lowerCaseTitle.includes("세탁기")) {
+        finalType = "WASHER";
+      } else if (
+        lowerCaseTitle.includes("에어컨") ||
+        lowerCaseTitle.includes("에어콘")
+      ) {
+        finalType = "AIRCONDITIONER";
+      } else if (
+        lowerCaseTitle.includes("티비") ||
+        lowerCaseTitle.includes("tv")
+      ) {
+        finalType = "AIRCONDITIONER"; // TV도 일단 에어컨 이미지 사용 (DefaultImageType에 TV 없음)
+      }
+    }
+    return finalType;
+  };
 
   useEffect(() => {
     const fetchProducts = async () => {
       try {
-        const response = await getAllProducts();
-        console.log("Fetched products:", response.data);
+        setLoading(true);
+        setError(null);
+
+        const tradeTypes: Array<"SELLING" | "BUYING"> = [];
+        let isActive: boolean | undefined;
+
+        selectedStatuses.forEach((status) => {
+          const mappedStatus = statusMapping[status];
+          if (mappedStatus) {
+            tradeTypes.push(mappedStatus.type);
+            // isActive는 모든 선택된 상태에 대해 동일해야 하므로, 첫 번째 값만 사용 (필터 그룹이 단일 isActive를 가정)
+            if (isActive === undefined) {
+              isActive = mappedStatus.isActive;
+            }
+          }
+        });
+
+        const params = {
+          categories: selectedCategories.map((cat) => categoryMapping[cat]),
+          tradeTypes:
+            tradeTypes.length > 0 ? Array.from(new Set(tradeTypes)) : undefined,
+          isActive: isActive,
+          searchQuery: searchQuery,
+        };
+
+        const response = await getAllProducts(params);
         setProducts(response.data);
         setLoading(false);
       } catch (err) {
+        console.error("Failed to fetch products:", err);
         setError("상품 목록을 불러오는데 실패했습니다.");
         setLoading(false);
       }
     };
 
     fetchProducts();
-  }, []);
+  }, [selectedCategories, selectedStatuses, searchQuery]);
+
+  // URL 쿼리 파라미터 변경 시 상태 업데이트
+  useEffect(() => {
+    const categories = searchParams.get("categories");
+    const statuses = searchParams.get("statuses");
+    const search = searchParams.get("search");
+
+    setSelectedCategories(categories ? categories.split(",") : []);
+    setSelectedStatuses(statuses ? statuses.split(",") : []);
+    setSearchQuery(search || "");
+    setCurrentPage(1); // URL 파라미터 변경 시 첫 페이지로 리셋
+  }, [searchParams]);
 
   // URL 쿼리 파라미터 업데이트 함수
   const updateSearchParams = (
@@ -141,35 +216,11 @@ const PostList = () => {
     });
   };
 
-  const filteredProducts = products.filter((product) => {
-    const categoryMatch =
-      selectedCategories.length === 0 ||
-      selectedCategories.some(
-        (cat) => product.category === categoryMapping[cat]
-      );
-
-    const statusMatch =
-      selectedStatuses.length === 0 ||
-      selectedStatuses.some((status) => {
-        const { type, isActive } = statusMapping[status];
-        return product.tradeType === type && product.isActive === isActive;
-      });
-
-    const searchMatch =
-      !searchQuery ||
-      (product.title &&
-        product.title.toLowerCase().includes(searchQuery.toLowerCase())) ||
-      (product.modelName &&
-        product.modelName.toLowerCase().includes(searchQuery.toLowerCase()));
-
-    return categoryMatch && statusMatch && searchMatch;
-  });
-
   // Pagination calculations
-  const totalPages = Math.ceil(filteredProducts.length / postsPerPage);
+  const totalPages = Math.ceil(products.length / postsPerPage);
   const startIndex = (currentPage - 1) * postsPerPage;
   const endIndex = startIndex + postsPerPage;
-  const currentProducts = filteredProducts.slice(startIndex, endIndex);
+  const currentProducts = products.slice(startIndex, endIndex);
 
   const handlePageChange = (
     event: React.ChangeEvent<unknown>,
@@ -424,7 +475,6 @@ const PostList = () => {
           <Grid
             container
             spacing={0}
-
             justifyContent="flex-start"
             sx={{ px: 0, width: "100%" }}
           >
@@ -441,15 +491,22 @@ const PostList = () => {
                   title={product.title}
                   modelName={product.modelName}
                   price={product.price}
-                  quantity={product.quantity}
-                  thumbnailUrl={product?.thumbnailUrl}
-                  isScraped={product.isScraped}
+                  quantity={null}
+                  thumbnailUrl={
+                    product?.thumbnailUrl ||
+                    getImageUrl(
+                      null,
+                      getCardImageType(product.category, product.title)
+                    )
+                  }
+                  isScraped={product.isScraped || false}
                   onScrapClick={() => handleScrapClick(product.id)}
                   postType={
                     product.tradeType.toLowerCase() as "buying" | "selling"
                   }
                   isActive={product.isActive}
-                  applianceType={product.category}
+                  createdAt={product.createdAt}
+                  category={product.category}
                 />
               </Grid>
             ))}

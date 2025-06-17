@@ -251,11 +251,11 @@ const PostCreate = () => {
             title: form.title,
             content: form.description,
             quantity: parseInt(form.quantity),
-            applianceType: form.category.toUpperCase() as
+            applianceType: form.category as
               | "REFRIGERATOR"
               | "WASHING_MACHINE"
               | "AIR_CONDITIONER",
-            isActive: true, // 수정 시 활성 상태는 유지
+            isActive: true,
           };
           await productApi.updateBuyingPost(parseInt(postId), data);
         } else {
@@ -309,11 +309,12 @@ const PostCreate = () => {
           const data = {
             title: form.title,
             content: form.description,
-            applianceType: form.category.toUpperCase() as
+            quantity: parseInt(form.quantity),
+            applianceType: form.category as
               | "REFRIGERATOR"
               | "WASHING_MACHINE"
               | "AIR_CONDITIONER",
-            quantity: parseInt(form.quantity),
+            isActive: true,
           };
 
           console.log("Submitting buying post data:", data);
