@@ -1,5 +1,11 @@
-import axios from "axios";
+import axios, { AxiosResponse, InternalAxiosRequestConfig } from "axios";
 import { useAuthStore } from "@/store/useAuthStore";
+
+declare module "axios" {
+  export interface InternalAxiosRequestConfig {
+    _retry?: boolean;
+  }
+}
 
 const BASE_URL = process.env.REACT_APP_API_URL || "https://dev-back.sallim.me";
 
@@ -17,7 +23,8 @@ export const axiosInstance = axios.create({
 let isRefreshing = false;
 // 토큰 갱신 대기 중인 요청들을 저장하는 큐
 let failedQueue: Array<{
-  resolve: (token: string) => void;
+  config: InternalAxiosRequestConfig;
+  resolve: (value: AxiosResponse) => void;
   reject: (error: any) => void;
 }> = [];
 
@@ -27,7 +34,17 @@ const processQueue = (error: any, token: string | null = null) => {
     if (error) {
       prom.reject(error);
     } else {
-      prom.resolve(token!);
+      // Create a new config object for retry
+      const newConfig = { ...prom.config };
+      if (!newConfig.headers) {
+        newConfig.headers = new axios.AxiosHeaders();
+      }
+      newConfig.headers.set("Authorization", `Bearer ${token}`);
+
+      axiosInstance
+        .request(newConfig)
+        .then((response) => prom.resolve(response))
+        .catch((err) => prom.reject(err));
     }
   });
   failedQueue = [];
@@ -116,7 +133,7 @@ axiosInstance.interceptors.response.use(
       return Promise.reject(new Error("서버에 연결할 수 없습니다."));
     }
 
-    const originalRequest = error.config;
+    const originalRequest = error.config as InternalAxiosRequestConfig;
 
     // 401 에러 처리 (토큰 만료)
     if (
@@ -127,13 +144,8 @@ axiosInstance.interceptors.response.use(
       if (isRefreshing) {
         // 이미 토큰 갱신 중이면 대기
         return new Promise((resolve, reject) => {
-          failedQueue.push({ resolve, reject });
-        })
-          .then((token) => {
-            originalRequest.headers.Authorization = `Bearer ${token}`;
-            return axiosInstance(originalRequest);
-          })
-          .catch((err) => Promise.reject(err));
+          failedQueue.push({ config: originalRequest, resolve, reject });
+        });
       }
 
       originalRequest._retry = true;
@@ -155,11 +167,23 @@ axiosInstance.interceptors.response.use(
           throw new Error("Token refresh returned null token");
         }
 
-        console.log("✅ Token refresh successful, retrying original request");
+        console.log(
+          "✅ Token refresh successful, retrying original request and processing queue"
+        );
+        // Create a new config object for the original request and apply new token
+        const retryOriginalRequestConfig = { ...originalRequest };
+        if (!retryOriginalRequestConfig.headers) {
+          retryOriginalRequestConfig.headers = new axios.AxiosHeaders();
+        }
+        retryOriginalRequestConfig.headers.set(
+          "Authorization",
+          `Bearer ${newAccessToken}`
+        );
+
+        // Process any requests that queued up while refreshing
         processQueue(null, newAccessToken);
 
-        originalRequest.headers.Authorization = `Bearer ${newAccessToken}`;
-        return axiosInstance(originalRequest);
+        return axiosInstance(retryOriginalRequestConfig);
       } catch (refreshError) {
         console.error("❌ Token refresh failed:", refreshError);
         processQueue(refreshError, null);
