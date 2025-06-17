@@ -178,12 +178,6 @@ export const useAuthStore = create<AuthState>()(
               "Authorization"
             ] = `Bearer ${tokens.accessToken}`;
 
-            // 모든 요청에 대해 Authorization 헤더 설정
-            axiosInstance.interceptors.request.use((config) => {
-              config.headers.Authorization = `Bearer ${tokens.accessToken}`;
-              return config;
-            });
-
             console.log("✅ Token reissue completed successfully");
           } catch (error) {
             console.error("❌ Token reissue error:", error);

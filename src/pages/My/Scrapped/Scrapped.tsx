@@ -150,9 +150,12 @@ const Scrapped = () => {
                     title={scrap.productTitle}
                     modelName={scrap.memberNickname}
                     price={scrap.productPrice || 0}
-                    thumbnailUrl={`${process.env.PUBLIC_URL}/images/${
-                      scrap.postType === "BUYING" ? "buy" : "sell"
-                    }.svg`}
+                    thumbnailUrl={
+                      scrap.thumbnailUrl ||
+                      `${process.env.PUBLIC_URL}/images/${
+                        scrap.postType === "BUYING" ? "buy" : "sell"
+                      }.svg`
+                    }
                     quantity={null}
                     isScraped={true}
                     onScrapClick={() => handleScrapClick(scrap.productId)}

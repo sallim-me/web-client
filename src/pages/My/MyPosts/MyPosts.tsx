@@ -180,7 +180,7 @@ const MyPosts = () => {
                   modelName={post.modelName}
                   price={post.price}
                   quantity={null}
-                  thumbnailUrl={""}
+                  thumbnailUrl={post.thumbnailUrl || ""}
                   isScraped={post.isScraped || false}
                   onScrapClick={() => handleScrapClick(post.productId)}
                   postType={post.postType.toLowerCase() as "buying" | "selling"}
